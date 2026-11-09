@@ -1,0 +1,85 @@
+{
+  "part_1_topics": [
+    {
+      "topic": "Hometown",
+      "questions": [
+        "Could you tell me where you are from?",
+        "What do you like most about your hometown?",
+        "Has your hometown changed much since you were a child?",
+        "Do you think you will continue living there in the future?"
+      ]
+    },
+    {
+      "topic": "Work or Studies",
+      "questions": [
+        "Do you work or are you a student?",
+        "What made you choose that particular field?",
+        "What is the most interesting aspect of your work or studies?",
+        "What are your future career plans?"
+      ]
+    },
+    {
+      "topic": "Daily Routine and Free Time",
+      "questions": [
+        "What part of the day do you enjoy most?",
+        "What do you usually do on your weekends?",
+        "Do you prefer spending your free time alone or with other people?",
+        "How has your daily routine changed in recent years?"
+      ]
+    }
+  ],
+  "part_2_cue_cards": [
+    {
+      "id": "cue_card_journey",
+      "title": "Describe a memorable journey you have taken",
+      "bullet_points": [
+        "Where you went and how you travelled there",
+        "Who you went with",
+        "What you did during the journey",
+        "And explain why this journey was so memorable to you"
+      ],
+      "part_3_topic": "Travel and Tourism",
+      "part_3_questions": [
+        "How has travel changed compared to the past?",
+        "Do you think tourism has more positive or negative effects on local communities?",
+        "Why do some people prefer travelling to remote and quiet places?",
+        "How might technological advances impact the way people travel in the future?"
+      ]
+    },
+    {
+      "id": "cue_card_challenge",
+      "title": "Describe a difficult challenge you faced and overcame",
+      "bullet_points": [
+        "What the challenge was",
+        "When and why it occurred",
+        "What steps you took to overcome it",
+        "And explain what you learned from this experience"
+      ],
+      "part_3_topic": "Challenges and Personal Growth",
+      "part_3_questions": [
+        "Why is it important for young people to face challenges?",
+        "Do you believe schools adequately prepare students for practical life difficulties?",
+        "How does modern technology make daily challenges easier or more difficult?",
+        "What qualities are most essential for strong leaders during a crisis?"
+      ]
+    },
+    {
+      "id": "cue_card_technology",
+      "title": "Describe a piece of electronic technology you find very useful",
+      "bullet_points": [
+        "What it is and how often you use it",
+        "How you learned to use it",
+        "What features make it so practical",
+        "And explain how it has impacted your daily life"
+      ],
+      "part_3_topic": "Technology and Society",
+      "part_3_questions": [
+        "Do people rely too heavily on technological devices today?",
+        "How has communication between family members evolved with social media?",
+        "What ethical concerns arise from increasing automation and artificial intelligence?",
+        "Should governments regulate how digital platforms use personal data?"
+      ]
+    }
+  ]
+}
+

@@ -1,0 +1,42 @@
+{
+  "addition": [
+    "furthermore",
+    "moreover",
+    "in addition",
+    "additionally",
+    "not only that but"
+  ],
+  "contrast": [
+    "on the other hand",
+    "however",
+    "nevertheless",
+    "conversely",
+    "whereas",
+    "in contrast"
+  ],
+  "cause_effect": [
+    "consequently",
+    "as a result",
+    "therefore",
+    "thus",
+    "for this reason"
+  ],
+  "example": [
+    "for instance",
+    "to illustrate",
+    "such as",
+    "a prime example being"
+  ],
+  "concession": [
+    "despite this",
+    "although",
+    "even though",
+    "admittedly"
+  ],
+  "opinion": [
+    "from my perspective",
+    "in my view",
+    "as far as i am concerned",
+    "i am convinced that"
+  ]
+}

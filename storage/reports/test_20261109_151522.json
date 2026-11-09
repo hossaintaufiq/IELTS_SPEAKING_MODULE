@@ -1,0 +1,1037 @@
+{
+  "session_id": "test_20261109_151522",
+  "turns": [
+    {
+      "part": 1,
+      "question": "Part 1 Question 1",
+      "transcript": "Well, my full name is Aftab Hossain, but most of my friends and family simply call me Aftab.",
+      "duration": 12.0,
+      "words_data": [
+        {
+          "word": "Well,",
+          "start": 0.5,
+          "end": 0.85,
+          "prob": 0.95
+        },
+        {
+          "word": "my",
+          "start": 0.95,
+          "end": 1.3,
+          "prob": 0.95
+        },
+        {
+          "word": "full",
+          "start": 1.4,
+          "end": 1.75,
+          "prob": 0.95
+        },
+        {
+          "word": "name",
+          "start": 1.85,
+          "end": 2.2,
+          "prob": 0.95
+        },
+        {
+          "word": "is",
+          "start": 2.3,
+          "end": 2.65,
+          "prob": 0.95
+        },
+        {
+          "word": "Aftab",
+          "start": 2.75,
+          "end": 3.1,
+          "prob": 0.95
+        },
+        {
+          "word": "Hossain,",
+          "start": 3.2,
+          "end": 3.55,
+          "prob": 0.95
+        },
+        {
+          "word": "but",
+          "start": 3.65,
+          "end": 4.0,
+          "prob": 0.95
+        },
+        {
+          "word": "most",
+          "start": 4.1,
+          "end": 4.45,
+          "prob": 0.95
+        },
+        {
+          "word": "of",
+          "start": 4.55,
+          "end": 4.9,
+          "prob": 0.95
+        },
+        {
+          "word": "my",
+          "start": 5.0,
+          "end": 5.35,
+          "prob": 0.95
+        },
+        {
+          "word": "friends",
+          "start": 5.45,
+          "end": 5.8,
+          "prob": 0.95
+        },
+        {
+          "word": "and",
+          "start": 5.9,
+          "end": 6.25,
+          "prob": 0.95
+        },
+        {
+          "word": "family",
+          "start": 6.35,
+          "end": 6.7,
+          "prob": 0.95
+        },
+        {
+          "word": "simply",
+          "start": 6.8,
+          "end": 7.15,
+          "prob": 0.95
+        },
+        {
+          "word": "call",
+          "start": 7.25,
+          "end": 7.6,
+          "prob": 0.95
+        },
+        {
+          "word": "me",
+          "start": 7.7,
+          "end": 8.05,
+          "prob": 0.95
+        },
+        {
+          "word": "Aftab.",
+          "start": 8.15,
+          "end": 8.5,
+          "prob": 0.95
+        }
+      ]
+    },
+    {
+      "part": 1,
+      "question": "Part 1 Question 2",
+      "transcript": "I was born and raised in a coastal town which is renowned for its picturesque scenery and vibrant community.",
+      "duration": 12.0,
+      "words_data": [
+        {
+          "word": "I",
+          "start": 0.5,
+          "end": 0.85,
+          "prob": 0.95
+        },
+        {
+          "word": "was",
+          "start": 0.95,
+          "end": 1.3,
+          "prob": 0.95
+        },
+        {
+          "word": "born",
+          "start": 1.4,
+          "end": 1.75,
+          "prob": 0.95
+        },
+        {
+          "word": "and",
+          "start": 1.85,
+          "end": 2.2,
+          "prob": 0.95
+        },
+        {
+          "word": "raised",
+          "start": 2.3,
+          "end": 2.65,
+          "prob": 0.95
+        },
+        {
+          "word": "in",
+          "start": 2.75,
+          "end": 3.1,
+          "prob": 0.95
+        },
+        {
+          "word": "a",
+          "start": 3.2,
+          "end": 3.55,
+          "prob": 0.95
+        },
+        {
+          "word": "coastal",
+          "start": 3.65,
+          "end": 4.0,
+          "prob": 0.95
+        },
+        {
+          "word": "town",
+          "start": 4.1,
+          "end": 4.45,
+          "prob": 0.95
+        },
+        {
+          "word": "which",
+          "start": 4.55,
+          "end": 4.9,
+          "prob": 0.95
+        },
+        {
+          "word": "is",
+          "start": 5.0,
+          "end": 5.35,
+          "prob": 0.95
+        },
+        {
+          "word": "renowned",
+          "start": 5.45,
+          "end": 5.8,
+          "prob": 0.95
+        },
+        {
+          "word": "for",
+          "start": 5.9,
+          "end": 6.25,
+          "prob": 0.95
+        },
+        {
+          "word": "its",
+          "start": 6.35,
+          "end": 6.7,
+          "prob": 0.95
+        },
+        {
+          "word": "picturesque",
+          "start": 6.8,
+          "end": 7.15,
+          "prob": 0.95
+        },
+        {
+          "word": "scenery",
+          "start": 7.25,
+          "end": 7.6,
+          "prob": 0.95
+        },
+        {
+          "word": "and",
+          "start": 7.7,
+          "end": 8.05,
+          "prob": 0.95
+        },
+        {
+          "word": "vibrant",
+          "start": 8.15,
+          "end": 8.5,
+          "prob": 0.95
+        },
+        {
+          "word": "community.",
+          "start": 8.6,
+          "end": 8.95,
+          "prob": 0.95
+        }
+      ]
+    },
+    {
+      "part": 1,
+      "question": "Part 1 Question 3",
+      "transcript": "Yes, in recent years, urbanization has expanded rapidly, which has led to significant infrastructural improvements.",
+      "duration": 12.0,
+      "words_data": [
+        {
+          "word": "Yes,",
+          "start": 0.5,
+          "end": 0.85,
+          "prob": 0.95
+        },
+        {
+          "word": "in",
+          "start": 0.95,
+          "end": 1.3,
+          "prob": 0.95
+        },
+        {
+          "word": "recent",
+          "start": 1.4,
+          "end": 1.75,
+          "prob": 0.95
+        },
+        {
+          "word": "years,",
+          "start": 1.85,
+          "end": 2.2,
+          "prob": 0.95
+        },
+        {
+          "word": "urbanization",
+          "start": 2.3,
+          "end": 2.65,
+          "prob": 0.95
+        },
+        {
+          "word": "has",
+          "start": 2.75,
+          "end": 3.1,
+          "prob": 0.95
+        },
+        {
+          "word": "expanded",
+          "start": 3.2,
+          "end": 3.55,
+          "prob": 0.95
+        },
+        {
+          "word": "rapidly,",
+          "start": 3.65,
+          "end": 4.0,
+          "prob": 0.95
+        },
+        {
+          "word": "which",
+          "start": 4.1,
+          "end": 4.45,
+          "prob": 0.95
+        },
+        {
+          "word": "has",
+          "start": 4.55,
+          "end": 4.9,
+          "prob": 0.95
+        },
+        {
+          "word": "led",
+          "start": 5.0,
+          "end": 5.35,
+          "prob": 0.95
+        },
+        {
+          "word": "to",
+          "start": 5.45,
+          "end": 5.8,
+          "prob": 0.95
+        },
+        {
+          "word": "significant",
+          "start": 5.9,
+          "end": 6.25,
+          "prob": 0.95
+        },
+        {
+          "word": "infrastructural",
+          "start": 6.35,
+          "end": 6.7,
+          "prob": 0.95
+        },
+        {
+          "word": "improvements.",
+          "start": 6.8,
+          "end": 7.15,
+          "prob": 0.95
+        }
+      ]
+    },
+    {
+      "part": 2,
+      "question": "Describe a memorable journey you have taken",
+      "transcript": "I would like to talk about a memorable journey I took to the highlands with my close friends two years ago. We decided to travel by train because we wanted to appreciate the scenic landscape. During the trip, we explored historic sites and hiked through lush mountain trails. This journey was unforgettable because it gave us a rare opportunity to disconnect from technology and reconnect with nature.",
+      "duration": 60.0,
+      "words_data": [
+        {
+          "word": "I",
+          "start": 0.5,
+          "end": 0.85,
+          "prob": 0.95
+        },
+        {
+          "word": "would",
+          "start": 0.95,
+          "end": 1.3,
+          "prob": 0.95
+        },
+        {
+          "word": "like",
+          "start": 1.4,
+          "end": 1.75,
+          "prob": 0.95
+        },
+        {
+          "word": "to",
+          "start": 1.85,
+          "end": 2.2,
+          "prob": 0.95
+        },
+        {
+          "word": "talk",
+          "start": 2.3,
+          "end": 2.65,
+          "prob": 0.95
+        },
+        {
+          "word": "about",
+          "start": 2.75,
+          "end": 3.1,
+          "prob": 0.95
+        },
+        {
+          "word": "a",
+          "start": 3.2,
+          "end": 3.55,
+          "prob": 0.95
+        },
+        {
+          "word": "memorable",
+          "start": 3.65,
+          "end": 4.0,
+          "prob": 0.95
+        },
+        {
+          "word": "journey",
+          "start": 4.1,
+          "end": 4.45,
+          "prob": 0.95
+        },
+        {
+          "word": "I",
+          "start": 4.55,
+          "end": 4.9,
+          "prob": 0.95
+        },
+        {
+          "word": "took",
+          "start": 5.0,
+          "end": 5.35,
+          "prob": 0.95
+        },
+        {
+          "word": "to",
+          "start": 5.45,
+          "end": 5.8,
+          "prob": 0.95
+        },
+        {
+          "word": "the",
+          "start": 5.9,
+          "end": 6.25,
+          "prob": 0.95
+        },
+        {
+          "word": "highlands",
+          "start": 6.35,
+          "end": 6.7,
+          "prob": 0.95
+        },
+        {
+          "word": "with",
+          "start": 6.8,
+          "end": 7.15,
+          "prob": 0.95
+        },
+        {
+          "word": "my",
+          "start": 7.25,
+          "end": 7.6,
+          "prob": 0.95
+        },
+        {
+          "word": "close",
+          "start": 7.7,
+          "end": 8.05,
+          "prob": 0.95
+        },
+        {
+          "word": "friends",
+          "start": 8.15,
+          "end": 8.5,
+          "prob": 0.95
+        },
+        {
+          "word": "two",
+          "start": 8.6,
+          "end": 8.95,
+          "prob": 0.95
+        },
+        {
+          "word": "years",
+          "start": 9.05,
+          "end": 9.4,
+          "prob": 0.95
+        },
+        {
+          "word": "ago.",
+          "start": 9.5,
+          "end": 9.85,
+          "prob": 0.95
+        },
+        {
+          "word": "We",
+          "start": 9.95,
+          "end": 10.3,
+          "prob": 0.95
+        },
+        {
+          "word": "decided",
+          "start": 10.4,
+          "end": 10.75,
+          "prob": 0.95
+        },
+        {
+          "word": "to",
+          "start": 10.85,
+          "end": 11.2,
+          "prob": 0.95
+        },
+        {
+          "word": "travel",
+          "start": 11.3,
+          "end": 11.65,
+          "prob": 0.95
+        },
+        {
+          "word": "by",
+          "start": 11.75,
+          "end": 12.1,
+          "prob": 0.95
+        },
+        {
+          "word": "train",
+          "start": 12.2,
+          "end": 12.55,
+          "prob": 0.95
+        },
+        {
+          "word": "because",
+          "start": 12.65,
+          "end": 13.0,
+          "prob": 0.95
+        },
+        {
+          "word": "we",
+          "start": 13.1,
+          "end": 13.45,
+          "prob": 0.95
+        },
+        {
+          "word": "wanted",
+          "start": 13.55,
+          "end": 13.9,
+          "prob": 0.95
+        },
+        {
+          "word": "to",
+          "start": 14.0,
+          "end": 14.35,
+          "prob": 0.95
+        },
+        {
+          "word": "appreciate",
+          "start": 14.45,
+          "end": 14.8,
+          "prob": 0.95
+        },
+        {
+          "word": "the",
+          "start": 14.9,
+          "end": 15.25,
+          "prob": 0.95
+        },
+        {
+          "word": "scenic",
+          "start": 15.35,
+          "end": 15.7,
+          "prob": 0.95
+        },
+        {
+          "word": "landscape.",
+          "start": 15.8,
+          "end": 16.15,
+          "prob": 0.95
+        },
+        {
+          "word": "During",
+          "start": 16.25,
+          "end": 16.6,
+          "prob": 0.95
+        },
+        {
+          "word": "the",
+          "start": 16.7,
+          "end": 17.05,
+          "prob": 0.95
+        },
+        {
+          "word": "trip,",
+          "start": 17.15,
+          "end": 17.5,
+          "prob": 0.95
+        },
+        {
+          "word": "we",
+          "start": 17.6,
+          "end": 17.95,
+          "prob": 0.95
+        },
+        {
+          "word": "explored",
+          "start": 18.05,
+          "end": 18.4,
+          "prob": 0.95
+        },
+        {
+          "word": "historic",
+          "start": 18.5,
+          "end": 18.85,
+          "prob": 0.95
+        },
+        {
+          "word": "sites",
+          "start": 18.95,
+          "end": 19.3,
+          "prob": 0.95
+        },
+        {
+          "word": "and",
+          "start": 19.4,
+          "end": 19.75,
+          "prob": 0.95
+        },
+        {
+          "word": "hiked",
+          "start": 19.85,
+          "end": 20.2,
+          "prob": 0.95
+        },
+        {
+          "word": "through",
+          "start": 20.3,
+          "end": 20.65,
+          "prob": 0.95
+        },
+        {
+          "word": "lush",
+          "start": 20.75,
+          "end": 21.1,
+          "prob": 0.95
+        },
+        {
+          "word": "mountain",
+          "start": 21.2,
+          "end": 21.55,
+          "prob": 0.95
+        },
+        {
+          "word": "trails.",
+          "start": 21.65,
+          "end": 22.0,
+          "prob": 0.95
+        },
+        {
+          "word": "This",
+          "start": 22.1,
+          "end": 22.45,
+          "prob": 0.95
+        },
+        {
+          "word": "journey",
+          "start": 22.55,
+          "end": 22.9,
+          "prob": 0.95
+        },
+        {
+          "word": "was",
+          "start": 23.0,
+          "end": 23.35,
+          "prob": 0.95
+        },
+        {
+          "word": "unforgettable",
+          "start": 23.45,
+          "end": 23.8,
+          "prob": 0.95
+        },
+        {
+          "word": "because",
+          "start": 23.9,
+          "end": 24.25,
+          "prob": 0.95
+        },
+        {
+          "word": "it",
+          "start": 24.35,
+          "end": 24.7,
+          "prob": 0.95
+        },
+        {
+          "word": "gave",
+          "start": 24.8,
+          "end": 25.15,
+          "prob": 0.95
+        },
+        {
+          "word": "us",
+          "start": 25.25,
+          "end": 25.6,
+          "prob": 0.95
+        },
+        {
+          "word": "a",
+          "start": 25.7,
+          "end": 26.05,
+          "prob": 0.95
+        },
+        {
+          "word": "rare",
+          "start": 26.15,
+          "end": 26.5,
+          "prob": 0.95
+        },
+        {
+          "word": "opportunity",
+          "start": 26.6,
+          "end": 26.95,
+          "prob": 0.95
+        },
+        {
+          "word": "to",
+          "start": 27.05,
+          "end": 27.4,
+          "prob": 0.95
+        },
+        {
+          "word": "disconnect",
+          "start": 27.5,
+          "end": 27.85,
+          "prob": 0.95
+        },
+        {
+          "word": "from",
+          "start": 27.95,
+          "end": 28.3,
+          "prob": 0.95
+        },
+        {
+          "word": "technology",
+          "start": 28.4,
+          "end": 28.75,
+          "prob": 0.95
+        },
+        {
+          "word": "and",
+          "start": 28.85,
+          "end": 29.2,
+          "prob": 0.95
+        },
+        {
+          "word": "reconnect",
+          "start": 29.3,
+          "end": 29.65,
+          "prob": 0.95
+        },
+        {
+          "word": "with",
+          "start": 29.75,
+          "end": 30.1,
+          "prob": 0.95
+        },
+        {
+          "word": "nature.",
+          "start": 30.2,
+          "end": 30.55,
+          "prob": 0.95
+        }
+      ]
+    },
+    {
+      "part": 3,
+      "question": "Part 3 Question 1",
+      "transcript": "From my perspective, modern travel has become substantially more accessible due to budget airlines, although it has occasionally led to over-tourism.",
+      "duration": 20.0,
+      "words_data": [
+        {
+          "word": "From",
+          "start": 0.5,
+          "end": 0.85,
+          "prob": 0.95
+        },
+        {
+          "word": "my",
+          "start": 0.95,
+          "end": 1.3,
+          "prob": 0.95
+        },
+        {
+          "word": "perspective,",
+          "start": 1.4,
+          "end": 1.75,
+          "prob": 0.95
+        },
+        {
+          "word": "modern",
+          "start": 1.85,
+          "end": 2.2,
+          "prob": 0.95
+        },
+        {
+          "word": "travel",
+          "start": 2.3,
+          "end": 2.65,
+          "prob": 0.95
+        },
+        {
+          "word": "has",
+          "start": 2.75,
+          "end": 3.1,
+          "prob": 0.95
+        },
+        {
+          "word": "become",
+          "start": 3.2,
+          "end": 3.55,
+          "prob": 0.95
+        },
+        {
+          "word": "substantially",
+          "start": 3.65,
+          "end": 4.0,
+          "prob": 0.95
+        },
+        {
+          "word": "more",
+          "start": 4.1,
+          "end": 4.45,
+          "prob": 0.95
+        },
+        {
+          "word": "accessible",
+          "start": 4.55,
+          "end": 4.9,
+          "prob": 0.95
+        },
+        {
+          "word": "due",
+          "start": 5.0,
+          "end": 5.35,
+          "prob": 0.95
+        },
+        {
+          "word": "to",
+          "start": 5.45,
+          "end": 5.8,
+          "prob": 0.95
+        },
+        {
+          "word": "budget",
+          "start": 5.9,
+          "end": 6.25,
+          "prob": 0.95
+        },
+        {
+          "word": "airlines,",
+          "start": 6.35,
+          "end": 6.7,
+          "prob": 0.95
+        },
+        {
+          "word": "although",
+          "start": 6.8,
+          "end": 7.15,
+          "prob": 0.95
+        },
+        {
+          "word": "it",
+          "start": 7.25,
+          "end": 7.6,
+          "prob": 0.95
+        },
+        {
+          "word": "has",
+          "start": 7.7,
+          "end": 8.05,
+          "prob": 0.95
+        },
+        {
+          "word": "occasionally",
+          "start": 8.15,
+          "end": 8.5,
+          "prob": 0.95
+        },
+        {
+          "word": "led",
+          "start": 8.6,
+          "end": 8.95,
+          "prob": 0.95
+        },
+        {
+          "word": "to",
+          "start": 9.05,
+          "end": 9.4,
+          "prob": 0.95
+        },
+        {
+          "word": "over-tourism.",
+          "start": 9.5,
+          "end": 9.85,
+          "prob": 0.95
+        }
+      ]
+    },
+    {
+      "part": 3,
+      "question": "Part 3 Question 2",
+      "transcript": "Sustainable eco-tourism is of paramount importance to ensure local cultural traditions and delicate ecosystems remain protected for future generations.",
+      "duration": 20.0,
+      "words_data": [
+        {
+          "word": "Sustainable",
+          "start": 0.5,
+          "end": 0.85,
+          "prob": 0.95
+        },
+        {
+          "word": "eco-tourism",
+          "start": 0.95,
+          "end": 1.3,
+          "prob": 0.95
+        },
+        {
+          "word": "is",
+          "start": 1.4,
+          "end": 1.75,
+          "prob": 0.95
+        },
+        {
+          "word": "of",
+          "start": 1.85,
+          "end": 2.2,
+          "prob": 0.95
+        },
+        {
+          "word": "paramount",
+          "start": 2.3,
+          "end": 2.65,
+          "prob": 0.95
+        },
+        {
+          "word": "importance",
+          "start": 2.75,
+          "end": 3.1,
+          "prob": 0.95
+        },
+        {
+          "word": "to",
+          "start": 3.2,
+          "end": 3.55,
+          "prob": 0.95
+        },
+        {
+          "word": "ensure",
+          "start": 3.65,
+          "end": 4.0,
+          "prob": 0.95
+        },
+        {
+          "word": "local",
+          "start": 4.1,
+          "end": 4.45,
+          "prob": 0.95
+        },
+        {
+          "word": "cultural",
+          "start": 4.55,
+          "end": 4.9,
+          "prob": 0.95
+        },
+        {
+          "word": "traditions",
+          "start": 5.0,
+          "end": 5.35,
+          "prob": 0.95
+        },
+        {
+          "word": "and",
+          "start": 5.45,
+          "end": 5.8,
+          "prob": 0.95
+        },
+        {
+          "word": "delicate",
+          "start": 5.9,
+          "end": 6.25,
+          "prob": 0.95
+        },
+        {
+          "word": "ecosystems",
+          "start": 6.35,
+          "end": 6.7,
+          "prob": 0.95
+        },
+        {
+          "word": "remain",
+          "start": 6.8,
+          "end": 7.15,
+          "prob": 0.95
+        },
+        {
+          "word": "protected",
+          "start": 7.25,
+          "end": 7.6,
+          "prob": 0.95
+        },
+        {
+          "word": "for",
+          "start": 7.7,
+          "end": 8.05,
+          "prob": 0.95
+        },
+        {
+          "word": "future",
+          "start": 8.15,
+          "end": 8.5,
+          "prob": 0.95
+        },
+        {
+          "word": "generations.",
+          "start": 8.6,
+          "end": 8.95,
+          "prob": 0.95
+        }
+      ]
+    }
+  ],
+  "report": {
+    "overall_band": 6.5,
+    "raw_average": 6.62,
+    "breakdown": {
+      "fluency_and_coherence": {
+        "band": 4.5,
+        "wpm": 70.1,
+        "pause_count": 0,
+        "feedback": "Frequent hesitations and pauses cause disjointed delivery."
+      },
+      "lexical_resource": {
+        "band": 7.0,
+        "ttr": 0.735,
+        "c1_c2_percentage": 4.4,
+        "feedback": "Good vocabulary range. Successfully uses topic-specific expressions and discourse markers."
+      },
+      "grammatical_range_and_accuracy": {
+        "band": 7.0,
+        "complexity_ratio": 0.56,
+        "feedback": "Good grammatical range. Frequently employs subordinate clauses and varied structures."
+      },
+      "pronunciation": {
+        "band": 8.0,
+        "acoustic_confidence": 0.95,
+        "feedback": "Clear, articulate phoneme delivery with natural rhythm and effective sentence stress."
+      }
+    },
+    "primary_weakness": "Fluency and Coherence",
+    "key_recommendation": "Practice speaking in 2-minute sustained turns without stopping to reduce hesitation gaps."
+  }
+}

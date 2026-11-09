@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local-IELTS AI Examiner</title>
+    <!-- Completely Self-Contained Offline CSS (Zero External CDN Dependency) -->
+    <style>
+        :root {
+            --bg-main: #0a0e17;
+            --card-bg: #111827;
+            --card-sub: #0b1120;
+            --border: #1f2937;
+            --border-hover: #374151;
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --accent: #06b6d4;
+            --text-main: #f9fafb;
+            --text-sub: #9ca3af;
+            --text-dim: #6b7280;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        /* Navigation */
+        header {
+            background: rgba(17, 24, 39, 0.85);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 24px;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .header-content {
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-box {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--primary), #8b5cf6);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            color: white;
+            box-shadow: 0 4px 14px rgba(79, 70, 229, 0.4);
+        }
+
+        .brand-title {
+            font-size: 18px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pill-badge {
+            font-size: 11px;
+            background: rgba(79, 70, 229, 0.15);
+            color: #818cf8;
+            border: 1px solid rgba(79, 70, 229, 0.3);
+            padding: 2px 8px;
+            border-radius: 9999px;
+            font-weight: 600;
+        }
+
+        .status-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            background: rgba(16, 185, 129, 0.1);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.25);
+            padding: 6px 14px;
+            border-radius: 9999px;
+            font-weight: 600;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #34d399;
+            border-radius: 50%;
+            animation: pulse-dot 1.5s infinite;
+        }
+
+        @keyframes pulse-dot {
+            0% { transform: scale(0.9); opacity: 0.7; }
+            50% { transform: scale(1.3); opacity: 1; }
+            100% { transform: scale(0.9); opacity: 0.7; }
+        }
+
+        /* Main Container */
+        main {
+            max-width: 850px;
+            margin: 32px auto;
+            width: 100%;
+            padding: 0 20px;
+            flex: 1;
+        }
+
+        /* Stepper */
+        .stepper {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .step-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            opacity: 0.5;
+            transition: all 0.3s ease;
+        }
+
+        .step-card.active {
+            opacity: 1;
+            border-color: rgba(79, 70, 229, 0.6);
+            background: rgba(79, 70, 229, 0.1);
+        }
+
+        .step-card.completed {
+            opacity: 1;
+            border-color: rgba(16, 185, 129, 0.5);
+            background: rgba(16, 185, 129, 0.08);
+        }
+
+        .step-num {
+            width: 28px;
+            height: 28px;
+            background: var(--border);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .step-card.active .step-num {
+            background: var(--primary);
+            color: white;
+        }
+
+        .step-card.completed .step-num {
+            background: var(--success);
+            color: white;
+        }
+
+        .step-info p:first-child {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .step-info p:last-child {
+            font-size: 11px;
+            color: var(--text-sub);
+        }
+
+        /* Test Console Card */
+        .console-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 32px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .examiner-box {
+            margin-bottom: 28px;
+        }
+
+        .examiner-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .examiner-tag {
+            font-size: 11px;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            color: #818cf8;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .examiner-tag::before {
+            content: "";
+            width: 6px;
+            height: 6px;
+            background: var(--primary);
+            border-radius: 50%;
+        }
+
+        .btn-voice {
+            background: none;
+            border: none;
+            color: var(--text-sub);
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-voice:hover {
+            color: var(--text-main);
+        }
+
+        .examiner-speech {
+            font-size: 22px;
+            font-weight: 600;
+            line-height: 1.5;
+            color: #ffffff;
+        }
+
+        /* Part 2 Cue Card */
+        .cue-card {
+            background: var(--card-sub);
+            border: 1px solid rgba(79, 70, 229, 0.35);
+            border-radius: 14px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .cue-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .cue-card-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #a5b4fc;
+        }
+
+        .prep-timer {
+            font-family: monospace;
+            font-size: 12px;
+            font-weight: 700;
+            background: rgba(245, 158, 11, 0.15);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            padding: 4px 10px;
+            border-radius: 8px;
+        }
+
+        .cue-bullets {
+            list-style: disc inside;
+            color: var(--text-sub);
+            font-size: 13px;
+            line-height: 1.8;
+            margin-bottom: 14px;
+        }
+
+        .scratchpad {
+            width: 100%;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px;
+            color: var(--text-main);
+            font-size: 12px;
+            height: 70px;
+            resize: none;
+        }
+
+        .scratchpad:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        /* Audio Interaction Station */
+        .audio-station {
+            background: var(--card-sub);
+            border: 2px dashed var(--border);
+            border-radius: 16px;
+            padding: 28px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        canvas#visualizer {
+            width: 100%;
+            max-width: 440px;
+            height: 55px;
+            background: #050811;
+            border-radius: 8px;
+            margin-bottom: 18px;
+        }
+
+        .action-buttons {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .btn-record {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 14px 28px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 16px rgba(79, 70, 229, 0.35);
+            transition: all 0.2s ease;
+        }
+
+        .btn-record:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn-record.recording {
+            background: var(--danger);
+            animation: pulse-record 1.5s infinite;
+        }
+
+        @keyframes pulse-record {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.04); }
+            100% { transform: scale(1); }
+        }
+
+        .btn-text-toggle {
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            font-size: 13px;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        .btn-text-toggle:hover {
+            color: var(--text-sub);
+        }
+
+        .text-input-area {
+            width: 100%;
+            margin-top: 16px;
+        }
+
+        .text-input-area textarea {
+            width: 100%;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px;
+            color: white;
+            font-size: 14px;
+            height: 90px;
+            margin-bottom: 10px;
+        }
+
+        .btn-submit-text {
+            background: var(--border);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-submit-text:hover {
+            background: var(--border-hover);
+        }
+
+        .status-msg {
+            margin-top: 16px;
+            font-size: 12px;
+            color: var(--text-dim);
+            text-align: center;
+        }
+
+        /* Scorecard Report */
+        .report-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 24px;
+        }
+
+        .report-title h2 {
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .report-title p {
+            font-size: 12px;
+            color: var(--text-sub);
+        }
+
+        .band-badge-box {
+            background: var(--card-sub);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px 28px;
+            text-align: center;
+        }
+
+        .band-badge-box span:first-child {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-sub);
+            letter-spacing: 0.05em;
+        }
+
+        .overall-band-number {
+            font-size: 44px;
+            font-weight: 900;
+            color: var(--success);
+            line-height: 1;
+            margin-top: 4px;
+        }
+
+        .criteria-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .criterion-card {
+            background: var(--card-sub);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .criterion-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .criterion-card-header span:first-child {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .criterion-band {
+            font-size: 13px;
+            font-weight: 800;
+            color: #818cf8;
+        }
+
+        .criterion-card p {
+            font-size: 12px;
+            color: var(--text-sub);
+            line-height: 1.5;
+        }
+
+        .recommendation-banner {
+            background: rgba(79, 70, 229, 0.12);
+            border: 1px solid rgba(79, 70, 229, 0.3);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 24px;
+        }
+
+        .recommendation-banner h4 {
+            font-size: 13px;
+            font-weight: 700;
+            color: #a5b4fc;
+            margin-bottom: 4px;
+        }
+
+        .recommendation-banner p {
+            font-size: 12px;
+            color: var(--text-main);
+            line-height: 1.5;
+        }
+
+        .report-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn-print {
+            flex: 1;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .btn-restart {
+            flex: 1;
+            background: var(--border);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 16px;
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+
+        /* Print Styling for Official PDF */
+        @media print {
+            body { background: white !important; color: black !important; }
+            header, footer, .stepper, .console-card, .btn-print, .btn-restart { display: none !important; }
+            #scorecard-report { display: block !important; border: 1px solid #ddd !important; box-shadow: none !important; background: white !important; }
+            .overall-band-number { color: #047857 !important; }
+            .criterion-card { background: #f9fafb !important; border-color: #e5e7eb !important; color: black !important; }
+            .criterion-card p, .criterion-card span { color: black !important; }
+            .recommendation-banner { background: #eff6ff !important; border-color: #bfdbfe !important; color: black !important; }
+            .recommendation-banner p, .recommendation-banner h4 { color: black !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="header-content">
+            <div class="brand-logo">
+                <div class="logo-box">IE</div>
+                <div class="brand-title">
+                    Local-IELTS <span class="pill-badge">On-Device AI</span>
+                </div>
+            </div>
+
+            <div class="status-pill">
+                <span class="status-dot"></span>
+                <span>100% Offline Engine Active</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Section -->
+    <main>
+        <!-- Stepper -->
+        <div id="stepper" class="stepper">
+            <div id="step-1" class="step-card active">
+                <div class="step-num">1</div>
+                <div class="step-info">
+                    <p>Part 1</p>
+                    <p>Introduction & Interview</p>
+                </div>
+            </div>
+            <div id="step-2" class="step-card">
+                <div class="step-num">2</div>
+                <div class="step-info">
+                    <p>Part 2</p>
+                    <p>Cue Card Monologue</p>
+                </div>
+            </div>
+            <div id="step-3" class="step-card">
+                <div class="step-num">3</div>
+                <div class="step-info">
+                    <p>Part 3</p>
+                    <p>Discussion & Band Score</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Interactive Test Console -->
+        <div id="test-console" class="console-card">
+            <!-- Examiner Question Box -->
+            <div class="examiner-box">
+                <div class="examiner-header">
+                    <span id="examiner-tag" class="examiner-tag">Examiner Inquiry</span>
+                    <span id="speaking-indicator" style="font-size: 11px; color: #818cf8; display: flex; align-items: center; gap: 4px;">
+                        <span class="status-dot"></span> Listening & Conversing
+                    </span>
+                </div>
+                <div id="examiner-text" class="examiner-speech">
+                    "Good afternoon. My name is Emma. Could you tell me your full name, please?"
+                </div>
+            </div>
+
+            <!-- Part 2 Cue Card (Hidden by default) -->
+            <div id="cue-card-view" class="cue-card hidden">
+                <div class="cue-card-header">
+                    <h3 id="cue-card-title" class="cue-card-title">Cue Card Topic</h3>
+                    <div id="prep-timer" class="prep-timer">Preparation: 60s</div>
+                </div>
+                <ul id="cue-card-bullets" class="cue-bullets"></ul>
+                <textarea placeholder="Digital Scratchpad: Note down keywords here during your 1-minute prep time..." class="scratchpad"></textarea>
+            </div>
+
+            <!-- Audio Input Station -->
+            <div class="audio-station">
+                <canvas id="visualizer" width="400" height="55"></canvas>
+                
+                <div class="action-buttons">
+                    <button id="record-btn" onclick="toggleRecording()" class="btn-record">
+                        <span>🎙️ Start Speaking</span>
+                    </button>
+                    <button onclick="toggleTextMode()" class="btn-text-toggle">
+                        Type Answer Instead
+                    </button>
+                </div>
+
+                <!-- Text Mode Box -->
+                <div id="text-input-box" class="text-input-area hidden">
+                    <textarea id="typed-answer" placeholder="Type your spoken answer here for quick evaluation..."></textarea>
+                    <button onclick="submitTypedAnswer()" class="btn-submit-text">Submit Response</button>
+                </div>
+
+                <div id="turn-status" class="status-msg">
+                    Ready. Press Start Speaking when you are prepared.
+                </div>
+            </div>
+        </div>
+
+        <!-- Post-Test Official Band Scorecard -->
+        <div id="scorecard-report" class="console-card hidden">
+            <div class="report-header">
+                <div class="report-title">
+                    <span style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #34d399;">Official Evaluation Complete</span>
+                    <h2>IELTS Speaking Diagnostic Report</h2>
+                    <p>Evaluated under official British Council & Cambridge English band rubrics</p>
+                </div>
+                <div class="band-badge-box">
+                    <span>OVERALL BAND</span>
+                    <div id="final-band" class="overall-band-number">7.5</div>
+                </div>
+            </div>
+
+            <!-- 4 Criteria Breakdown Grid -->
+            <div class="criteria-grid">
+                <div class="criterion-card">
+                    <div class="criterion-card-header">
+                        <span>Fluency & Coherence</span>
+                        <span id="band-fc" class="criterion-band">Band 7.5</span>
+                    </div>
+                    <p id="feed-fc"></p>
+                </div>
+
+                <div class="criterion-card">
+                    <div class="criterion-card-header">
+                        <span>Lexical Resource</span>
+                        <span id="band-lr" class="criterion-band">Band 7.0</span>
+                    </div>
+                    <p id="feed-lr"></p>
+                </div>
+
+                <div class="criterion-card">
+                    <div class="criterion-card-header">
+                        <span>Grammatical Range & Accuracy</span>
+                        <span id="band-gra" class="criterion-band">Band 7.5</span>
+                    </div>
+                    <p id="feed-gra"></p>
+                </div>
+
+                <div class="criterion-card">
+                    <div class="criterion-card-header">
+                        <span>Pronunciation</span>
+                        <span id="band-pr" class="criterion-band">Band 8.0</span>
+                    </div>
+                    <p id="feed-pr"></p>
+                </div>
+            </div>
+
+            <!-- Targeted Recommendation -->
+            <div class="recommendation-banner">
+                <h4>Targeted Diagnostic Priority</h4>
+                <p id="target-recommendation"></p>
+            </div>
+
+            <div class="report-actions">
+                <button onclick="window.print()" class="btn-print">📄 Print / Save PDF Scorecard</button>
+                <button onclick="location.reload()" class="btn-restart">Take Another Mock Test</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        Local-IELTS • Pure On-Device AI Architecture • Air-Gapped & Private
+    </footer>
+
+    <!-- Logic Script -->
+    <script>
+        let currentSessionId = "";
+        let currentPart = 1;
+        let isRecording = false;
+        let mediaRecorder;
+        let audioChunks = [];
+        let audioCtx;
+        let analyser;
+        let animFrameId;
+        let prepTimerInterval;
+
+        // VAD (Voice Activity & Silence Detection) State
+        let hasSpoken = false;
+        let silenceStartTime = null;
+        const SILENCE_THRESHOLD_MS = 2200; // 2.2 seconds natural pause triggers auto-submit
+        const NOISE_FLOOR = 18;             // Volume threshold for active speech
+
+        async function initSession() {
+            try {
+                const res = await fetch('/api/start-session', { method: 'POST' });
+                const data = await res.json();
+                currentSessionId = data.session_id;
+                document.getElementById('examiner-text').innerText = `"${data.initial_message}"`;
+                // Automatically speak opening greeting & question like a human examiner
+                speakCurrentQuestion(() => {
+                    autoStartListening();
+                });
+            } catch (err) {
+                console.error("Session start error:", err);
+            }
+        }
+        initSession();
+
+        function speakCurrentQuestion(onDone) {
+            const text = document.getElementById('examiner-text').innerText.replace(/"/g, '');
+            document.getElementById('turn-status').innerText = "🗣️ Examiner is speaking...";
+            document.getElementById('turn-status').style.color = "#818cf8";
+
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = 0.98;
+                
+                // Select British English voice if available in browser
+                const voices = window.speechSynthesis.getVoices();
+                const britishVoice = voices.find(v => v.lang === 'en-GB' || v.name.includes('UK') || v.name.includes('British'));
+                if (britishVoice) utterance.voice = britishVoice;
+
+                utterance.onend = () => {
+                    document.getElementById('turn-status').innerText = "👂 Listening... Speak naturally. (A natural pause will submit your answer)";
+                    document.getElementById('turn-status').style.color = "#34d399";
+                    if (onDone) onDone();
+                };
+                utterance.onerror = () => {
+                    if (onDone) onDone();
+                };
+                window.speechSynthesis.speak(utterance);
+            } else {
+                if (onDone) onDone();
+            }
+        }
+
+        async function autoStartListening() {
+            if (!isRecording) {
+                await startRecording();
+            }
+        }
+
+        function toggleTextMode() {
+            document.getElementById('text-input-box').classList.toggle('hidden');
+        }
+
+        async function submitTypedAnswer() {
+            const answer = document.getElementById('typed-answer').value.trim();
+            if (!answer) return;
+
+            document.getElementById('turn-status').innerText = "Analyzing response...";
+            const res = await fetch('/api/submit-turn', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    session_id: currentSessionId,
+                    part: currentPart,
+                    question: document.getElementById('examiner-text').innerText,
+                    raw_text: answer,
+                    duration: 15.0
+                })
+            });
+            const data = await res.json();
+            document.getElementById('typed-answer').value = "";
+            handleTurnTransition(data);
+        }
+
+        function handleTurnTransition(data) {
+            if (data.next_part === 2 && currentPart === 1) {
+                currentPart = 2;
+                updateStepper(2);
+                loadCueCard();
+            } else if (data.next_part === 3 && currentPart === 2) {
+                currentPart = 3;
+                updateStepper(3);
+                document.getElementById('cue-card-view').classList.add('hidden');
+                document.getElementById('examiner-text').innerText = `"${data.next_question}"`;
+                speakCurrentQuestion(() => autoStartListening());
+            } else if (data.next_part === 4 || !data.next_question) {
+                finishTest();
+            } else if (data.next_question) {
+                document.getElementById('examiner-text').innerText = `"${data.next_question}"`;
+                // Speak examiner's dynamic follow-up, then automatically resume listening
+                speakCurrentQuestion(() => autoStartListening());
+            }
+        }
+
+        async function loadCueCard() {
+            const res = await fetch(`/api/cue-card/${currentSessionId}`);
+            const card = await res.json();
+            document.getElementById('cue-card-view').classList.remove('hidden');
+            document.getElementById('cue-card-title').innerText = card.title;
+            const bullets = document.getElementById('cue-card-bullets');
+            bullets.innerHTML = "";
+            card.bullet_points.forEach(b => {
+                const li = document.createElement('li');
+                li.innerText = b;
+                bullets.appendChild(li);
+            });
+            document.getElementById('examiner-text').innerText = `"Now, I am going to give you a topic, and I would like you to talk about it for one to two minutes."`;
+            speakCurrentQuestion(() => startPart2PrepTimer());
+        }
+
+        function startPart2PrepTimer() {
+            let timeLeft = 60;
+            const timerEl = document.getElementById('prep-timer');
+            timerEl.innerText = `Preparation: ${timeLeft}s`;
+            clearInterval(prepTimerInterval);
+
+            prepTimerInterval = setInterval(() => {
+                timeLeft--;
+                timerEl.innerText = `Preparation: ${timeLeft}s`;
+                if (timeLeft <= 0) {
+                    clearInterval(prepTimerInterval);
+                    timerEl.innerText = "Preparation Complete! Please speak now (1-2 mins)";
+                    document.getElementById('examiner-text').innerText = `"All right. Please begin speaking now."`;
+                    speakCurrentQuestion(() => autoStartListening());
+                }
+            }, 1000);
+        }
+
+        function updateStepper(step) {
+            for (let i = 1; i <= 3; i++) {
+                const el = document.getElementById(`step-${i}`);
+                el.classList.remove('active', 'completed');
+                if (i === step) el.classList.add('active');
+                else if (i < step) el.classList.add('completed');
+            }
+        }
+
+        async function finishTest() {
+            clearInterval(prepTimerInterval);
+            stopVisualizer();
+            document.getElementById('test-console').classList.add('hidden');
+            document.getElementById('stepper').classList.add('hidden');
+            document.getElementById('scorecard-report').classList.remove('hidden');
+
+            const res = await fetch('/api/evaluate-session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ session_id: currentSessionId })
+            });
+            const rep = await res.json();
+
+            document.getElementById('final-band').innerText = rep.overall_band;
+            document.getElementById('band-fc').innerText = `Band ${rep.breakdown.fluency_and_coherence.band}`;
+            document.getElementById('feed-fc').innerText = rep.breakdown.fluency_and_coherence.feedback;
+
+            document.getElementById('band-lr').innerText = `Band ${rep.breakdown.lexical_resource.band}`;
+            document.getElementById('feed-lr').innerText = rep.breakdown.lexical_resource.feedback;
+
+            document.getElementById('band-gra').innerText = `Band ${rep.breakdown.grammatical_range_and_accuracy.band}`;
+            document.getElementById('feed-gra').innerText = rep.breakdown.grammatical_range_and_accuracy.feedback;
+
+            document.getElementById('band-pr').innerText = `Band ${rep.breakdown.pronunciation.band}`;
+            document.getElementById('feed-pr').innerText = rep.breakdown.pronunciation.feedback;
+
+            document.getElementById('target-recommendation').innerText = rep.key_recommendation;
+        }
+
+        function startVisualizer(stream) {
+            const canvas = document.getElementById('visualizer');
+            const canvasCtx = canvas.getContext('2d');
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            const source = audioCtx.createMediaStreamSource(stream);
+            analyser = audioCtx.createAnalyser();
+            analyser.fftSize = 128;
+            source.connect(analyser);
+
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+
+            function draw() {
+                animFrameId = requestAnimationFrame(draw);
+                analyser.getByteFrequencyData(dataArray);
+
+                canvasCtx.fillStyle = '#050811';
+                canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+
+                let sum = 0;
+                const barWidth = (canvas.width / bufferLength) * 2;
+                let x = 0;
+
+                for (let i = 0; i < bufferLength; i++) {
+                    const val = dataArray[i];
+                    sum += val;
+                    const barHeight = (val / 255) * canvas.height * 0.95;
+                    canvasCtx.fillStyle = `rgba(99, 102, 241, ${0.35 + (val / 255) * 0.65})`;
+                    canvasCtx.fillRect(x, canvas.height - barHeight, barWidth - 2, barHeight);
+                    x += barWidth;
+                }
+
+                const avgVolume = sum / bufferLength;
+
+                // Continuous Voice Activity & Long Pause Detection
+                if (isRecording) {
+                    if (avgVolume > NOISE_FLOOR) {
+                        hasSpoken = true;
+                        silenceStartTime = null; // Reset silence clock
+                        document.getElementById('turn-status').innerText = "🗣️ You are speaking... (Examiner is listening)";
+                        document.getElementById('turn-status').style.color = "#818cf8";
+                    } else if (hasSpoken) {
+                        // User has spoken at least once, now in silence
+                        const now = Date.now();
+                        if (!silenceStartTime) {
+                            silenceStartTime = now;
+                        } else {
+                            const elapsedSilence = now - silenceStartTime;
+                            if (elapsedSilence >= SILENCE_THRESHOLD_MS) {
+                                // Long natural pause detected -> Conclude turn and submit
+                                document.getElementById('turn-status').innerText = "⏳ Natural pause detected. Processing your response...";
+                                document.getElementById('turn-status').style.color = "#fbbf24";
+                                hasSpoken = false;
+                                silenceStartTime = null;
+                                stopRecordingAndSubmit();
+                            }
+                        }
+                    }
+                }
+            }
+            draw();
+        }
+
+        function stopVisualizer() {
+            if (animFrameId) cancelAnimationFrame(animFrameId);
+            const canvas = document.getElementById('visualizer');
+            if (canvas) {
+                const canvasCtx = canvas.getContext('2d');
+                canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+        }
+
+        async function startRecording() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+                hasSpoken = false;
+                silenceStartTime = null;
+
+                mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+                mediaRecorder.onstop = uploadRecording;
+                mediaRecorder.start();
+
+                startVisualizer(stream);
+
+                isRecording = true;
+                const btn = document.getElementById('record-btn');
+                btn.classList.add('recording');
+                btn.innerHTML = `<span>⏹️ Stop Early</span>`;
+                document.getElementById('turn-status').innerText = "👂 Listening to you... (Speak naturally. A natural pause will submit your answer)";
+                document.getElementById('turn-status').style.color = "#34d399";
+            } catch (err) {
+                document.getElementById('turn-status').innerText = "Microphone unavailable. Use 'Type Answer Instead'.";
+            }
+        }
+
+        function stopRecordingAndSubmit() {
+            if (isRecording && mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+                isRecording = false;
+                const btn = document.getElementById('record-btn');
+                btn.classList.remove('recording');
+                btn.innerHTML = `<span>🎙️ Start Speaking</span>`;
+            }
+        }
+
+        async function toggleRecording() {
+            if (!isRecording) {
+                await startRecording();
+            } else {
+                stopRecordingAndSubmit();
+            }
+        }
+
+        function uploadRecording() {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+            const reader = new FileReader();
+            reader.readAsDataURL(audioBlob);
+            reader.onloadend = async () => {
+                const base64Data = reader.result.split(',')[1];
+                const res = await fetch('/api/submit-turn', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        session_id: currentSessionId,
+                        part: currentPart,
+                        question: document.getElementById('examiner-text').innerText,
+                        audio_base64: base64Data,
+                        duration: 15.0
+                    })
+                });
+                const data = await res.json();
+                handleTurnTransition(data);
+            };
+        }
+    </script>
+</body>
+</html>

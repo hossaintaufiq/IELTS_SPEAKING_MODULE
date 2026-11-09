@@ -1,0 +1,1267 @@
+{
+  "session_id": "test_20261109_151855",
+  "turns": [
+    {
+      "part": 1,
+      "question": "\"Good afternoon. My name is Emma. Could you tell me your full name, please?\"",
+      "transcript": "Well, I grew up in a vibrant coastal town which was renowned for its scenic beaches and rich cultural heritage. However, in recent years, urbanization has rapidly expanded.",
+      "duration": 15.0,
+      "words_data": [
+        {
+          "word": "Well,",
+          "start": 0.5,
+          "end": 0.85,
+          "prob": 0.95
+        },
+        {
+          "word": "I",
+          "start": 1.0,
+          "end": 1.35,
+          "prob": 0.95
+        },
+        {
+          "word": "grew",
+          "start": 1.5,
+          "end": 1.85,
+          "prob": 0.95
+        },
+        {
+          "word": "up",
+          "start": 2.0,
+          "end": 2.35,
+          "prob": 0.95
+        },
+        {
+          "word": "in",
+          "start": 2.5,
+          "end": 2.85,
+          "prob": 0.95
+        },
+        {
+          "word": "a",
+          "start": 3.0,
+          "end": 3.35,
+          "prob": 0.95
+        },
+        {
+          "word": "vibrant",
+          "start": 3.5,
+          "end": 3.85,
+          "prob": 0.95
+        },
+        {
+          "word": "coastal",
+          "start": 4.0,
+          "end": 4.35,
+          "prob": 0.95
+        },
+        {
+          "word": "town",
+          "start": 4.5,
+          "end": 4.85,
+          "prob": 0.95
+        },
+        {
+          "word": "which",
+          "start": 5.0,
+          "end": 5.35,
+          "prob": 0.95
+        },
+        {
+          "word": "was",
+          "start": 5.5,
+          "end": 5.85,
+          "prob": 0.95
+        },
+        {
+          "word": "renowned",
+          "start": 6.0,
+          "end": 6.35,
+          "prob": 0.95
+        },
+        {
+          "word": "for",
+          "start": 6.5,
+          "end": 6.85,
+          "prob": 0.95
+        },
+        {
+          "word": "its",
+          "start": 7.0,
+          "end": 7.35,
+          "prob": 0.95
+        },
+        {
+          "word": "scenic",
+          "start": 7.5,
+          "end": 7.85,
+          "prob": 0.95
+        },
+        {
+          "word": "beaches",
+          "start": 8.0,
+          "end": 8.35,
+          "prob": 0.95
+        },
+        {
+          "word": "and",
+          "start": 8.5,
+          "end": 8.85,
+          "prob": 0.95
+        },
+        {
+          "word": "rich",
+          "start": 9.0,
+          "end": 9.35,
+          "prob": 0.95
+        },
+        {
+          "word": "cultural",
+          "start": 9.5,
+          "end": 9.85,
+          "prob": 0.95
+        },
+        {
+          "word": "heritage.",
+          "start": 10.0,
+          "end": 10.35,
+          "prob": 0.95
+        },
+        {
+          "word": "However,",
+          "start": 10.5,
+          "end": 10.85,
+          "prob": 0.95
+        },
+        {
+          "word": "in",
+          "start": 11.0,
+          "end": 11.35,
+          "prob": 0.95
+        },
+        {
+          "word": "recent",
+          "start": 11.5,
+          "end": 11.85,
+          "prob": 0.95
+        },
+        {
+          "word": "years,",
+          "start": 12.0,
+          "end": 12.35,
+          "prob": 0.95
+        },
+        {
+          "word": "urbanization",
+          "start": 12.5,
+          "end": 12.85,
+          "prob": 0.95
+        },
+        {
+          "word": "has",
+          "start": 13.0,
+          "end": 13.35,
+          "prob": 0.95
+        },
+        {
+          "word": "rapidly",
+          "start": 13.5,
+          "end": 13.85,
+          "prob": 0.95
+        },
+        {
+          "word": "expanded.",
+          "start": 14.0,
+          "end": 14.35,
+          "prob": 0.95
+        }
+      ]
+    },
+    {
+      "part": 1,
+      "question": "\"I understand. And how has this impacted your personal daily routine recently?\"",
+      "transcript": "Well, I grew up in a vibrant coastal town which was renowned for its scenic beaches and rich cultural heritage. However, in recent years, urbanization has rapidly expanded.",
+      "duration": 15.0,
+      "words_data": [
+        {
+          "word": "Well,",
+          "start": 0.5,
+          "end": 0.85,
+          "prob": 0.95
+        },
+        {
+          "word": "I",
+          "start": 1.0,
+          "end": 1.35,
+          "prob": 0.95
+        },
+        {
+          "word": "grew",
+          "start": 1.5,
+          "end": 1.85,
+          "prob": 0.95
+        },
+        {
+          "word": "up",
+          "start": 2.0,
+          "end": 2.35,
+          "prob": 0.95
+        },
+        {
+          "word": "in",
+          "start": 2.5,
+          "end": 2.85,
+          "prob": 0.95
+        },
+        {
+          "word": "a",
+          "start": 3.0,
+          "end": 3.35,
+          "prob": 0.95
+        },
+        {
+          "word": "vibrant",
+          "start": 3.5,
+          "end": 3.85,
+          "prob": 0.95
+        },
+        {
+          "word": "coastal",
+          "start": 4.0,
+          "end": 4.35,
+          "prob": 0.95
+        },
+        {
+          "word": "town",
+          "start": 4.5,
+          "end": 4.85,
+          "prob": 0.95
+        },
+        {
+          "word": "which",
+          "start": 5.0,
+          "end": 5.35,
+          "prob": 0.95
+        },
+        {
+          "word": "was",
+          "start": 5.5,
+          "end": 5.85,
+          "prob": 0.95
+        },
+        {
+          "word": "renowned",
+          "start": 6.0,
+          "end": 6.35,
+          "prob": 0.95
+        },
+        {
+          "word": "for",
+          "start": 6.5,
+          "end": 6.85,
+          "prob": 0.95
+        },
+        {
+          "word": "its",
+          "start": 7.0,
+          "end": 7.35,
+          "prob": 0.95
+        },
+        {
+          "word": "scenic",
+          "start": 7.5,
+          "end": 7.85,
+          "prob": 0.95
+        },
+        {
+          "word": "beaches",
+          "start": 8.0,
+          "end": 8.35,
+          "prob": 0.95
+        },
+        {
+          "word": "and",
+          "start": 8.5,
+          "end": 8.85,
+          "prob": 0.95
+        },
+        {
+          "word": "rich",
+          "start": 9.0,
+          "end": 9.35,
+          "prob": 0.95
+        },
+        {
+          "word": "cultural",
+          "start": 9.5,
+          "end": 9.85,
+          "prob": 0.95
+        },
+        {
+          "word": "heritage.",
+          "start": 10.0,
+          "end": 10.35,
+          "prob": 0.95
+        },
+        {
+          "word": "However,",
+          "start": 10.5,
+          "end": 10.85,
+          "prob": 0.95
+        },
+        {
+          "word": "in",
+          "start": 11.0,
+          "end": 11.35,
+          "prob": 0.95
+        },
+        {
+          "word": "recent",
+          "start": 11.5,
+          "end": 11.85,
+          "prob": 0.95
+        },
+        {
+          "word": "years,",
+          "start": 12.0,
+          "end": 12.35,
+          "prob": 0.95
+        },
+        {
+          "word": "urbanization",
+          "start": 12.5,
+          "end": 12.85,
+          "prob": 0.95
+        },
+        {
+          "word": "has",
+          "start": 13.0,
+          "end": 13.35,
+          "prob": 0.95
+        },
+        {
+          "word": "rapidly",
+          "start": 13.5,
+          "end": 13.85,
+          "prob": 0.95
+        },
+        {
+          "word": "expanded.",
+          "start": 14.0,
+          "end": 14.35,
+          "prob": 0.95
+        }
+      ]
+    },
+    {
+      "part": 1,
+      "question": "\"I understand. And how has this impacted your personal daily routine recently?\"",
+      "transcript": "Well, I grew up in a vibrant coastal town which was renowned for its scenic beaches and rich cultural heritage. However, in recent years, urbanization has rapidly expanded.",
+      "duration": 15.0,
+      "words_data": [
+        {
+          "word": "Well,",
+          "start": 0.5,
+          "end": 0.85,
+          "prob": 0.95
+        },
+        {
+          "word": "I",
+          "start": 1.0,
+          "end": 1.35,
+          "prob": 0.95
+        },
+        {
+          "word": "grew",
+          "start": 1.5,
+          "end": 1.85,
+          "prob": 0.95
+        },
+        {
+          "word": "up",
+          "start": 2.0,
+          "end": 2.35,
+          "prob": 0.95
+        },
+        {
+          "word": "in",
+          "start": 2.5,
+          "end": 2.85,
+          "prob": 0.95
+        },
+        {
+          "word": "a",
+          "start": 3.0,
+          "end": 3.35,
+          "prob": 0.95
+        },
+        {
+          "word": "vibrant",
+          "start": 3.5,
+          "end": 3.85,
+          "prob": 0.95
+        },
+        {
+          "word": "coastal",
+          "start": 4.0,
+          "end": 4.35,
+          "prob": 0.95
+        },
+        {
+          "word": "town",
+          "start": 4.5,
+          "end": 4.85,
+          "prob": 0.95
+        },
+        {
+          "word": "which",
+          "start": 5.0,
+          "end": 5.35,
+          "prob": 0.95
+        },
+        {
+          "word": "was",
+          "start": 5.5,
+          "end": 5.85,
+          "prob": 0.95
+        },
+        {
+          "word": "renowned",
+          "start": 6.0,
+          "end": 6.35,
+          "prob": 0.95
+        },
+        {
+          "word": "for",
+          "start": 6.5,
+          "end": 6.85,
+          "prob": 0.95
+        },
+        {
+          "word": "its",
+          "start": 7.0,
+          "end": 7.35,
+          "prob": 0.95
+        },
+        {
+          "word": "scenic",
+          "start": 7.5,
+          "end": 7.85,
+          "prob": 0.95
+        },
+        {
+          "word": "beaches",
+          "start": 8.0,
+          "end": 8.35,
+          "prob": 0.95
+        },
+        {
+          "word": "and",
+          "start": 8.5,
+          "end": 8.85,
+          "prob": 0.95
+        },
+        {
+          "word": "rich",
+          "start": 9.0,
+          "end": 9.35,
+          "prob": 0.95
+        },
+        {
+          "word": "cultural",
+          "start": 9.5,
+          "end": 9.85,
+          "prob": 0.95
+        },
+        {
+          "word": "heritage.",
+          "start": 10.0,
+          "end": 10.35,
+          "prob": 0.95
+        },
+        {
+          "word": "However,",
+          "start": 10.5,
+          "end": 10.85,
+          "prob": 0.95
+        },
+        {
+          "word": "in",
+          "start": 11.0,
+          "end": 11.35,
+          "prob": 0.95
+        },
+        {
+          "word": "recent",
+          "start": 11.5,
+          "end": 11.85,
+          "prob": 0.95
+        },
+        {
+          "word": "years,",
+          "start": 12.0,
+          "end": 12.35,
+          "prob": 0.95
+        },
+        {
+          "word": "urbanization",
+          "start": 12.5,
+          "end": 12.85,
+          "prob": 0.95
+        },
+        {
+          "word": "has",
+          "start": 13.0,
+          "end": 13.35,
+          "prob": 0.95
+        },
+        {
+          "word": "rapidly",
+          "start": 13.5,
+          "end": 13.85,
+          "prob": 0.95
+        },
+        {
+          "word": "expanded.",
+          "start": 14.0,
+          "end": 14.35,
+          "prob": 0.95
+        }
+      ]
+    },
+    {
+      "part": 2,
+      "question": "\"Now, I am going to give you a topic, and I would like you to talk about it for one to two minutes.\"",
+      "transcript": "Well, I grew up in a vibrant coastal town which was renowned for its scenic beaches and rich cultural heritage. However, in recent years, urbanization has rapidly expanded.",
+      "duration": 15.0,
+      "words_data": [
+        {
+          "word": "Well,",
+          "start": 0.5,
+          "end": 0.85,
+          "prob": 0.95
+        },
+        {
+          "word": "I",
+          "start": 1.0,
+          "end": 1.35,
+          "prob": 0.95
+        },
+        {
+          "word": "grew",
+          "start": 1.5,
+          "end": 1.85,
+          "prob": 0.95
+        },
+        {
+          "word": "up",
+          "start": 2.0,
+          "end": 2.35,
+          "prob": 0.95
+        },
+        {
+          "word": "in",
+          "start": 2.5,
+          "end": 2.85,
+          "prob": 0.95
+        },
+        {
+          "word": "a",
+          "start": 3.0,
+          "end": 3.35,
+          "prob": 0.95
+        },
+        {
+          "word": "vibrant",
+          "start": 3.5,
+          "end": 3.85,
+          "prob": 0.95
+        },
+        {
+          "word": "coastal",
+          "start": 4.0,
+          "end": 4.35,
+          "prob": 0.95
+        },
+        {
+          "word": "town",
+          "start": 4.5,
+          "end": 4.85,
+          "prob": 0.95
+        },
+        {
+          "word": "which",
+          "start": 5.0,
+          "end": 5.35,
+          "prob": 0.95
+        },
+        {
+          "word": "was",
+          "start": 5.5,
+          "end": 5.85,
+          "prob": 0.95
+        },
+        {
+          "word": "renowned",
+          "start": 6.0,
+          "end": 6.35,
+          "prob": 0.95
+        },
+        {
+          "word": "for",
+          "start": 6.5,
+          "end": 6.85,
+          "prob": 0.95
+        },
+        {
+          "word": "its",
+          "start": 7.0,
+          "end": 7.35,
+          "prob": 0.95
+        },
+        {
+          "word": "scenic",
+          "start": 7.5,
+          "end": 7.85,
+          "prob": 0.95
+        },
+        {
+          "word": "beaches",
+          "start": 8.0,
+          "end": 8.35,
+          "prob": 0.95
+        },
+        {
+          "word": "and",
+          "start": 8.5,
+          "end": 8.85,
+          "prob": 0.95
+        },
+        {
+          "word": "rich",
+          "start": 9.0,
+          "end": 9.35,
+          "prob": 0.95
+        },
+        {
+          "word": "cultural",
+          "start": 9.5,
+          "end": 9.85,
+          "prob": 0.95
+        },
+        {
+          "word": "heritage.",
+          "start": 10.0,
+          "end": 10.35,
+          "prob": 0.95
+        },
+        {
+          "word": "However,",
+          "start": 10.5,
+          "end": 10.85,
+          "prob": 0.95
+        },
+        {
+          "word": "in",
+          "start": 11.0,
+          "end": 11.35,
+          "prob": 0.95
+        },
+        {
+          "word": "recent",
+          "start": 11.5,
+          "end": 11.85,
+          "prob": 0.95
+        },
+        {
+          "word": "years,",
+          "start": 12.0,
+          "end": 12.35,
+          "prob": 0.95
+        },
+        {
+          "word": "urbanization",
+          "start": 12.5,
+          "end": 12.85,
+          "prob": 0.95
+        },
+        {
+          "word": "has",
+          "start": 13.0,
+          "end": 13.35,
+          "prob": 0.95
+        },
+        {
+          "word": "rapidly",
+          "start": 13.5,
+          "end": 13.85,
+          "prob": 0.95
+        },
+        {
+          "word": "expanded.",
+          "start": 14.0,
+          "end": 14.35,
+          "prob": 0.95
+        }
+      ]
+    },
+    {
+      "part": 3,
+      "question": "\"Interesting view. Why do you think people's attitudes toward this have evolved so significantly in recent years?\"",
+      "transcript": "Well, I grew up in a vibrant coastal town which was renowned for its scenic beaches and rich cultural heritage. However, in recent years, urbanization has rapidly expanded.",
+      "duration": 15.0,
+      "words_data": [
+        {
+          "word": "Well,",
+          "start": 0.5,
+          "end": 0.85,
+          "prob": 0.95
+        },
+        {
+          "word": "I",
+          "start": 1.0,
+          "end": 1.35,
+          "prob": 0.95
+        },
+        {
+          "word": "grew",
+          "start": 1.5,
+          "end": 1.85,
+          "prob": 0.95
+        },
+        {
+          "word": "up",
+          "start": 2.0,
+          "end": 2.35,
+          "prob": 0.95
+        },
+        {
+          "word": "in",
+          "start": 2.5,
+          "end": 2.85,
+          "prob": 0.95
+        },
+        {
+          "word": "a",
+          "start": 3.0,
+          "end": 3.35,
+          "prob": 0.95
+        },
+        {
+          "word": "vibrant",
+          "start": 3.5,
+          "end": 3.85,
+          "prob": 0.95
+        },
+        {
+          "word": "coastal",
+          "start": 4.0,
+          "end": 4.35,
+          "prob": 0.95
+        },
+        {
+          "word": "town",
+          "start": 4.5,
+          "end": 4.85,
+          "prob": 0.95
+        },
+        {
+          "word": "which",
+          "start": 5.0,
+          "end": 5.35,
+          "prob": 0.95
+        },
+        {
+          "word": "was",
+          "start": 5.5,
+          "end": 5.85,
+          "prob": 0.95
+        },
+        {
+          "word": "renowned",
+          "start": 6.0,
+          "end": 6.35,
+          "prob": 0.95
+        },
+        {
+          "word": "for",
+          "start": 6.5,
+          "end": 6.85,
+          "prob": 0.95
+        },
+        {
+          "word": "its",
+          "start": 7.0,
+          "end": 7.35,
+          "prob": 0.95
+        },
+        {
+          "word": "scenic",
+          "start": 7.5,
+          "end": 7.85,
+          "prob": 0.95
+        },
+        {
+          "word": "beaches",
+          "start": 8.0,
+          "end": 8.35,
+          "prob": 0.95
+        },
+        {
+          "word": "and",
+          "start": 8.5,
+          "end": 8.85,
+          "prob": 0.95
+        },
+        {
+          "word": "rich",
+          "start": 9.0,
+          "end": 9.35,
+          "prob": 0.95
+        },
+        {
+          "word": "cultural",
+          "start": 9.5,
+          "end": 9.85,
+          "prob": 0.95
+        },
+        {
+          "word": "heritage.",
+          "start": 10.0,
+          "end": 10.35,
+          "prob": 0.95
+        },
+        {
+          "word": "However,",
+          "start": 10.5,
+          "end": 10.85,
+          "prob": 0.95
+        },
+        {
+          "word": "in",
+          "start": 11.0,
+          "end": 11.35,
+          "prob": 0.95
+        },
+        {
+          "word": "recent",
+          "start": 11.5,
+          "end": 11.85,
+          "prob": 0.95
+        },
+        {
+          "word": "years,",
+          "start": 12.0,
+          "end": 12.35,
+          "prob": 0.95
+        },
+        {
+          "word": "urbanization",
+          "start": 12.5,
+          "end": 12.85,
+          "prob": 0.95
+        },
+        {
+          "word": "has",
+          "start": 13.0,
+          "end": 13.35,
+          "prob": 0.95
+        },
+        {
+          "word": "rapidly",
+          "start": 13.5,
+          "end": 13.85,
+          "prob": 0.95
+        },
+        {
+          "word": "expanded.",
+          "start": 14.0,
+          "end": 14.35,
+          "prob": 0.95
+        }
+      ]
+    },
+    {
+      "part": 3,
+      "question": "\"Interesting view. Why do you think people's attitudes toward this have evolved so significantly in recent years?\"",
+      "transcript": "Well, I grew up in a vibrant coastal town which was renowned for its scenic beaches and rich cultural heritage. However, in recent years, urbanization has rapidly expanded.",
+      "duration": 15.0,
+      "words_data": [
+        {
+          "word": "Well,",
+          "start": 0.5,
+          "end": 0.85,
+          "prob": 0.95
+        },
+        {
+          "word": "I",
+          "start": 1.0,
+          "end": 1.35,
+          "prob": 0.95
+        },
+        {
+          "word": "grew",
+          "start": 1.5,
+          "end": 1.85,
+          "prob": 0.95
+        },
+        {
+          "word": "up",
+          "start": 2.0,
+          "end": 2.35,
+          "prob": 0.95
+        },
+        {
+          "word": "in",
+          "start": 2.5,
+          "end": 2.85,
+          "prob": 0.95
+        },
+        {
+          "word": "a",
+          "start": 3.0,
+          "end": 3.35,
+          "prob": 0.95
+        },
+        {
+          "word": "vibrant",
+          "start": 3.5,
+          "end": 3.85,
+          "prob": 0.95
+        },
+        {
+          "word": "coastal",
+          "start": 4.0,
+          "end": 4.35,
+          "prob": 0.95
+        },
+        {
+          "word": "town",
+          "start": 4.5,
+          "end": 4.85,
+          "prob": 0.95
+        },
+        {
+          "word": "which",
+          "start": 5.0,
+          "end": 5.35,
+          "prob": 0.95
+        },
+        {
+          "word": "was",
+          "start": 5.5,
+          "end": 5.85,
+          "prob": 0.95
+        },
+        {
+          "word": "renowned",
+          "start": 6.0,
+          "end": 6.35,
+          "prob": 0.95
+        },
+        {
+          "word": "for",
+          "start": 6.5,
+          "end": 6.85,
+          "prob": 0.95
+        },
+        {
+          "word": "its",
+          "start": 7.0,
+          "end": 7.35,
+          "prob": 0.95
+        },
+        {
+          "word": "scenic",
+          "start": 7.5,
+          "end": 7.85,
+          "prob": 0.95
+        },
+        {
+          "word": "beaches",
+          "start": 8.0,
+          "end": 8.35,
+          "prob": 0.95
+        },
+        {
+          "word": "and",
+          "start": 8.5,
+          "end": 8.85,
+          "prob": 0.95
+        },
+        {
+          "word": "rich",
+          "start": 9.0,
+          "end": 9.35,
+          "prob": 0.95
+        },
+        {
+          "word": "cultural",
+          "start": 9.5,
+          "end": 9.85,
+          "prob": 0.95
+        },
+        {
+          "word": "heritage.",
+          "start": 10.0,
+          "end": 10.35,
+          "prob": 0.95
+        },
+        {
+          "word": "However,",
+          "start": 10.5,
+          "end": 10.85,
+          "prob": 0.95
+        },
+        {
+          "word": "in",
+          "start": 11.0,
+          "end": 11.35,
+          "prob": 0.95
+        },
+        {
+          "word": "recent",
+          "start": 11.5,
+          "end": 11.85,
+          "prob": 0.95
+        },
+        {
+          "word": "years,",
+          "start": 12.0,
+          "end": 12.35,
+          "prob": 0.95
+        },
+        {
+          "word": "urbanization",
+          "start": 12.5,
+          "end": 12.85,
+          "prob": 0.95
+        },
+        {
+          "word": "has",
+          "start": 13.0,
+          "end": 13.35,
+          "prob": 0.95
+        },
+        {
+          "word": "rapidly",
+          "start": 13.5,
+          "end": 13.85,
+          "prob": 0.95
+        },
+        {
+          "word": "expanded.",
+          "start": 14.0,
+          "end": 14.35,
+          "prob": 0.95
+        }
+      ]
+    },
+    {
+      "part": 3,
+      "question": "\"All right. Please begin speaking now.\"",
+      "transcript": "Well, I grew up in a vibrant coastal town which was renowned for its scenic beaches and rich cultural heritage. However, in recent years, urbanization has rapidly expanded.",
+      "duration": 15.0,
+      "words_data": [
+        {
+          "word": "Well,",
+          "start": 0.5,
+          "end": 0.85,
+          "prob": 0.95
+        },
+        {
+          "word": "I",
+          "start": 1.0,
+          "end": 1.35,
+          "prob": 0.95
+        },
+        {
+          "word": "grew",
+          "start": 1.5,
+          "end": 1.85,
+          "prob": 0.95
+        },
+        {
+          "word": "up",
+          "start": 2.0,
+          "end": 2.35,
+          "prob": 0.95
+        },
+        {
+          "word": "in",
+          "start": 2.5,
+          "end": 2.85,
+          "prob": 0.95
+        },
+        {
+          "word": "a",
+          "start": 3.0,
+          "end": 3.35,
+          "prob": 0.95
+        },
+        {
+          "word": "vibrant",
+          "start": 3.5,
+          "end": 3.85,
+          "prob": 0.95
+        },
+        {
+          "word": "coastal",
+          "start": 4.0,
+          "end": 4.35,
+          "prob": 0.95
+        },
+        {
+          "word": "town",
+          "start": 4.5,
+          "end": 4.85,
+          "prob": 0.95
+        },
+        {
+          "word": "which",
+          "start": 5.0,
+          "end": 5.35,
+          "prob": 0.95
+        },
+        {
+          "word": "was",
+          "start": 5.5,
+          "end": 5.85,
+          "prob": 0.95
+        },
+        {
+          "word": "renowned",
+          "start": 6.0,
+          "end": 6.35,
+          "prob": 0.95
+        },
+        {
+          "word": "for",
+          "start": 6.5,
+          "end": 6.85,
+          "prob": 0.95
+        },
+        {
+          "word": "its",
+          "start": 7.0,
+          "end": 7.35,
+          "prob": 0.95
+        },
+        {
+          "word": "scenic",
+          "start": 7.5,
+          "end": 7.85,
+          "prob": 0.95
+        },
+        {
+          "word": "beaches",
+          "start": 8.0,
+          "end": 8.35,
+          "prob": 0.95
+        },
+        {
+          "word": "and",
+          "start": 8.5,
+          "end": 8.85,
+          "prob": 0.95
+        },
+        {
+          "word": "rich",
+          "start": 9.0,
+          "end": 9.35,
+          "prob": 0.95
+        },
+        {
+          "word": "cultural",
+          "start": 9.5,
+          "end": 9.85,
+          "prob": 0.95
+        },
+        {
+          "word": "heritage.",
+          "start": 10.0,
+          "end": 10.35,
+          "prob": 0.95
+        },
+        {
+          "word": "However,",
+          "start": 10.5,
+          "end": 10.85,
+          "prob": 0.95
+        },
+        {
+          "word": "in",
+          "start": 11.0,
+          "end": 11.35,
+          "prob": 0.95
+        },
+        {
+          "word": "recent",
+          "start": 11.5,
+          "end": 11.85,
+          "prob": 0.95
+        },
+        {
+          "word": "years,",
+          "start": 12.0,
+          "end": 12.35,
+          "prob": 0.95
+        },
+        {
+          "word": "urbanization",
+          "start": 12.5,
+          "end": 12.85,
+          "prob": 0.95
+        },
+        {
+          "word": "has",
+          "start": 13.0,
+          "end": 13.35,
+          "prob": 0.95
+        },
+        {
+          "word": "rapidly",
+          "start": 13.5,
+          "end": 13.85,
+          "prob": 0.95
+        },
+        {
+          "word": "expanded.",
+          "start": 14.0,
+          "end": 14.35,
+          "prob": 0.95
+        }
+      ]
+    }
+  ],
+  "report": {
+    "overall_band": 6.5,
+    "raw_average": 6.5,
+    "breakdown": {
+      "fluency_and_coherence": {
+        "band": 6.5,
+        "wpm": 112.0,
+        "pause_count": 0,
+        "feedback": "Generally speaks with acceptable tempo, but exhibits noticeable hesitations or filler words."
+      },
+      "lexical_resource": {
+        "band": 4.5,
+        "ttr": 0.137,
+        "c1_c2_percentage": 8.0,
+        "feedback": "Narrow vocabulary range causing difficulty with expression."
+      },
+      "grammatical_range_and_accuracy": {
+        "band": 7.0,
+        "complexity_ratio": 0.5,
+        "feedback": "Good grammatical range. Frequently employs subordinate clauses and varied structures."
+      },
+      "pronunciation": {
+        "band": 8.0,
+        "acoustic_confidence": 0.95,
+        "feedback": "Clear, articulate phoneme delivery with natural rhythm and effective sentence stress."
+      }
+    },
+    "primary_weakness": "Lexical Resource",
+    "key_recommendation": "Incorporate more C1/C2 collocations and topic-specific vocabulary instead of repeating basic adjectives."
+  }
+}

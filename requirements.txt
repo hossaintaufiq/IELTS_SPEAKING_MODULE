@@ -1,0 +1,23 @@
+# Local-IELTS Dependencies
+
+# Audio Processing & Capture
+sounddevice>=0.4.6
+soundfile>=0.12.1
+numpy>=1.24.0
+
+# Speech-to-Text (ASR)
+faster-whisper>=1.0.0
+
+# Local Text-to-Speech (TTS)
+kokoro>=0.8.4
+pyttsx3>=2.90  # Lightweight offline fallback
+
+# Natural Language Processing & Linguistics
+spacy>=3.7.0
+transformers>=4.40.0
+torch>=2.0.0
+
+# Optional Local LLM Inference Engines (Pick one based on your setup):
+# - For Ollama: install ollama (pip install ollama) or run local Ollama daemon
+# - For llama.cpp: install llama-cpp-python (pip install llama-cpp-python)
+
