@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Examiner Feedback TTS — standard config</title>
+<style>
+body{font:16px system-ui;max-width:960px;margin:40px auto;padding:0 16px;color:#222}
+textarea{width:100%;height:150px;font:inherit;padding:10px;box-sizing:border-box}
+.row{display:flex;gap:14px;align-items:center;margin:12px 0;flex-wrap:wrap}
+button{padding:8px 18px;font:inherit;cursor:pointer}
+button:disabled{opacity:.5;cursor:wait}
+table{border-collapse:collapse;width:100%;margin-top:10px;font-size:13px}
+td,th{border-bottom:1px solid #ddd;padding:5px;text-align:left}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;margin:10px 0;font-size:14px}
+.grid label{display:flex;gap:8px;align-items:center;justify-content:space-between}
+.grid input[type=number]{width:90px}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:10px 0}
+.card{border:1px solid #ddd;border-radius:8px;padding:10px}
+.card b{display:block;font-size:20px}.card small{color:#666}
+#stat,.hint{color:#555;font-size:14px}.warn{color:#8a5a00;font-size:13px}
+h3{margin:24px 0 6px}
+.ok{color:#0a7a2f;font-weight:600}.bad{color:#b00020;font-weight:600}
+#verdict{font-size:15px;margin:8px 0}
+</style></head><body>
+<h2>Examiner Feedback TTS — standard configuration</h2>
+<div class="hint">Kokoro <b>fp32</b> · voice <b>Emma 75% + Alice 25%</b> · speed <b>0.95</b> · <b>Feedback mode</b> (streamed sentence by sentence, long sentences split at commas, phrasing clean-up, light processing). These settings are fixed.</div>
+<p id="load">Loading model... first run downloads ~330 MB (cached afterwards).</p>
+<textarea id="t">Thank you for your answer. You spoke clearly and kept a steady pace throughout, and your pronunciation was easy to follow. However, some of your answers were quite short, so try to add a reason or an example. Overall, that was a good attempt, and with a little more detail you can improve your score.</textarea>
+<div class="hint">Paste your own text above. Write <b>[pause]</b> for an extra break.</div>
+<div class="row">
+ <button id="go" disabled>Speak</button>
+ <button id="five" disabled>Test my text ×5</button>
+ <button id="full" disabled>Full benchmark</button>
+ <label><input id="mute" type="checkbox" checked> silent benchmarks (faster)</label>
+ <label>Target first audio <input id="fa_t" type="number" step="0.1" value="1.5" style="width:60px"> s</label>
+ <span id="stat"></span>
+</div>
+<audio id="a" controls style="width:100%"></audio>
+
+<h3>Benchmark results</h3>
+<div id="verdict">Run <b>Full benchmark</b> (3 built-in feedback texts + your text, 5 runs each) or <b>Test my text ×5</b>.</div>
+<div class="warn">Pass criteria: first-audio p95 ≤ target · RTF p95 &lt; 1.0 (generation faster than speech) · 0 stalls (no audible gaps while streaming). Benchmarks run one request at a time; concurrency is not tested here.</div>
+<table id="bench"><thead><tr><th>Text</th><th>Words</th><th>Runs</th><th>First audio p50 / p95 (s)</th><th>RTF mean / p95</th><th>Stalls</th><th>Words/min (speech)</th><th>Words/min (with pauses)</th><th>Result</th></tr></thead><tbody></tbody></table>
+
+<h3>Measured on this machine</h3>
+<div class="cards">
+ <div class="card"><small>RTF (last / mean)</small><b id="m_rtf">–</b></div>
+ <div class="card"><small>RTF p95</small><b id="m_p95">–</b></div>
+ <div class="card"><small>First-audio latency (last)</small><b id="m_fa">–</b></div>
+ <div class="card"><small>Speech per CPU-second</small><b id="m_sp">–</b></div>
+ <div class="card"><small>JS heap now / peak</small><b id="m_heap">–</b></div>
+ <div class="card"><small>Cache storage (model files)</small><b id="m_store">–</b></div>
+ <div class="card"><small>Logical CPU cores</small><b id="m_cores">–</b></div>
+ <div class="card"><small>Threads usable by WASM</small><b id="m_thr">–</b></div>
+</div>
+<div class="warn" id="memnote"></div>
+<div class="warn">RAM: the browser only reports the JS heap. The model runs in WASM memory the page can't see — read the real number in Chrome Task Manager (Shift+Esc → this tab → "Memory footprint") and type it into "RAM per worker" below. All numbers are browser measurements; re-measure with the Python engine on the real server.</div>
+<table id="log"><thead><tr><th>#</th><th>First audio (s)</th><th>Gen (s)</th><th>Audio (s)</th><th>RTF</th><th>Words/min (speech)</th><th>Words/min (with pauses)</th><th>Stalls</th><th>Heap (MB)</th><th></th></tr></thead><tbody></tbody></table>
+
+<h3>Server sizing &amp; cost estimate</h3>
+<div class="warn">Every input is editable. Defaults are placeholders, not facts — especially the price and the peak-concurrency figure (the proposal's 5,000–6,000 is still unvalidated).</div>
+<div class="grid">
+ <label>Concurrent tests at peak <input id="c_conc" type="number" value="100"></label>
+ <label>Test duration (min) <input id="c_dur" type="number" value="14"></label>
+ <label>Live-generated audio per test (s) <input id="c_dyn" type="number" value="60"></label>
+ <label>Burst factor (requests bunch up) <input id="c_burst" type="number" step="0.5" value="4"></label>
+ <label>CPU cores used per generation <input id="c_cu" type="number" step="1" value="1"></label>
+ <label>Server speed vs this PC (1 = same) <input id="c_speed" type="number" step="0.1" value="1"></label>
+ <label>Headroom to keep free (%) <input id="c_head" type="number" value="30"></label>
+ <label>RAM per worker (MB) — from Task Manager <input id="c_ram" type="number" value="1000"></label>
+ <label>Other services RAM (GB: API, DB, Redis, OS) <input id="c_oth" type="number" step="0.5" value="4"></label>
+ <label>Server: CPU cores <input id="c_sc" type="number" value="8"></label>
+ <label>Server: RAM (GB) <input id="c_sr" type="number" value="16"></label>
+ <label>Server price (USD / month) <input id="c_price" type="number" value="150"></label>
+ <label>Tests per month <input id="c_tpm" type="number" value="10000"></label>
+ <label>Fixed prompts to pre-generate <input id="c_np" type="number" value="150"></label>
+ <label>Avg length of a fixed prompt (s) <input id="c_pl" type="number" value="5"></label>
+</div>
+<div class="cards" id="out"></div>
+<div class="warn" id="outnote"></div>
+
+<script type="module">
+import { KokoroTTS } from "https://cdn.jsdelivr.net/npm/kokoro-js@1.2.1/dist/kokoro.web.js";
+const $ = id => document.getElementById(id);
+
+const SR = 24000, STYLE_DIM = 256, SPEED = 0.95, EMMA_SHARE = 0.75, DTYPE = "fp32";
+const GAP_STATEMENT = 0.3, GAP_QUESTION = 0.45, GAP_PAUSE = 0.6, FB_GAP = 0.8;
+const HP_HZ = 80, LEVEL_DBFS = -3;
+const VOICE_URL = "https://huggingface.co/onnx-community/Kokoro-82M-v1.0-ONNX/resolve/main/voices/";
+let tts, emmaBin, aliceBin;
+
+try {
+  const t0 = performance.now();
+  tts = await KokoroTTS.from_pretrained("onnx-community/Kokoro-82M-v1.0-ONNX", { dtype: DTYPE, device: "wasm" });
+  const load = async n => new Float32Array(await (await fetch(VOICE_URL + n + ".bin")).arrayBuffer());
+  [emmaBin, aliceBin] = await Promise.all([load("bf_emma"), load("bf_alice")]);
+  const origModel = tts.model;
+  tts.model = async inputs => {
+    const n = Math.min(Math.max(inputs.input_ids.dims.at(-1) - 2, 0), 509);
+    const off = n * STYLE_DIM, d = new Float32Array(STYLE_DIM);
+    for (let i = 0; i < STYLE_DIM; i++) d[i] = EMMA_SHARE * emmaBin[off + i] + (1 - EMMA_SHARE) * aliceBin[off + i];
+    return origModel({ ...inputs, style: new inputs.style.constructor("float32", d, [1, STYLE_DIM]) });
+  };
+  const tl = (performance.now() - t0) / 1000, tw = performance.now();
+  await tts.generate("Hello, good morning.", { voice: "bf_emma", speed: SPEED });
+  $("load").textContent = `Model ready — fp32 (loaded in ${tl.toFixed(1)} s, warm-up ${((performance.now() - tw) / 1000).toFixed(2)} s).`;
+} catch (e) { $("load").textContent = "Model failed to load: " + e.message; throw e; }
+["go", "five", "full"].forEach(id => $(id).disabled = false);
+
+function hash01(str) { let h = 2166136261; for (const c of str) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return ((h >>> 0) % 1000) / 1000; }
+const wc = t => t.split(/\s+/).filter(Boolean).length;
+
+function phrase(text) {
+  let s = text.replace(/\s+/g, " ").replace(/\s+-\s+/g, ", ").replace(/;/g, ",").trim();
+  s = s.replace(/\b(Now|Okay|Alright|Right|Well|So|Good morning|Good afternoon|Good evening|Thank you|Thanks|Lovely|Great|Excellent)(?=\s+[A-Za-z])(?!,)/g, "$1,");
+  s = s.replace(/\bThank you,\s+(for|very)/gi, m => m.replace(",", ""));
+  s = s.replace(/,(\s*[.!?])/g, "$1");
+  return s;
+}
+function splitText(text) {
+  const parts = [], blocks = text.split(/\[pause\]/i);
+  blocks.forEach((c, bi) => {
+    const extra = bi < blocks.length - 1;
+    const sents = c.split(/(?<=[.!?…])\s+/).filter(x => x.trim());
+    sents.forEach((s, i) => {
+      const end = s.trim().slice(-1);
+      let gap = end === "?" ? GAP_QUESTION : end === "…" ? 0.7 : /[.!]/.test(end) ? GAP_STATEMENT : 0.25;
+      gap *= 0.85 + 0.3 * hash01(s);
+      if (extra && i === sents.length - 1) gap += GAP_PAUSE;
+      parts.push({ text: s.trim(), gap, brk: extra && i === sents.length - 1 });
+    });
+    if (extra && !sents.length && parts.length) { const l = parts.at(-1); l.gap += GAP_PAUSE; l.brk = true; }
+  });
+  return parts;
+}
+function mergeShort(parts, minW, maxW) {
+  const out = []; let cur = null;
+  for (const p of parts) {
+    if (cur && !cur.brk && wc(cur.text) < minW && wc(cur.text) + wc(p.text) <= maxW) {
+      cur.text += " " + p.text; cur.gap = p.gap; cur.brk = p.brk;
+    } else { if (cur) out.push(cur); cur = { ...p }; }
+  }
+  if (cur) out.push(cur);
+  return out;
+}
+function splitFirst(p) {
+  if (wc(p.text) <= 14) return [p];
+  const segs = p.text.split(/(?<=,)\s+/); let left = segs[0], i = 1;
+  while (i < segs.length && wc(left) < 6) left += " " + segs[i++];
+  const right = segs.slice(i).join(" ");
+  if (!right) return [p];
+  return [{ text: left, gap: 0.08 / FB_GAP, brk: false }, { text: right, gap: p.gap, brk: p.brk }];
+}
+function plan(raw) {
+  const c = mergeShort(splitText(phrase(raw)), 8, 24);
+  if (!c.length) return [];
+  return [...splitFirst(c[0]), ...mergeShort(c.slice(1), 14, 40)];
+}
+
+function trim(x, th = 0.008, keep = Math.round(0.04 * SR)) {
+  let a = 0, b = x.length - 1;
+  while (a < b && Math.abs(x[a]) < th) a++;
+  while (b > a && Math.abs(x[b]) < th) b--;
+  return x.slice(Math.max(0, a - keep), Math.min(x.length, b + 1 + keep));
+}
+function lightChunk(x, gain) {
+  const y = new Float32Array(x.length), a = Math.exp(-2 * Math.PI * HP_HZ / SR), fade = Math.round(0.005 * SR);
+  let px = 0, py = 0;
+  for (let i = 0; i < x.length; i++) {
+    const v = a * (py + x[i] - px); px = x[i]; py = v;
+    let o = Math.max(-1, Math.min(1, v * gain));
+    if (i < fade) o *= i / fade;
+    if (i > x.length - fade) o *= (x.length - i) / fade;
+    y[i] = o;
+  }
+  return y;
+}
+function concat(chunks) {
+  const all = new Float32Array(chunks.reduce((n, c) => n + c.length, 0)); let off = 0;
+  for (const c of chunks) { all.set(c, off); off += c.length; }
+  return all;
+}
+function wavBlob(f32) {
+  const b = new DataView(new ArrayBuffer(44 + f32.length * 2)), w = (o, s) => [...s].forEach((c, i) => b.setUint8(o + i, c.charCodeAt(0)));
+  w(0, "RIFF"); b.setUint32(4, 36 + f32.length * 2, true); w(8, "WAVEfmt "); b.setUint32(16, 16, true);
+  b.setUint16(20, 1, true); b.setUint16(22, 1, true); b.setUint32(24, SR, true); b.setUint32(28, SR * 2, true);
+  b.setUint16(32, 2, true); b.setUint16(34, 16, true); w(36, "data"); b.setUint32(40, f32.length * 2, true);
+  f32.forEach((x, i) => b.setInt16(44 + i * 2, Math.max(-1, Math.min(1, x)) * 32767, true));
+  return new Blob([b], { type: "audio/wav" });
+}
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+const mb = b => b / 1048576;
+const heapNow = () => performance.memory ? mb(performance.memory.usedJSHeapSize) : null;
+let heapPeak = 0;
+const sampleHeap = () => { const h = heapNow(); if (h !== null) heapPeak = Math.max(heapPeak, h); return h; };
+const mean = a => a.reduce((x, y) => x + y, 0) / a.length;
+const pct = (a, p) => { const s = [...a].sort((x, y) => x - y); return s[Math.min(s.length - 1, Math.ceil(p * s.length) - 1)]; };
+const iso = self.crossOriginIsolated === true;
+const threads = iso ? Math.min(navigator.hardwareConcurrency || 1, 4) : 1;
+$("m_cores").textContent = navigator.hardwareConcurrency || "?";
+$("m_thr").textContent = threads + (iso ? "" : " (page not cross-origin isolated)");
+if (!performance.memory) $("memnote").textContent = "JS heap isn't reported by this browser — use Chrome/Edge, or read memory from the task manager.";
+const target = () => +$("fa_t").value || 1.5;
+
+let ac;
+async function gen(raw, play) {
+  const parts = plan(raw);
+  if (!parts.length) throw new Error("empty text");
+  if (play) { ac ||= new AudioContext({ sampleRate: SR }); await ac.resume(); }
+  await sleep(20);
+  const t0 = performance.now(), out = [];
+  let first = 0, speech = 0, gain = null, vEnd = 0, nextAt = 0, stalls = 0;
+  for (const p of parts) {
+    const a = await tts.generate(p.text, { voice: "bf_emma", speed: Math.min(1.4, Math.max(0.6, SPEED + (hash01(p.text) - 0.5) * 0.04)) });
+    const ready = (performance.now() - t0) / 1000, au = trim(a.audio);
+    if (gain === null) {
+      let pk = 0; for (const v of au) pk = Math.max(pk, Math.abs(v));
+      gain = pk ? Math.min(3, Math.max(0.3, Math.pow(10, LEVEL_DBFS / 20) / pk)) : 1;
+    }
+    const y = lightChunk(au, gain), gapS = p.gap * FB_GAP, durS = y.length / SR;
+    if (!first) { first = ready; vEnd = ready; } else if (vEnd < ready) { stalls++; vEnd = ready; }
+    vEnd += durS + gapS;
+    if (play) {
+      const buf = ac.createBuffer(1, y.length, SR); buf.copyToChannel(y, 0);
+      const src = ac.createBufferSource(); src.buffer = buf; src.connect(ac.destination);
+      const now = ac.currentTime;
+      if (nextAt < now) nextAt = now + 0.02;
+      src.start(nextAt); nextAt += durS + gapS;
+    }
+    out.push(y, new Float32Array(Math.round(gapS * SR)));
+    speech += durS; sampleHeap();
+  }
+  const genS = (performance.now() - t0) / 1000;
+  const all = concat(out), words = parts.reduce((n, q) => n + wc(q.text), 0), total = all.length / SR;
+  if (play) await sleep(Math.max(0, (nextAt - ac.currentTime) * 1000));
+  return { all, genS, first, speechSec: speech, stalls, words, total, rtf: genS / speech,
+           wpmSpeech: words / (speech / 60), wpmAll: words / (total / 60) };
+}
+
+const runs = [];
+function addLog(r) {
+  runs.push(r);
+  const url = URL.createObjectURL(wavBlob(r.all)), h = sampleHeap();
+  const row = $("log").tBodies[0].insertRow(0);
+  row.innerHTML = `<td>${runs.length}</td><td>${r.first.toFixed(2)}</td><td>${r.genS.toFixed(2)}</td><td>${r.total.toFixed(2)}</td><td>${r.rtf.toFixed(2)}</td><td>${r.wpmSpeech.toFixed(0)}</td><td>${r.wpmAll.toFixed(0)}</td><td>${r.stalls}</td><td>${h === null ? "n/a" : h.toFixed(0)}</td><td><a href="#">play</a> · <a href="${url}" download="feedback_${runs.length}.wav">save</a></td>`;
+  row.querySelector("a").onclick = e => { e.preventDefault(); $("a").src = url; $("a").play(); };
+  return url;
+}
+async function refreshStore() {
+  try { const e = await navigator.storage.estimate(); $("m_store").textContent = mb(e.usage).toFixed(0) + " MB"; } catch { $("m_store").textContent = "n/a"; }
+}
+function updateMetrics() {
+  if (!runs.length) return;
+  const last = runs.at(-1), rtfs = runs.map(r => r.rtf), mr = mean(rtfs);
+  $("m_rtf").textContent = `${last.rtf.toFixed(2)} / ${mr.toFixed(2)}`;
+  $("m_p95").textContent = runs.length >= 5 ? pct(rtfs, 0.95).toFixed(2) : "needs ≥5 runs";
+  $("m_fa").textContent = last.first.toFixed(2) + " s " + (last.first <= target() ? "✓" : "✗ over target");
+  $("m_sp").textContent = (1 / (mr * threads)).toFixed(2) + " s";
+  const h = heapNow();
+  $("m_heap").textContent = h === null ? "n/a" : `${h.toFixed(0)} / ${heapPeak.toFixed(0)} MB`;
+  refreshStore(); calc();
+}
+
+const SAMPLES = [
+  ["Short feedback", "Good job. Let's move on to the next question."],
+  ["Medium feedback", "Thank you for your answer. You spoke clearly and kept a steady pace, but try to extend your answers with a reason or an example."],
+  ["Long feedback", "Overall, that was a good attempt. Your fluency was strong, and you rarely stopped to search for words. However, some sentences were quite short, so try to develop your ideas with more detail. Your vocabulary was clear, but you could use a wider range of phrases. Keep practising, and focus on grammar accuracy in longer sentences."],
+];
+const REPS = 5;
+function summarize(name, rs) {
+  const fa = rs.map(r => r.first), rtf = rs.map(r => r.rtf), stalls = rs.reduce((n, r) => n + r.stalls, 0);
+  const okFa = pct(fa, 0.95) <= target(), okRtf = pct(rtf, 0.95) < 1, okSt = stalls === 0;
+  return { name, words: rs[0].words, n: rs.length, fa50: pct(fa, 0.5), fa95: pct(fa, 0.95), rtfM: mean(rtf), rtf95: pct(rtf, 0.95), stalls,
+           wpmS: mean(rs.map(r => r.wpmSpeech)), wpmA: mean(rs.map(r => r.wpmAll)), okFa, okRtf, okSt, pass: okFa && okRtf && okSt };
+}
+const tick = ok => `<span class="${ok ? "ok" : "bad"}">${ok ? "✓" : "✗"}</span>`;
+function addBenchRow(s) {
+  const row = $("bench").tBodies[0].insertRow(0);
+  row.innerHTML = `<td>${s.name}</td><td>${s.words}</td><td>${s.n}</td><td>${s.fa50.toFixed(2)} / ${s.fa95.toFixed(2)} ${tick(s.okFa)}</td><td>${s.rtfM.toFixed(2)} / ${s.rtf95.toFixed(2)} ${tick(s.okRtf)}</td><td>${s.stalls} ${tick(s.okSt)}</td><td>${s.wpmS.toFixed(0)}</td><td>${s.wpmA.toFixed(0)}</td><td class="${s.pass ? "ok" : "bad"}">${s.pass ? "PASS" : "FAIL"}</td>`;
+}
+function setVerdict(list) {
+  const all = list.every(s => s.pass);
+  $("verdict").innerHTML = `${all ? '<span class="ok">ALL PASS</span>' : '<span class="bad">NOT PASSING</span>'} — first audio p95 ≤ ${target()} s, RTF p95 &lt; 1.0, 0 stalls, across ${list.length} text(s) × ${REPS} runs (fp32, Feedback mode, ${$("mute").checked ? "silent" : "with playback"}).`;
+}
+async function runSet(entries) {
+  const list = [], play = !$("mute").checked;
+  for (const [name, text] of entries) {
+    const rs = [];
+    for (let i = 1; i <= REPS; i++) {
+      $("stat").textContent = `${name}: run ${i}/${REPS}...`;
+      const r = await gen(text, play); rs.push(r); runs.push(r);
+    }
+    const s = summarize(name, rs); list.push(s); addBenchRow(s);
+    updateMetrics();
+  }
+  setVerdict(list);
+}
+
+const N = id => +$(id).value || 0;
+function card(label, val, sub = "") { return `<div class="card"><small>${label}</small><b>${val}</b><small>${sub}</small></div>`; }
+function calc() {
+  if (!runs.length) { $("out").innerHTML = card("Run a generation first", "–", "RTF is needed for the estimate"); $("outnote").textContent = ""; return; }
+  const rtf = mean(runs.map(r => r.rtf));
+  const cpuPerAudioSec = rtf * N("c_cu") / Math.max(N("c_speed"), 0.01);
+  const coreSecPerTest = N("c_dyn") * cpuPerAudioSec;
+  const avgCores = N("c_conc") * coreSecPerTest / (N("c_dur") * 60);
+  const peakCores = avgCores * N("c_burst");
+  const needCores = peakCores / (1 - N("c_head") / 100);
+  const workers = Math.max(1, Math.ceil(needCores / Math.max(N("c_cu"), 1)));
+  const ramGB = workers * N("c_ram") / 1024 + N("c_oth");
+  const byCpu = Math.ceil(needCores / N("c_sc")), byRam = Math.ceil(ramGB / N("c_sr"));
+  const servers = Math.max(1, byCpu, byRam), monthly = servers * N("c_price");
+  const perTest = N("c_tpm") ? monthly / N("c_tpm") : 0;
+  const preMin = N("c_np") * N("c_pl") * rtf / 60;
+  $("out").innerHTML =
+    card("CPU per test", coreSecPerTest.toFixed(1) + " core-s", `${cpuPerAudioSec.toFixed(2)} core-s per speech-second`) +
+    card("Cores needed (peak + headroom)", needCores.toFixed(1), `avg ${avgCores.toFixed(2)}, peak ${peakCores.toFixed(2)}`) +
+    card("TTS workers", workers, `${(workers * N("c_ram") / 1024).toFixed(1)} GB for workers`) +
+    card("Total RAM", ramGB.toFixed(1) + " GB", `incl. ${N("c_oth")} GB other services`) +
+    card("Servers needed", servers, `by CPU ${byCpu}, by RAM ${byRam}`) +
+    card("Monthly cost", "$" + monthly.toLocaleString(), `${N("c_sc")} cores / ${N("c_sr")} GB each`) +
+    card("Cost per test", "$" + perTest.toFixed(4), `${N("c_tpm").toLocaleString()} tests/mo`) +
+    card("Pre-generate fixed prompts", preMin.toFixed(1) + " min", `${N("c_np")} prompts, one-time`);
+  $("outnote").textContent = "Assumes live TTS only for the dynamic part of each test; fixed prompts are generated once and served from cache. CPU-only estimate — no GPU priced.";
+}
+document.querySelectorAll("[id^=c_]").forEach(el => el.addEventListener("input", calc));
+
+const busy = b => ["go", "five", "full"].forEach(id => $(id).disabled = b);
+const userText = () => $("t").value.trim();
+$("go").onclick = async () => {
+  busy(true); $("stat").textContent = "generating...";
+  try { const r = await gen(userText(), true); $("a").src = addLog(r); updateMetrics(); $("stat").textContent = "done"; }
+  catch (e) { $("stat").textContent = e.message; }
+  busy(false);
+};
+$("five").onclick = async () => {
+  busy(true);
+  try { if (!userText()) throw new Error("empty text"); await runSet([["Your text", userText()]]); $("stat").textContent = "benchmark done"; }
+  catch (e) { $("stat").textContent = e.message; }
+  busy(false);
+};
+$("full").onclick = async () => {
+  busy(true); $("bench").tBodies[0].innerHTML = "";
+  try {
+    const set = [...SAMPLES]; if (userText()) set.push(["Your text", userText()]);
+    await runSet(set); $("stat").textContent = "full benchmark done";
+  } catch (e) { $("stat").textContent = e.message; }
+  busy(false);
+};
+refreshStore(); calc();
+</script></body></html>
