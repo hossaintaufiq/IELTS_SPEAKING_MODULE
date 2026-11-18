@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>STT Accuracy Lab (Whisper, browser)</title>
+  <style>
+    body {
+      font: 16px system-ui;
+      max-width: 960px;
+      margin: 40px auto;
+      padding: 0 16px;
+      color: #222
+    }
+
+    textarea {
+      width: 100%;
+      height: 110px;
+      font: inherit;
+      padding: 10px;
+      box-sizing: border-box
+    }
+
+    .row {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      margin: 12px 0;
+      flex-wrap: wrap
+    }
+
+    button {
+      padding: 8px 18px;
+      font: inherit;
+      cursor: pointer
+    }
+
+    button:disabled {
+      opacity: .5;
+      cursor: wait
+    }
+
+    button.rec {
+      background: #c62828;
+      color: #fff;
+      border: 0;
+      border-radius: 4px
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 10px;
+      font-size: 13px
+    }
+
+    td,
+    th {
+      border-bottom: 1px solid #ddd;
+      padding: 5px;
+      text-align: left
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin: 10px 0
+    }
+
+    .card {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 10px
+    }
+
+    .card b {
+      display: block;
+      font-size: 20px
+    }
+
+    .card small {
+      color: #666
+    }
+
+    #stat,
+    .hint {
+      color: #555;
+      font-size: 14px
+    }
+
+    .warn {
+      color: #8a5a00;
+      font-size: 13px
+    }
+
+    h3 {
+      margin: 24px 0 6px
+    }
+
+    #diff {
+      line-height: 1.9;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 10px;
+      min-height: 40px
+    }
+
+    .sub {
+      background: #ffe0b2;
+      border-radius: 3px;
+      padding: 0 3px
+    }
+
+    .sub s {
+      color: #b00020
+    }
+
+    .del {
+      background: #ffcdd2;
+      border-radius: 3px;
+      padding: 0 3px;
+      text-decoration: line-through
+    }
+
+    .ins {
+      background: #c8e6c9;
+      border-radius: 3px;
+      padding: 0 3px
+    }
+
+    .ok {
+      color: #0a7a2f;
+      font-weight: 600
+    }
+
+    .bad {
+      color: #b00020;
+      font-weight: 600
+    }
+  </style>
+</head>
+
+<body>
+  <h2>STT Accuracy Lab — Whisper in the browser</h2>
+  <div class="hint">Record your voice or upload audio, type what was actually said as the <b>reference</b>, and the page
+    computes WER/CER and shows exactly which words were missed, changed or added. Audio never leaves your computer (only
+    the model files are downloaded).</div>
+  <div class="warn">This runs OpenAI Whisper weights through ONNX/WebAssembly. The planned server engine is
+    faster-whisper (same Whisper models, different runtime), so <b>accuracy by model size carries over</b>; speed
+    numbers do not.</div>
+
+  <h3>1. Model</h3>
+  <div class="row">
+    <label>Model <select id="model">
+        <option value="onnx-community/whisper-tiny.en">tiny.en (~40 MB, fastest, least accurate)</option>
+        <option value="onnx-community/whisper-base.en" selected>base.en (~75 MB)</option>
+        <option value="onnx-community/whisper-small.en">small.en (~250 MB, much better)</option>
+        <option value="onnx-community/whisper-large-v3-turbo">large-v3-turbo (~800 MB+, needs WebGPU)</option>
+      </select></label>
+    <label>Device <select id="dev">
+        <option value="wasm">CPU (WASM)</option>
+        <option value="webgpu">GPU (WebGPU)</option>
+      </select></label>
+    <button id="load">Load model</button>
+    <span id="stat"></span>
+  </div>
+  <div class="hint" id="loadinfo">No model loaded.</div>
+
+  <h3>2. Audio</h3>
+  <div class="row">
+    <button id="rec" class="rec">● Record</button>
+    <span id="rtime">0:00</span>
+    <span>or</span>
+    <input id="file" type="file" accept="audio/*,video/*">
+  </div>
+  <audio id="player" controls style="width:100%"></audio>
+  <div class="hint" id="audioinfo">No audio yet.</div>
+
+  <h3>3. Reference text (what was really said)</h3>
+  <div class="row">
+    <label>Sample to read aloud <select id="sample">
+        <option value="">— choose, or type your own —</option>
+        <option value="0">Short, everyday</option>
+        <option value="1">Numbers, dates, names</option>
+        <option value="2">IELTS Part 2 style answer</option>
+      </select></label>
+    <label><input id="nofill" type="checkbox"> ignore filler words (um, uh, er…) when scoring</label>
+  </div>
+  <textarea id="ref"
+    placeholder="Type or paste the exact words spoken. Include 'um' / 'uh' if you said them."></textarea>
+  <div class="row"><button id="go" disabled>Transcribe &amp; score</button><button id="csv" disabled>Download results
+      CSV</button></div>
+
+  <h3>4. Result</h3>
+  <div class="cards">
+    <div class="card"><small>WER (lower is better)</small><b id="r_wer">–</b></div>
+    <div class="card"><small>CER</small><b id="r_cer">–</b></div>
+    <div class="card"><small>Subs / Dels / Ins</small><b id="r_sdi">–</b></div>
+    <div class="card"><small>Fillers: spoken → transcribed</small><b id="r_fill">–</b></div>
+    <div class="card"><small>Transcription time</small><b id="r_time">–</b></div>
+    <div class="card"><small>Audio length</small><b id="r_dur">–</b></div>
+    <div class="card"><small>RTF (time ÷ audio)</small><b id="r_rtf">–</b></div>
+    <div class="card"><small>JS heap</small><b id="r_heap">–</b></div>
+  </div>
+  <b>Transcript</b>
+  <div id="hyp" style="border:1px solid #ddd;border-radius:8px;padding:10px;min-height:40px"></div>
+  <b>Word-by-word comparison</b> <span class="hint"><span class="sub">changed <s>ref</s>→heard</span> <span
+      class="del">missed</span> <span class="ins">added</span></span>
+  <div id="diff"></div>
+
+  <h3>All runs</h3>
+  <div class="warn">Run several different clips (and speakers/accents) per model. A single clip says little.</div>
+  <table id="hist">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Model</th>
+        <th>Device</th>
+        <th>Audio (s)</th>
+        <th>Words</th>
+        <th>WER</th>
+        <th>CER</th>
+        <th>S/D/I</th>
+        <th>Time (s)</th>
+        <th>RTF</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <h3>Average by model</h3>
+  <table id="avg">
+    <thead>
+      <tr>
+        <th>Model</th>
+        <th>Clips</th>
+        <th>Mean WER</th>
+        <th>Mean CER</th>
+        <th>Mean RTF</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script type="module">
+    import { pipeline, env } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3";
+    const $ = id => document.getElementById(id);
+    env.allowLocalModels = false;
+    const SAMPLES = [
+      "Good morning. My name is Sarah and I live in a small town near the coast. I work as a teacher and I really enjoy my job.",
+      "My flight lands at seven forty five on the twenty third of March, and the hotel is at fourteen Baker Street, near Victoria Station.",
+      "I would like to talk about a person who has influenced me a lot, and that is my grandmother. She grew up in a village, and she taught me that hard work and kindness are more important than money."
+    ];
+    $("sample").onchange = () => { if ($("sample").value !== "") $("ref").value = SAMPLES[+$("sample").value]; };
+    if (!navigator.gpu) { $("dev").querySelector('[value="webgpu"]').disabled = true; $("dev").querySelector('[value="webgpu"]').textContent += " — not available in this browser"; }
+
+    let asr = null, loaded = null;
+    $("load").onclick = async () => {
+      const id = $("model").value, dev = $("dev").value;
+      if (id.includes("large") && dev !== "webgpu") { $("stat").textContent = "large-v3-turbo needs WebGPU (choose GPU device)."; return; }
+      $("load").disabled = $("go").disabled = true; asr = null;
+      const t0 = performance.now();
+      try {
+        const dtype = dev === "webgpu" ? { encoder_model: "fp32", decoder_model_merged: "q4" } : "q8";
+        asr = await pipeline("automatic-speech-recognition", id, {
+          device: dev, dtype,
+          progress_callback: p => { if (p.status === "progress" && p.total) $("stat").textContent = `downloading ${p.file.split("/").pop()} ${Math.round(p.loaded / p.total * 100)}%`; }
+        });
+        loaded = { id, dev, name: id.split("/").pop() };
+        $("loadinfo").textContent = `Loaded ${loaded.name} on ${dev} in ${((performance.now() - t0) / 1000).toFixed(1)} s.`;
+        $("stat").textContent = "";
+        $("go").disabled = !audio;
+      } catch (e) { $("stat").textContent = "Load failed: " + e.message; }
+      $("load").disabled = false;
+    };
+
+    let audio = null, mediaRec, chunks = [], recT0, recTimer;
+    async function toMono16k(arrayBuffer) {
+      const ctx = new AudioContext({ sampleRate: 16000 });
+      const buf = await ctx.decodeAudioData(arrayBuffer);
+      await ctx.close();
+      const out = new Float32Array(buf.length);
+      for (let c = 0; c < buf.numberOfChannels; c++) { const d = buf.getChannelData(c); for (let i = 0; i < out.length; i++) out[i] += d[i] / buf.numberOfChannels; }
+      return out;
+    }
+    async function setAudio(blob, label) {
+      try {
+        audio = await toMono16k(await blob.arrayBuffer());
+        $("player").src = URL.createObjectURL(blob);
+        $("audioinfo").textContent = `${label}: ${(audio.length / 16000).toFixed(1)} s, converted to 16 kHz mono.`;
+        $("go").disabled = !asr;
+      } catch (e) { $("audioinfo").textContent = "Could not read that audio: " + e.message; }
+    }
+    $("file").onchange = () => { const f = $("file").files[0]; if (f) setAudio(f, f.name); };
+    $("rec").onclick = async () => {
+      if (mediaRec && mediaRec.state === "recording") { mediaRec.stop(); return; }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+        chunks = []; mediaRec = new MediaRecorder(stream);
+        mediaRec.ondataavailable = e => chunks.push(e.data);
+        mediaRec.onstop = () => {
+          clearInterval(recTimer); stream.getTracks().forEach(t => t.stop());
+          $("rec").textContent = "● Record"; setAudio(new Blob(chunks, { type: mediaRec.mimeType }), "Recording");
+        };
+        mediaRec.start(); recT0 = Date.now(); $("rec").textContent = "■ Stop";
+        recTimer = setInterval(() => { const s = Math.floor((Date.now() - recT0) / 1000); $("rtime").textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; }, 250);
+      } catch (e) { $("audioinfo").textContent = "Microphone not available: " + e.message; }
+    };
+
+    const FILLERS = new Set(["um", "uh", "er", "erm", "ah", "hmm", "mm", "mhm", "uhm", "eh"]);
+    function words(s, dropFillers) {
+      let w = s.toLowerCase().replace(/[’‘]/g, "'").replace(/[^a-z0-9'\s-]/g, " ").replace(/-/g, " ").split(/\s+/).filter(Boolean);
+      w = w.map(x => x.replace(/^'+|'+$/g, "")).filter(Boolean);
+      return dropFillers ? w.filter(x => !FILLERS.has(x)) : w;
+    }
+    function align(ref, hyp) {
+      const n = ref.length, m = hyp.length, d = Array.from({ length: n + 1 }, () => new Int32Array(m + 1));
+      for (let i = 0; i <= n; i++) d[i][0] = i;
+      for (let j = 0; j <= m; j++) d[0][j] = j;
+      for (let i = 1; i <= n; i++) for (let j = 1; j <= m; j++)
+        d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (ref[i - 1] === hyp[j - 1] ? 0 : 1));
+      const ops = []; let i = n, j = m;
+      while (i > 0 || j > 0) {
+        if (i > 0 && j > 0 && d[i][j] === d[i - 1][j - 1] + (ref[i - 1] === hyp[j - 1] ? 0 : 1)) {
+          ops.push(ref[i - 1] === hyp[j - 1] ? { t: "eq", r: ref[i - 1] } : { t: "sub", r: ref[i - 1], h: hyp[j - 1] }); i--; j--;
+        } else if (i > 0 && d[i][j] === d[i - 1][j] + 1) { ops.push({ t: "del", r: ref[i - 1] }); i--; }
+        else { ops.push({ t: "ins", h: hyp[j - 1] }); j--; }
+      }
+      return ops.reverse();
+    }
+    function lev(a, b) {
+      let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
+      for (let i = 1; i <= a.length; i++) {
+        const cur = [i];
+        for (let j = 1; j <= b.length; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+        prev = cur;
+      }
+      return prev[b.length];
+    }
+    const esc = s => s.replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+    const pctStr = x => (x * 100).toFixed(1) + "%";
+    const verdict = x => `<span class="${x <= 0.1 ? "ok" : x <= 0.2 ? "" : "bad"}">${pctStr(x)}</span>`;
+
+    const results = [];
+    $("go").onclick = async () => {
+      const refText = $("ref").value.trim();
+      if (!refText) { $("stat").textContent = "Type the reference text first."; return; }
+      $("go").disabled = true; $("stat").textContent = "transcribing...";
+      await new Promise(r => setTimeout(r, 30));
+      try {
+        const t0 = performance.now();
+        const opts = { chunk_length_s: 30, stride_length_s: 5 };
+        if (!loaded.id.endsWith(".en")) { opts.language = "english"; opts.task = "transcribe"; }
+        const out = await asr(audio, opts);
+        const secs = (performance.now() - t0) / 1000, dur = audio.length / 16000;
+        const hypText = (Array.isArray(out) ? out.map(o => o.text).join(" ") : out.text).trim();
+        const drop = $("nofill").checked;
+        const R = words(refText, drop), H = words(hypText, drop), ops = align(R, H);
+        const S = ops.filter(o => o.t === "sub").length, D = ops.filter(o => o.t === "del").length, I = ops.filter(o => o.t === "ins").length;
+        const wer = R.length ? (S + D + I) / R.length : 0;
+        const rc = R.join(" "), hc = H.join(" "), cer = rc.length ? lev(rc, hc) / rc.length : 0;
+        const fr = words(refText, false).filter(w => FILLERS.has(w)).length, fh = words(hypText, false).filter(w => FILLERS.has(w)).length;
+        $("hyp").textContent = hypText;
+        $("diff").innerHTML = ops.map(o => o.t === "eq" ? esc(o.r) : o.t === "sub" ? `<span class="sub"><s>${esc(o.r)}</s> ${esc(o.h)}</span>` : o.t === "del" ? `<span class="del">${esc(o.r)}</span>` : `<span class="ins">${esc(o.h)}</span>`).join(" ");
+        $("r_wer").innerHTML = verdict(wer); $("r_cer").textContent = pctStr(cer);
+        $("r_sdi").textContent = `${S} / ${D} / ${I}`;
+        $("r_fill").textContent = `${fr} → ${fh}`;
+        $("r_time").textContent = secs.toFixed(2) + " s"; $("r_dur").textContent = dur.toFixed(1) + " s"; $("r_rtf").textContent = (secs / dur).toFixed(2);
+        $("r_heap").textContent = performance.memory ? (performance.memory.usedJSHeapSize / 1048576).toFixed(0) + " MB" : "n/a";
+        const r = { n: results.length + 1, model: loaded.name, dev: loaded.dev, dur, words: R.length, wer, cer, S, D, I, secs, rtf: secs / dur };
+        results.push(r);
+        const row = $("hist").tBodies[0].insertRow(0);
+        row.innerHTML = `<td>${r.n}</td><td>${r.model}</td><td>${r.dev}</td><td>${dur.toFixed(1)}</td><td>${R.length}</td><td>${pctStr(wer)}</td><td>${pctStr(cer)}</td><td>${S}/${D}/${I}</td><td>${secs.toFixed(2)}</td><td>${r.rtf.toFixed(2)}</td>`;
+        const by = {}; for (const x of results) (by[x.model + " (" + x.dev + ")"] ||= []).push(x);
+        $("avg").tBodies[0].innerHTML = Object.entries(by).map(([k, v]) => {
+          const m = f => v.reduce((a, b) => a + b[f], 0) / v.length;
+          return `<tr><td>${k}</td><td>${v.length}</td><td>${pctStr(m("wer"))}</td><td>${pctStr(m("cer"))}</td><td>${m("rtf").toFixed(2)}</td></tr>`;
+        }).join("");
+        $("csv").disabled = false; $("stat").textContent = "done";
+      } catch (e) { $("stat").textContent = "Error: " + e.message; }
+      $("go").disabled = false;
+    };
+    $("csv").onclick = () => {
+      const head = "run,model,device,audio_s,ref_words,wer,cer,subs,dels,ins,time_s,rtf\n";
+      const body = results.map(r => [r.n, r.model, r.dev, r.dur.toFixed(2), r.words, r.wer.toFixed(4), r.cer.toFixed(4), r.S, r.D, r.I, r.secs.toFixed(2), r.rtf.toFixed(3)].join(",")).join("\n");
+      const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([head + body], { type: "text/csv" })); a.download = "stt_results.csv"; a.click();
+    };
+  </script>
+</body>
+
+</html>
