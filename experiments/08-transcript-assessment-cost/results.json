@@ -1,0 +1,56 @@
+[
+  {
+    "candidate_speech_min": 3,
+    "words": 404,
+    "transcript_tokens": 446,
+    "rubric_tokens": 84,
+    "model": "gpt-4.1-mini",
+    "cost_usd": 0.00133,
+    "cost_per_1000_assessments_usd": 1.33
+  },
+  {
+    "candidate_speech_min": 3,
+    "words": 404,
+    "transcript_tokens": 446,
+    "rubric_tokens": 2000,
+    "model": "gpt-4.1-mini",
+    "cost_usd": 0.0021,
+    "cost_per_1000_assessments_usd": 2.1
+  },
+  {
+    "candidate_speech_min": 9,
+    "words": 1212,
+    "transcript_tokens": 1338,
+    "rubric_tokens": 84,
+    "model": "gpt-4.1-mini",
+    "cost_usd": 0.00169,
+    "cost_per_1000_assessments_usd": 1.69
+  },
+  {
+    "candidate_speech_min": 9,
+    "words": 1212,
+    "transcript_tokens": 1338,
+    "rubric_tokens": 2000,
+    "model": "gpt-4.1-mini",
+    "cost_usd": 0.00246,
+    "cost_per_1000_assessments_usd": 2.46
+  },
+  {
+    "candidate_speech_min": 14,
+    "words": 1895,
+    "transcript_tokens": 2092,
+    "rubric_tokens": 84,
+    "model": "gpt-4.1-mini",
+    "cost_usd": 0.00199,
+    "cost_per_1000_assessments_usd": 1.99
+  },
+  {
+    "candidate_speech_min": 14,
+    "words": 1895,
+    "transcript_tokens": 2092,
+    "rubric_tokens": 2000,
+    "model": "gpt-4.1-mini",
+    "cost_usd": 0.00276,
+    "cost_per_1000_assessments_usd": 2.76
+  }
+]
