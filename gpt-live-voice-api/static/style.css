@@ -1,0 +1,12 @@
+:root { --bg:#0f1220; --card:#181c30; --text:#e8eaf6; --muted:#8a90b0; --accent:#6c8cff; --live:#ff5d6c; }
+* { box-sizing: border-box; }
+body { margin:0; min-height:100vh; display:grid; place-items:center; background:var(--bg); color:var(--text); font:16px/1.5 system-ui, sans-serif; }
+.card { width:min(440px, 92vw); background:var(--card); border-radius:16px; padding:2rem; text-align:center; box-shadow:0 10px 40px #0006; }
+h1 { margin:0 0 .25rem; font-size:1.4rem; }
+.status { color:var(--muted); margin:0 0 1.5rem; }
+.mic { width:120px; height:120px; border:0; border-radius:50%; background:var(--accent); color:#fff; font-size:1.1rem; cursor:pointer; transition:transform .15s, background .2s; }
+.mic:hover { transform:scale(1.05); }
+.mic.live { background:var(--live); animation:pulse 1.6s infinite; }
+@keyframes pulse { 0%{box-shadow:0 0 0 0 #ff5d6c88} 100%{box-shadow:0 0 0 24px #ff5d6c00} }
+.log { list-style:none; padding:0; margin:1.5rem 0 0; max-height:200px; overflow:auto; text-align:left; font-size:.9rem; color:var(--muted); }
+.log li { padding:.2rem 0; }
