@@ -1,0 +1,29 @@
+[
+  {
+    "model": "tiny.en",
+    "load_s": 1.19,
+    "rss_mb": 104,
+    "decode_s": 4.66,
+    "audio_s": 145.4,
+    "rtf": 0.032,
+    "wer_pct": 0.5
+  },
+  {
+    "model": "base.en",
+    "load_s": 1.13,
+    "rss_mb": 127,
+    "decode_s": 7.56,
+    "audio_s": 145.4,
+    "rtf": 0.052,
+    "wer_pct": 0.5
+  },
+  {
+    "model": "small.en",
+    "load_s": 2.6,
+    "rss_mb": 321,
+    "decode_s": 21.17,
+    "audio_s": 145.4,
+    "rtf": 0.146,
+    "wer_pct": 0.5
+  }
+]
