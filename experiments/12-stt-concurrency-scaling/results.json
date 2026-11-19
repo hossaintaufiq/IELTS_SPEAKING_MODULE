@@ -1,0 +1,30 @@
+[
+  {
+    "processes": 1,
+    "threads_each": 4,
+    "per_stream_rtf": 0.051,
+    "aggregate_audio_s_per_s": 19.5,
+    "streams_realtime_capacity": 19.5
+  },
+  {
+    "processes": 2,
+    "threads_each": 2,
+    "per_stream_rtf": 0.071,
+    "aggregate_audio_s_per_s": 28.2,
+    "streams_realtime_capacity": 28.2
+  },
+  {
+    "processes": 4,
+    "threads_each": 1,
+    "per_stream_rtf": 0.143,
+    "aggregate_audio_s_per_s": 28.0,
+    "streams_realtime_capacity": 28.0
+  },
+  {
+    "processes": 4,
+    "threads_each": 4,
+    "per_stream_rtf": 0.13,
+    "aggregate_audio_s_per_s": 30.8,
+    "streams_realtime_capacity": 30.8
+  }
+]
