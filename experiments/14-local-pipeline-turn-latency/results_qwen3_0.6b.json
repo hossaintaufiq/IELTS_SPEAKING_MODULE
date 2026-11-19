@@ -1,0 +1,69 @@
+{
+  "summary": {
+    "llm": "qwen3:0.6b",
+    "median_turn_latency_s": 7.55,
+    "max_turn_latency_s": 8.6
+  },
+  "turns": [
+    {
+      "turn": 1,
+      "candidate_audio_s": 25.9,
+      "stt_s": 2.39,
+      "llm_first_token_s": 2.35,
+      "llm_first_sentence_s": 2.63,
+      "tts_first_sentence_s": 2.95,
+      "turn_latency_s": 7.97,
+      "reply": "What is one thing you like most about the town?"
+    },
+    {
+      "turn": 2,
+      "candidate_audio_s": 24.8,
+      "stt_s": 1.65,
+      "llm_first_token_s": 2.32,
+      "llm_first_sentence_s": 2.51,
+      "tts_first_sentence_s": 3.39,
+      "turn_latency_s": 7.55,
+      "reply": "What are some potential downsides of using technology in education?"
+    },
+    {
+      "turn": 3,
+      "candidate_audio_s": 22.7,
+      "stt_s": 1.41,
+      "llm_first_token_s": 2.28,
+      "llm_first_sentence_s": 2.63,
+      "tts_first_sentence_s": 4.56,
+      "turn_latency_s": 8.6,
+      "reply": "What made the most special part of the journey was the time we were completely disconnected from our busy lives."
+    },
+    {
+      "turn": 4,
+      "candidate_audio_s": 25.9,
+      "stt_s": 1.73,
+      "llm_first_token_s": 2.1,
+      "llm_first_sentence_s": 2.25,
+      "tts_first_sentence_s": 2.14,
+      "turn_latency_s": 6.12,
+      "reply": "What is one thing that makes the town unique?"
+    },
+    {
+      "turn": 5,
+      "candidate_audio_s": 24.8,
+      "stt_s": 1.44,
+      "llm_first_token_s": 2.11,
+      "llm_first_sentence_s": 2.3,
+      "tts_first_sentence_s": 2.63,
+      "turn_latency_s": 6.37,
+      "reply": "What are some benefits and challenges of using technology in education?"
+    },
+    {
+      "turn": 6,
+      "candidate_audio_s": 22.7,
+      "stt_s": 1.6,
+      "llm_first_token_s": 2.08,
+      "llm_first_sentence_s": 2.2,
+      "tts_first_sentence_s": 1.47,
+      "turn_latency_s": 5.28,
+      "reply": "What made this trip special for me?"
+    }
+  ]
+}
