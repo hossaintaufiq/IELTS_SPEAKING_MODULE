@@ -1,0 +1,42 @@
+[
+  {
+    "variant": "all turns synthesised",
+    "stt": "gpt-4o-mini-transcribe",
+    "llm": "gpt-4.1-mini",
+    "tts": "gpt-4o-mini-tts",
+    "stt_usd": 0.027,
+    "llm_usd": 0.0052,
+    "tts_usd": 0.0525,
+    "total_usd": 0.085
+  },
+  {
+    "variant": "all turns synthesised",
+    "stt": "gpt-4o-transcribe",
+    "llm": "gpt-4.1-mini",
+    "tts": "gpt-4o-mini-tts",
+    "stt_usd": 0.054,
+    "llm_usd": 0.0052,
+    "tts_usd": 0.0525,
+    "total_usd": 0.112
+  },
+  {
+    "variant": "Part 3 only synthesised",
+    "stt": "gpt-4o-mini-transcribe",
+    "llm": "gpt-4.1-mini",
+    "tts": "gpt-4o-mini-tts",
+    "stt_usd": 0.027,
+    "llm_usd": 0.0052,
+    "tts_usd": 0.014,
+    "total_usd": 0.046
+  },
+  {
+    "variant": "Part 3 only synthesised",
+    "stt": "gpt-4o-transcribe",
+    "llm": "gpt-4.1-mini",
+    "tts": "gpt-4o-mini-tts",
+    "stt_usd": 0.054,
+    "llm_usd": 0.0052,
+    "tts_usd": 0.014,
+    "total_usd": 0.073
+  }
+]
