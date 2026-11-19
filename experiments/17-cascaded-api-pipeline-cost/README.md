@@ -25,7 +25,7 @@ Test shape: 9.0 minutes of candidate speech at 130 words per minute, 20 LLM turn
 | Part 3 only, larger transcription model | $0.054 | $0.005 | $0.014 | **$0.073** |
 
 ## Findings
-- A hosted cascade costs about $0.09–$0.11 per test, close to the cached mini Realtime figure ($0.12, experiment 06) and about a quarter to a third of the full Realtime model ($0.35–$0.57).
+- A hosted cascade costs about $0.09–$0.11 per test, close to the cached mini Realtime figure ($0.12, experiment 06) and roughly a fifth to a third of the full Realtime model ($0.35–$0.57).
 - Candidate transcription is the largest line (30–50%), because the candidate talks for most of the test. A cheaper transcription model or local transcription (experiment 01) is the first lever.
 - Combined with pre-rendered scripted prompts (experiment 04), the hosted cascade falls to $0.05–$0.07 per test.
 - The text model costs under one cent, so using a stronger model for the replies would add little.
