@@ -1,0 +1,50 @@
+[
+  {
+    "scenario": "A. All Realtime full",
+    "part1": 0.127,
+    "part2": 0.0693,
+    "part3": 0.1439,
+    "total_usd": 0.34,
+    "vs_all_realtime_full_pct": 0
+  },
+  {
+    "scenario": "B. All Realtime mini",
+    "part1": 0.0432,
+    "part2": 0.0217,
+    "part3": 0.0471,
+    "total_usd": 0.112,
+    "vs_all_realtime_full_pct": -67
+  },
+  {
+    "scenario": "C. Part 1 scripted + API transcription, rest Realtime full",
+    "part1": 0.009,
+    "part2": 0.0693,
+    "part3": 0.1439,
+    "total_usd": 0.222,
+    "vs_all_realtime_full_pct": -35
+  },
+  {
+    "scenario": "D. Parts 1 and 2 scripted + API transcription, Part 3 Realtime full",
+    "part1": 0.009,
+    "part2": 0.006,
+    "part3": 0.1439,
+    "total_usd": 0.159,
+    "vs_all_realtime_full_pct": -53
+  },
+  {
+    "scenario": "E. Parts 1 and 2 scripted + API transcription, Part 3 Realtime mini",
+    "part1": 0.009,
+    "part2": 0.006,
+    "part3": 0.0471,
+    "total_usd": 0.062,
+    "vs_all_realtime_full_pct": -82
+  },
+  {
+    "scenario": "F. Fully scripted with local transcription (no voice API)",
+    "part1": 0.0,
+    "part2": 0.0,
+    "part3": 0.0,
+    "total_usd": 0.0,
+    "vs_all_realtime_full_pct": -100
+  }
+]
