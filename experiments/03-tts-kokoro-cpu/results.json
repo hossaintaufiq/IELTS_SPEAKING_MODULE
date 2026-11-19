@@ -1,0 +1,68 @@
+{
+  "summary": {
+    "load_s": 0.62,
+    "model_ram_mb": 127,
+    "question_first_audio_median_s": 1.65,
+    "question_first_audio_max_s": 2.76,
+    "question_rtf_median": 0.653,
+    "feedback_rtf": 0.539,
+    "feedback_speech_s": 15.57,
+    "windows_sapi_feedback_gen_s": 0.84
+  },
+  "rows": [
+    {
+      "chars": 64,
+      "gen_s": 1.64,
+      "speech_s": 3.39,
+      "rtf": 0.482
+    },
+    {
+      "chars": 33,
+      "gen_s": 1.18,
+      "speech_s": 1.88,
+      "rtf": 0.627
+    },
+    {
+      "chars": 42,
+      "gen_s": 1.58,
+      "speech_s": 2.24,
+      "rtf": 0.704
+    },
+    {
+      "chars": 38,
+      "gen_s": 1.59,
+      "speech_s": 2.26,
+      "rtf": 0.704
+    },
+    {
+      "chars": 92,
+      "gen_s": 2.76,
+      "speech_s": 4.69,
+      "rtf": 0.589
+    },
+    {
+      "chars": 72,
+      "gen_s": 2.59,
+      "speech_s": 3.99,
+      "rtf": 0.649
+    },
+    {
+      "chars": 52,
+      "gen_s": 1.9,
+      "speech_s": 2.84,
+      "rtf": 0.67
+    },
+    {
+      "chars": 48,
+      "gen_s": 1.67,
+      "speech_s": 2.54,
+      "rtf": 0.656
+    },
+    {
+      "chars": 267,
+      "gen_s": 8.39,
+      "speech_s": 15.57,
+      "rtf": 0.539
+    }
+  ]
+}
