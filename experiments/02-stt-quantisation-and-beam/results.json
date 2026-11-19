@@ -1,0 +1,66 @@
+[
+  {
+    "model": "base.en",
+    "compute_type": "int8",
+    "beam": 1,
+    "ram_mb": 152,
+    "rtf": 0.058,
+    "wer_pct": 0.5
+  },
+  {
+    "model": "base.en",
+    "compute_type": "int8",
+    "beam": 5,
+    "ram_mb": 152,
+    "rtf": 0.069,
+    "wer_pct": 0.5
+  },
+  {
+    "model": "base.en",
+    "compute_type": "float32",
+    "beam": 1,
+    "ram_mb": 443,
+    "rtf": 0.087,
+    "wer_pct": 0.5
+  },
+  {
+    "model": "base.en",
+    "compute_type": "float32",
+    "beam": 5,
+    "ram_mb": 443,
+    "rtf": 0.106,
+    "wer_pct": 0.5
+  },
+  {
+    "model": "small.en",
+    "compute_type": "int8",
+    "beam": 1,
+    "ram_mb": 322,
+    "rtf": 0.132,
+    "wer_pct": 0.5
+  },
+  {
+    "model": "small.en",
+    "compute_type": "int8",
+    "beam": 5,
+    "ram_mb": 322,
+    "rtf": 0.17,
+    "wer_pct": 0.5
+  },
+  {
+    "model": "small.en",
+    "compute_type": "float32",
+    "beam": 1,
+    "ram_mb": 1159,
+    "rtf": 0.27,
+    "wer_pct": 0.5
+  },
+  {
+    "model": "small.en",
+    "compute_type": "float32",
+    "beam": 5,
+    "ram_mb": 1159,
+    "rtf": 0.34,
+    "wer_pct": 0.5
+  }
+]
