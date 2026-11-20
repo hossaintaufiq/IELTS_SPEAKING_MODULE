@@ -1,0 +1,62 @@
+[
+  {
+    "pause_s": "1.0-3.0",
+    "margin_db": 12.0,
+    "session_min": 5.19,
+    "speech_share_pct": 91.8,
+    "audio_kept_pct": 82.3,
+    "speech_recall_pct": 89.68,
+    "input_cost_full_usd": 0.0996,
+    "input_cost_gated_usd": 0.0819
+  },
+  {
+    "pause_s": "1.0-3.0",
+    "margin_db": 20.0,
+    "session_min": 5.19,
+    "speech_share_pct": 91.8,
+    "audio_kept_pct": 81.5,
+    "speech_recall_pct": 88.84,
+    "input_cost_full_usd": 0.0996,
+    "input_cost_gated_usd": 0.0812
+  },
+  {
+    "pause_s": "3.0-6.0",
+    "margin_db": 12.0,
+    "session_min": 5.69,
+    "speech_share_pct": 84.5,
+    "audio_kept_pct": 75.4,
+    "speech_recall_pct": 89.21,
+    "input_cost_full_usd": 0.1093,
+    "input_cost_gated_usd": 0.0824
+  },
+  {
+    "pause_s": "3.0-6.0",
+    "margin_db": 20.0,
+    "session_min": 5.69,
+    "speech_share_pct": 84.5,
+    "audio_kept_pct": 74.6,
+    "speech_recall_pct": 88.31,
+    "input_cost_full_usd": 0.1093,
+    "input_cost_gated_usd": 0.0816
+  },
+  {
+    "pause_s": "8.0-15.0",
+    "margin_db": 12.0,
+    "session_min": 7.12,
+    "speech_share_pct": 66.2,
+    "audio_kept_pct": 58.8,
+    "speech_recall_pct": 88.79,
+    "input_cost_full_usd": 0.1367,
+    "input_cost_gated_usd": 0.0804
+  },
+  {
+    "pause_s": "8.0-15.0",
+    "margin_db": 20.0,
+    "session_min": 7.12,
+    "speech_share_pct": 66.2,
+    "audio_kept_pct": 58.1,
+    "speech_recall_pct": 87.69,
+    "input_cost_full_usd": 0.1367,
+    "input_cost_gated_usd": 0.0794
+  }
+]
