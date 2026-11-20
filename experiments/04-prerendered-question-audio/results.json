@@ -1,0 +1,11 @@
+{
+  "prompts": 30,
+  "speech_minutes": 1.55,
+  "avg_prompt_s": 3.1,
+  "render_time_s": 58.3,
+  "storage_mb_wav": 4.5,
+  "realtime_cost_per_prompt_usd": 0.00397,
+  "realtime_cost_to_speak_bank_once_usd": 0.119,
+  "scripted_prompts_per_test": 14,
+  "saving_per_test_usd": 0.056
+}

@@ -1,0 +1,147 @@
+{
+  "summary": {
+    "qwen3:0.6b": {
+      "median_wall_s": 2.38,
+      "median_tokens_per_s": 69.6,
+      "valid_replies": "5/5"
+    },
+    "qwen3:1.7b": {
+      "median_wall_s": 2.97,
+      "median_tokens_per_s": 26.0,
+      "valid_replies": "5/5"
+    },
+    "llama3.2:3b": {
+      "median_wall_s": 3.98,
+      "median_tokens_per_s": 13.5,
+      "valid_replies": "5/5"
+    }
+  },
+  "runs": {
+    "qwen3:0.6b": [
+      {
+        "reply": "What makes the small town near the sea unique?",
+        "wall_s": 2.41,
+        "load_s": 0.06,
+        "prompt_tokens": 86,
+        "output_tokens": 11,
+        "tokens_per_s": 63.4
+      },
+      {
+        "reply": "What are some interesting career opportunities in computer science?",
+        "wall_s": 2.38,
+        "load_s": 0.02,
+        "prompt_tokens": 82,
+        "output_tokens": 11,
+        "tokens_per_s": 71.6
+      },
+      {
+        "reply": "When I was learning the guitar, I also enjoy playing it with my friends. How does this help you?",
+        "wall_s": 2.52,
+        "load_s": 0.01,
+        "prompt_tokens": 80,
+        "output_tokens": 23,
+        "tokens_per_s": 69.6
+      },
+      {
+        "reply": "What's the main issue with communication?",
+        "wall_s": 2.33,
+        "load_s": 0.01,
+        "prompt_tokens": 78,
+        "output_tokens": 9,
+        "tokens_per_s": 60.9
+      },
+      {
+        "reply": "How did your family feel about the travel experience?",
+        "wall_s": 2.31,
+        "load_s": 0.01,
+        "prompt_tokens": 81,
+        "output_tokens": 11,
+        "tokens_per_s": 74.7
+      }
+    ],
+    "qwen3:1.7b": [
+      {
+        "reply": "What do you think about the local community or the way people interact there?",
+        "wall_s": 3.09,
+        "load_s": 0.02,
+        "prompt_tokens": 86,
+        "output_tokens": 16,
+        "tokens_per_s": 24.3
+      },
+      {
+        "reply": "What kind of jobs do you think are most rewarding in the computer science field?",
+        "wall_s": 2.97,
+        "load_s": 0.02,
+        "prompt_tokens": 82,
+        "output_tokens": 17,
+        "tokens_per_s": 26.5
+      },
+      {
+        "reply": "What kind of music do you like?",
+        "wall_s": 2.65,
+        "load_s": 0.01,
+        "prompt_tokens": 80,
+        "output_tokens": 9,
+        "tokens_per_s": 27.6
+      },
+      {
+        "reply": "What do you think about the impact of social media on face-to-face communication?",
+        "wall_s": 2.97,
+        "load_s": 0.01,
+        "prompt_tokens": 78,
+        "output_tokens": 17,
+        "tokens_per_s": 26.0
+      },
+      {
+        "reply": "What was the most interesting part of your trip?",
+        "wall_s": 2.77,
+        "load_s": 0.01,
+        "prompt_tokens": 81,
+        "output_tokens": 11,
+        "tokens_per_s": 25.9
+      }
+    ],
+    "llama3.2:3b": [
+      {
+        "reply": "Do you think the town's quiet nature is a disadvantage for young people, or an advantage?",
+        "wall_s": 4.27,
+        "load_s": 0.03,
+        "prompt_tokens": 89,
+        "output_tokens": 20,
+        "tokens_per_s": 12.3
+      },
+      {
+        "reply": "What inspired you to pursue a career in computer science, rather than other fields of study?",
+        "wall_s": 3.9,
+        "load_s": 0.02,
+        "prompt_tokens": 85,
+        "output_tokens": 19,
+        "tokens_per_s": 13.9
+      },
+      {
+        "reply": "Do you find that playing the guitar has helped you develop any new skills that you're applying to football?",
+        "wall_s": 4.33,
+        "load_s": 0.02,
+        "prompt_tokens": 83,
+        "output_tokens": 22,
+        "tokens_per_s": 12.0
+      },
+      {
+        "reply": "Do you think there's a benefit to having some face-to-face communication in today's digital age?",
+        "wall_s": 3.98,
+        "load_s": 0.01,
+        "prompt_tokens": 81,
+        "output_tokens": 21,
+        "tokens_per_s": 13.5
+      },
+      {
+        "reply": "What was the most memorable experience you had while visiting Japan with your family?",
+        "wall_s": 3.63,
+        "load_s": 0.01,
+        "prompt_tokens": 84,
+        "output_tokens": 16,
+        "tokens_per_s": 14.2
+      }
+    ]
+  }
+}

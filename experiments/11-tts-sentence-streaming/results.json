@@ -1,0 +1,32 @@
+[
+  {
+    "utterance": "now_i_will_give_you_a_topic",
+    "sentences": 3,
+    "speech_s": 10.5,
+    "first_audio_whole_s": 5.42,
+    "first_audio_streamed_s": 3.37,
+    "first_audio_6_words_s": 1.41,
+    "total_gen_streamed_s": 7.45,
+    "stalls": 0
+  },
+  {
+    "utterance": "feedback",
+    "sentences": 3,
+    "speech_s": 15.6,
+    "first_audio_whole_s": 9.82,
+    "first_audio_streamed_s": 3.42,
+    "first_audio_6_words_s": 1.7,
+    "total_gen_streamed_s": 10.23,
+    "stalls": 0
+  },
+  {
+    "utterance": "part3_question",
+    "sentences": 3,
+    "speech_s": 7.5,
+    "first_audio_whole_s": 4.6,
+    "first_audio_streamed_s": 2.22,
+    "first_audio_6_words_s": 2.08,
+    "total_gen_streamed_s": 5.55,
+    "stalls": 0
+  }
+]

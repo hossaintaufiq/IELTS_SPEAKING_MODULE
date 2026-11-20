@@ -1,0 +1,26 @@
+[
+  {
+    "processes": 1,
+    "threads_each": 4,
+    "worst_rtf": 0.63,
+    "speech_s_per_s": 1.6
+  },
+  {
+    "processes": 2,
+    "threads_each": 2,
+    "worst_rtf": 0.94,
+    "speech_s_per_s": 2.14
+  },
+  {
+    "processes": 3,
+    "threads_each": 1,
+    "worst_rtf": 1.35,
+    "speech_s_per_s": 2.22
+  },
+  {
+    "processes": 4,
+    "threads_each": 1,
+    "worst_rtf": 1.66,
+    "speech_s_per_s": 2.42
+  }
+]
