@@ -1,0 +1,399 @@
+{
+  "assumptions": {
+    "server_usd_per_month": 150.0,
+    "target_utilisation": 0.6,
+    "machine": "4-core laptop class, measured RTFs"
+  },
+  "per_test": [
+    {
+      "stt": "base.en",
+      "llm": "qwen3:1.7b",
+      "stt_s": 28.1,
+      "tts_s": 136.5,
+      "llm_s": 59.4,
+      "total_s": 224.0,
+      "load_per_concurrent_test": 0.267,
+      "tests_per_machine_month_at_target_util": 6943,
+      "server_cost_per_test_usd_when_full": 0.022,
+      "fleet": {
+        "5": {
+          "machines": 3,
+          "monthly_usd": 450.0
+        },
+        "10": {
+          "machines": 5,
+          "monthly_usd": 750.0
+        },
+        "15": {
+          "machines": 7,
+          "monthly_usd": 1050.0
+        }
+      }
+    },
+    {
+      "stt": "base.en",
+      "llm": "llama3.2:3b",
+      "stt_s": 28.1,
+      "tts_s": 136.5,
+      "llm_s": 79.6,
+      "total_s": 244.2,
+      "load_per_concurrent_test": 0.291,
+      "tests_per_machine_month_at_target_util": 6369,
+      "server_cost_per_test_usd_when_full": 0.024,
+      "fleet": {
+        "5": {
+          "machines": 3,
+          "monthly_usd": 450.0
+        },
+        "10": {
+          "machines": 5,
+          "monthly_usd": 750.0
+        },
+        "15": {
+          "machines": 8,
+          "monthly_usd": 1200.0
+        }
+      }
+    },
+    {
+      "stt": "small.en",
+      "llm": "qwen3:1.7b",
+      "stt_s": 78.8,
+      "tts_s": 136.5,
+      "llm_s": 59.4,
+      "total_s": 274.7,
+      "load_per_concurrent_test": 0.327,
+      "tests_per_machine_month_at_target_util": 5661,
+      "server_cost_per_test_usd_when_full": 0.026,
+      "fleet": {
+        "5": {
+          "machines": 3,
+          "monthly_usd": 450.0
+        },
+        "10": {
+          "machines": 6,
+          "monthly_usd": 900.0
+        },
+        "15": {
+          "machines": 9,
+          "monthly_usd": 1350.0
+        }
+      }
+    },
+    {
+      "stt": "small.en",
+      "llm": "llama3.2:3b",
+      "stt_s": 78.8,
+      "tts_s": 136.5,
+      "llm_s": 79.6,
+      "total_s": 294.9,
+      "load_per_concurrent_test": 0.351,
+      "tests_per_machine_month_at_target_util": 5274,
+      "server_cost_per_test_usd_when_full": 0.028,
+      "fleet": {
+        "5": {
+          "machines": 3,
+          "monthly_usd": 450.0
+        },
+        "10": {
+          "machines": 6,
+          "monthly_usd": 900.0
+        },
+        "15": {
+          "machines": 9,
+          "monthly_usd": 1350.0
+        }
+      }
+    }
+  ],
+  "break_even": [
+    {
+      "stt": "base.en",
+      "llm": "qwen3:1.7b",
+      "concurrent": 5,
+      "api": "realtime-2.1-mini (cached)",
+      "monthly_fleet_usd": 450.0,
+      "break_even_tests_per_month": 3750
+    },
+    {
+      "stt": "base.en",
+      "llm": "qwen3:1.7b",
+      "concurrent": 5,
+      "api": "realtime-2.1, light examiner (cached)",
+      "monthly_fleet_usd": 450.0,
+      "break_even_tests_per_month": 1286
+    },
+    {
+      "stt": "base.en",
+      "llm": "qwen3:1.7b",
+      "concurrent": 5,
+      "api": "realtime-2.1, heavy examiner (cached)",
+      "monthly_fleet_usd": 450.0,
+      "break_even_tests_per_month": 789
+    },
+    {
+      "stt": "base.en",
+      "llm": "qwen3:1.7b",
+      "concurrent": 10,
+      "api": "realtime-2.1-mini (cached)",
+      "monthly_fleet_usd": 750.0,
+      "break_even_tests_per_month": 6250
+    },
+    {
+      "stt": "base.en",
+      "llm": "qwen3:1.7b",
+      "concurrent": 10,
+      "api": "realtime-2.1, light examiner (cached)",
+      "monthly_fleet_usd": 750.0,
+      "break_even_tests_per_month": 2143
+    },
+    {
+      "stt": "base.en",
+      "llm": "qwen3:1.7b",
+      "concurrent": 10,
+      "api": "realtime-2.1, heavy examiner (cached)",
+      "monthly_fleet_usd": 750.0,
+      "break_even_tests_per_month": 1316
+    },
+    {
+      "stt": "base.en",
+      "llm": "qwen3:1.7b",
+      "concurrent": 15,
+      "api": "realtime-2.1-mini (cached)",
+      "monthly_fleet_usd": 1050.0,
+      "break_even_tests_per_month": 8750
+    },
+    {
+      "stt": "base.en",
+      "llm": "qwen3:1.7b",
+      "concurrent": 15,
+      "api": "realtime-2.1, light examiner (cached)",
+      "monthly_fleet_usd": 1050.0,
+      "break_even_tests_per_month": 3000
+    },
+    {
+      "stt": "base.en",
+      "llm": "qwen3:1.7b",
+      "concurrent": 15,
+      "api": "realtime-2.1, heavy examiner (cached)",
+      "monthly_fleet_usd": 1050.0,
+      "break_even_tests_per_month": 1842
+    },
+    {
+      "stt": "base.en",
+      "llm": "llama3.2:3b",
+      "concurrent": 5,
+      "api": "realtime-2.1-mini (cached)",
+      "monthly_fleet_usd": 450.0,
+      "break_even_tests_per_month": 3750
+    },
+    {
+      "stt": "base.en",
+      "llm": "llama3.2:3b",
+      "concurrent": 5,
+      "api": "realtime-2.1, light examiner (cached)",
+      "monthly_fleet_usd": 450.0,
+      "break_even_tests_per_month": 1286
+    },
+    {
+      "stt": "base.en",
+      "llm": "llama3.2:3b",
+      "concurrent": 5,
+      "api": "realtime-2.1, heavy examiner (cached)",
+      "monthly_fleet_usd": 450.0,
+      "break_even_tests_per_month": 789
+    },
+    {
+      "stt": "base.en",
+      "llm": "llama3.2:3b",
+      "concurrent": 10,
+      "api": "realtime-2.1-mini (cached)",
+      "monthly_fleet_usd": 750.0,
+      "break_even_tests_per_month": 6250
+    },
+    {
+      "stt": "base.en",
+      "llm": "llama3.2:3b",
+      "concurrent": 10,
+      "api": "realtime-2.1, light examiner (cached)",
+      "monthly_fleet_usd": 750.0,
+      "break_even_tests_per_month": 2143
+    },
+    {
+      "stt": "base.en",
+      "llm": "llama3.2:3b",
+      "concurrent": 10,
+      "api": "realtime-2.1, heavy examiner (cached)",
+      "monthly_fleet_usd": 750.0,
+      "break_even_tests_per_month": 1316
+    },
+    {
+      "stt": "base.en",
+      "llm": "llama3.2:3b",
+      "concurrent": 15,
+      "api": "realtime-2.1-mini (cached)",
+      "monthly_fleet_usd": 1200.0,
+      "break_even_tests_per_month": 10000
+    },
+    {
+      "stt": "base.en",
+      "llm": "llama3.2:3b",
+      "concurrent": 15,
+      "api": "realtime-2.1, light examiner (cached)",
+      "monthly_fleet_usd": 1200.0,
+      "break_even_tests_per_month": 3429
+    },
+    {
+      "stt": "base.en",
+      "llm": "llama3.2:3b",
+      "concurrent": 15,
+      "api": "realtime-2.1, heavy examiner (cached)",
+      "monthly_fleet_usd": 1200.0,
+      "break_even_tests_per_month": 2105
+    },
+    {
+      "stt": "small.en",
+      "llm": "qwen3:1.7b",
+      "concurrent": 5,
+      "api": "realtime-2.1-mini (cached)",
+      "monthly_fleet_usd": 450.0,
+      "break_even_tests_per_month": 3750
+    },
+    {
+      "stt": "small.en",
+      "llm": "qwen3:1.7b",
+      "concurrent": 5,
+      "api": "realtime-2.1, light examiner (cached)",
+      "monthly_fleet_usd": 450.0,
+      "break_even_tests_per_month": 1286
+    },
+    {
+      "stt": "small.en",
+      "llm": "qwen3:1.7b",
+      "concurrent": 5,
+      "api": "realtime-2.1, heavy examiner (cached)",
+      "monthly_fleet_usd": 450.0,
+      "break_even_tests_per_month": 789
+    },
+    {
+      "stt": "small.en",
+      "llm": "qwen3:1.7b",
+      "concurrent": 10,
+      "api": "realtime-2.1-mini (cached)",
+      "monthly_fleet_usd": 900.0,
+      "break_even_tests_per_month": 7500
+    },
+    {
+      "stt": "small.en",
+      "llm": "qwen3:1.7b",
+      "concurrent": 10,
+      "api": "realtime-2.1, light examiner (cached)",
+      "monthly_fleet_usd": 900.0,
+      "break_even_tests_per_month": 2571
+    },
+    {
+      "stt": "small.en",
+      "llm": "qwen3:1.7b",
+      "concurrent": 10,
+      "api": "realtime-2.1, heavy examiner (cached)",
+      "monthly_fleet_usd": 900.0,
+      "break_even_tests_per_month": 1579
+    },
+    {
+      "stt": "small.en",
+      "llm": "qwen3:1.7b",
+      "concurrent": 15,
+      "api": "realtime-2.1-mini (cached)",
+      "monthly_fleet_usd": 1350.0,
+      "break_even_tests_per_month": 11250
+    },
+    {
+      "stt": "small.en",
+      "llm": "qwen3:1.7b",
+      "concurrent": 15,
+      "api": "realtime-2.1, light examiner (cached)",
+      "monthly_fleet_usd": 1350.0,
+      "break_even_tests_per_month": 3857
+    },
+    {
+      "stt": "small.en",
+      "llm": "qwen3:1.7b",
+      "concurrent": 15,
+      "api": "realtime-2.1, heavy examiner (cached)",
+      "monthly_fleet_usd": 1350.0,
+      "break_even_tests_per_month": 2368
+    },
+    {
+      "stt": "small.en",
+      "llm": "llama3.2:3b",
+      "concurrent": 5,
+      "api": "realtime-2.1-mini (cached)",
+      "monthly_fleet_usd": 450.0,
+      "break_even_tests_per_month": 3750
+    },
+    {
+      "stt": "small.en",
+      "llm": "llama3.2:3b",
+      "concurrent": 5,
+      "api": "realtime-2.1, light examiner (cached)",
+      "monthly_fleet_usd": 450.0,
+      "break_even_tests_per_month": 1286
+    },
+    {
+      "stt": "small.en",
+      "llm": "llama3.2:3b",
+      "concurrent": 5,
+      "api": "realtime-2.1, heavy examiner (cached)",
+      "monthly_fleet_usd": 450.0,
+      "break_even_tests_per_month": 789
+    },
+    {
+      "stt": "small.en",
+      "llm": "llama3.2:3b",
+      "concurrent": 10,
+      "api": "realtime-2.1-mini (cached)",
+      "monthly_fleet_usd": 900.0,
+      "break_even_tests_per_month": 7500
+    },
+    {
+      "stt": "small.en",
+      "llm": "llama3.2:3b",
+      "concurrent": 10,
+      "api": "realtime-2.1, light examiner (cached)",
+      "monthly_fleet_usd": 900.0,
+      "break_even_tests_per_month": 2571
+    },
+    {
+      "stt": "small.en",
+      "llm": "llama3.2:3b",
+      "concurrent": 10,
+      "api": "realtime-2.1, heavy examiner (cached)",
+      "monthly_fleet_usd": 900.0,
+      "break_even_tests_per_month": 1579
+    },
+    {
+      "stt": "small.en",
+      "llm": "llama3.2:3b",
+      "concurrent": 15,
+      "api": "realtime-2.1-mini (cached)",
+      "monthly_fleet_usd": 1350.0,
+      "break_even_tests_per_month": 11250
+    },
+    {
+      "stt": "small.en",
+      "llm": "llama3.2:3b",
+      "concurrent": 15,
+      "api": "realtime-2.1, light examiner (cached)",
+      "monthly_fleet_usd": 1350.0,
+      "break_even_tests_per_month": 3857
+    },
+    {
+      "stt": "small.en",
+      "llm": "llama3.2:3b",
+      "concurrent": 15,
+      "api": "realtime-2.1, heavy examiner (cached)",
+      "monthly_fleet_usd": 1350.0,
+      "break_even_tests_per_month": 2368
+    }
+  ]
+}
