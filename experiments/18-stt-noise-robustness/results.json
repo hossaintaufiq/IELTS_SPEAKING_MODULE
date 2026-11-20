@@ -1,0 +1,77 @@
+[
+  {
+    "model": "tiny.en",
+    "snr_db": "clean",
+    "wer_pct": 0.5
+  },
+  {
+    "model": "tiny.en",
+    "snr_db": 20,
+    "wer_pct": 0.5
+  },
+  {
+    "model": "tiny.en",
+    "snr_db": 10,
+    "wer_pct": 0.5
+  },
+  {
+    "model": "tiny.en",
+    "snr_db": 5,
+    "wer_pct": 0.74
+  },
+  {
+    "model": "tiny.en",
+    "snr_db": 0,
+    "wer_pct": 11.63
+  },
+  {
+    "model": "base.en",
+    "snr_db": "clean",
+    "wer_pct": 0.5
+  },
+  {
+    "model": "base.en",
+    "snr_db": 20,
+    "wer_pct": 0.5
+  },
+  {
+    "model": "base.en",
+    "snr_db": 10,
+    "wer_pct": 0.5
+  },
+  {
+    "model": "base.en",
+    "snr_db": 5,
+    "wer_pct": 0.5
+  },
+  {
+    "model": "base.en",
+    "snr_db": 0,
+    "wer_pct": 3.22
+  },
+  {
+    "model": "small.en",
+    "snr_db": "clean",
+    "wer_pct": 0.5
+  },
+  {
+    "model": "small.en",
+    "snr_db": 20,
+    "wer_pct": 0.5
+  },
+  {
+    "model": "small.en",
+    "snr_db": 10,
+    "wer_pct": 0.5
+  },
+  {
+    "model": "small.en",
+    "snr_db": 5,
+    "wer_pct": 0.5
+  },
+  {
+    "model": "small.en",
+    "snr_db": 0,
+    "wer_pct": 1.24
+  }
+]

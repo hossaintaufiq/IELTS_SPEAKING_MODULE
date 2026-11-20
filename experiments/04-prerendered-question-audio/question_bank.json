@@ -1,0 +1,40 @@
+{
+  "part1": [
+    "Let's talk about your hometown. Where is your hometown?",
+    "What do you like most about the place where you live?",
+    "Do you work or are you a student?",
+    "Why did you choose that job or field of study?",
+    "What do you usually do in your free time?",
+    "Do you prefer to spend your evenings at home or going out?",
+    "How often do you cook at home?",
+    "What kind of food do you enjoy most?",
+    "Do you enjoy reading books?",
+    "How do you usually travel to work or school?",
+    "Do you like listening to music?",
+    "What kind of weather do you like?",
+    "Do you often use your phone during the day?",
+    "How do you usually keep in touch with your friends?",
+    "Is there a hobby you would like to try in the future?"
+  ],
+  "part2_prompts": [
+    "Now I'm going to give you a topic, and I'd like you to talk about it for one to two minutes. Before you talk, you have one minute to think about what you are going to say. You can make some notes if you wish.",
+    "All right? Remember, you have one to two minutes for this, so don't worry if I stop you. I'll tell you when the time is up. Can you start speaking now, please?",
+    "Thank you. Do you still use it today?"
+  ],
+  "part3": [
+    "Let's consider how technology affects our lives. Do you think technology has made communication easier?",
+    "What are the disadvantages of relying so much on technology?",
+    "How might education change in the next twenty years?",
+    "Do you think people learn better in groups or alone?",
+    "Why do some people prefer to live in big cities?",
+    "How can governments encourage people to use public transport?",
+    "What role does tradition play in your country today?",
+    "Do you think young people and older people have different values?",
+    "How important is it for people to travel abroad?",
+    "In what ways can companies treat their employees better?"
+  ],
+  "closing": [
+    "Thank you. That is the end of the speaking test.",
+    "Thank you very much. Could I have your identification, please?"
+  ]
+}
