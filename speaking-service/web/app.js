@@ -3,6 +3,8 @@ const PHASES = {
   intro: "Introduction", name: "Introduction", part1: "Part 1: Interview", part2_intro: "Part 2: Introduction", part2_prep: "Part 2: Preparation",
   part2_speak: "Part 2: Your talk", part2_followup: "Part 2: Follow-up", part3: "Part 3: Discussion", done: "Finished",
 };
+let LEAD = 0.35;                       // seconds of audio buffered before playback; raise if you still hear clicks
+window.setLead = (x) => { LEAD = x; };
 const state = { ws: null, ctx: null, mic: null, playhead: 0, sources: [], lat: [], log: [], phase: null, speakingUntil: 0 };
 
 function addMsg(role, text, label) {
@@ -25,7 +27,15 @@ function playPcm(buf) {
   ab.copyToChannel(f32, 0);
   const src = state.ctx.createBufferSource();
   src.buffer = ab; src.connect(state.ctx.destination);
-  const t = Math.max(state.ctx.currentTime + 0.03, state.playhead);
+  // Jitter buffer. Chunks arrive over a ~200 ms, bursty network path; scheduling them with only a few
+  // ms of lead leaves gaps (clicks). Keep LEAD seconds of audio queued, and rebuild that cushion whenever
+  // playback has run dry (a new sentence, or a late chunk = an "underrun").
+  const now = state.ctx.currentTime;
+  let t = state.playhead;
+  if (t < now + 0.02) {
+    if (state.playhead > 0 && state.sources.length) state.underruns = (state.underruns || 0) + 1;   // ran dry mid-speech
+    t = now + LEAD;
+  }
   src.start(t);
   state.playhead = t + ab.duration;
   state.sources.push(src);
@@ -114,7 +124,7 @@ function updateMeter(buf) {
 setInterval(() => {
   if (!state.ws) return;
   $("mic-status").textContent = state.muted ? "Mic paused" :
-    `Browser sent ${state.sent || 0} chunks - server heard ${state.srvChunks ?? 0} (level ${(state.srvRms ?? 0).toFixed(3)})`;
+    `Browser sent ${state.sent || 0} chunks - server heard ${state.srvChunks ?? 0} (level ${(state.srvRms ?? 0).toFixed(3)}) | audio gaps: ${state.underruns || 0}`;
 }, 500);
 
 // ---- connect / mic --------------------------------------------------------------------------
@@ -155,7 +165,12 @@ async function start() {
       setOrb("listening", "Your turn - speak");
     };
     state.ws.onmessage = (m) => (typeof m.data === "string" ? onEvent(JSON.parse(m.data)) : playPcm(m.data));
-    state.ws.onclose = () => { $("conn").textContent = "Disconnected"; $("conn").className = "pill off"; finishUi(); };
+    state.ws.onclose = (e) => {
+      $("conn").textContent = "Disconnected"; $("conn").className = "pill off";
+      if (state.phase !== "done") addMsg("sys", "Connection lost (code " + e.code + (e.reason ? ", " + e.reason : "") + "). " +
+        "If this repeats, the network path to the GPU server is dropping. Reload the page to start again.");
+      finishUi();
+    };
     state.ws.onerror = () => addMsg("sys", "Connection error. Is the server running?");
   } catch (err) {
     addMsg("sys", "Could not start: " + (err.message || err));
