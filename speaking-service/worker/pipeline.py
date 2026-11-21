@@ -47,9 +47,9 @@ def build_task(websocket, cfg: WorkerConfig, session):
         LLMUserAggregatorParams,
     )
     from pipecat.services.kokoro.tts import KokoroTTSService
-    from pipecat.services.whisper.stt import WhisperSTTService
     from pipecat.transports.websocket.fastapi import FastAPIWebsocketParams, FastAPIWebsocketTransport
 
+    from worker.stt import ExamWhisperSTTService
     from worker.taps import LiveCaptionTap, OutputTap
 
     transport = FastAPIWebsocketTransport(
@@ -61,10 +61,10 @@ def build_task(websocket, cfg: WorkerConfig, session):
             serializer=BrowserSerializer(session),
         ),
     )
-    stt = WhisperSTTService(
+    stt = ExamWhisperSTTService(
         device=cfg.whisper_device,
         compute_type=cfg.whisper_compute_type,
-        settings=WhisperSTTService.Settings(model=cfg.whisper_model),
+        settings=ExamWhisperSTTService.Settings(model=cfg.whisper_model),
     )
     tts = KokoroTTSService(
         model_path=cfg.kokoro_model_path,
@@ -92,7 +92,8 @@ def build_task(websocket, cfg: WorkerConfig, session):
     pipeline = Pipeline([
         transport.input(),
         LiveCaptionTap(send_json, model_name=cfg.caption_model, device=cfg.whisper_device,
-                       compute_type=cfg.whisper_compute_type),
+                       compute_type=cfg.whisper_compute_type,
+                       on_start=session.vad_started, on_stop=session.vad_stopped),
         stt,
         user_agg,
         tts,
@@ -104,4 +105,5 @@ def build_task(websocket, cfg: WorkerConfig, session):
         params=PipelineParams(audio_in_sample_rate=16000, audio_out_sample_rate=SPEAKER_RATE),
     )
     session.task = task
+    session.stt = stt
     return task

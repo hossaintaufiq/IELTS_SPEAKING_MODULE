@@ -74,9 +74,10 @@ class LiveCaptionTap(FrameProcessor):
     MAX_BYTES = 16000 * 2 * 15         # never transcribe more than the last 15 s
 
     def __init__(self, send, model_name: str = "small.en", device: str = "cuda",
-                 compute_type: str = "float16", interval: float = 0.9):
+                 compute_type: str = "float16", interval: float = 0.9, on_start=None, on_stop=None):
         super().__init__()
         self._send, self._interval = send, interval
+        self._on_start, self._on_stop = on_start, on_stop     # tell the session when the candidate talks
         self._cfg = (model_name, device, compute_type)
         self._model = None
         self._pre = bytearray()
@@ -134,8 +135,12 @@ class LiveCaptionTap(FrameProcessor):
         await super().process_frame(frame, direction)
         if isinstance(frame, (VADUserStartedSpeakingFrame, UserStartedSpeakingFrame)):
             self._begin()
+            if self._on_start:
+                self._on_start()
         elif isinstance(frame, (VADUserStoppedSpeakingFrame, UserStoppedSpeakingFrame)):
             self._end()
+            if self._on_stop:
+                self._on_stop()
         elif isinstance(frame, InputAudioRawFrame):
             if self._active:
                 self._buf.extend(frame.audio)

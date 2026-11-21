@@ -136,6 +136,8 @@ class NextQuestion:
     facts: list[str] = field(default_factory=list)
 
 
+from worker.examiner.speech import is_repeat_request  # noqa: E402
+
 JsonLLM = Callable[[str, str], Awaitable["dict | None"]]
 
 
@@ -298,7 +300,8 @@ def fallback_question(inp: NextQuestionInput) -> str:
 
     if fresh(inp.fallback):
         return inp.fallback
-    return next((f for f in inp.frames if fresh(f)), inp.fallback)
+    # Never hand back a question that was already asked: "" tells the caller the bank is used up.
+    return next((f for f in inp.frames if fresh(f)), "")
 
 
 def origin_of(say: str, frames: list[str]) -> str:
@@ -315,7 +318,9 @@ async def next_question(inp: NextQuestionInput, llm: JsonLLM, test_id: str = "")
         return NextQuestion(fallback_question(inp), "script", "fallback")
     facts = [f.strip()[:120] for f in js.get("facts", []) if isinstance(f, str) and len(f.strip()) > 2][:3] \
         if isinstance(js.get("facts"), list) else []
-    repeat = js.get("reply") == "repeat"
+    # The examiner may only repeat a question when the candidate really asked for it. An LLM that
+    # claims so without a request (it did, after a noisy turn) would repeat questions unasked.
+    repeat = js.get("reply") == "repeat" and is_repeat_request(last_answer(inp))
     if check_question(say, inp, repeat=repeat):
         return NextQuestion(fallback_question(inp), "script", "fallback", facts=facts)
     return NextQuestion(say, "ai", "repeat" if repeat else origin_of(say, inp.frames),
