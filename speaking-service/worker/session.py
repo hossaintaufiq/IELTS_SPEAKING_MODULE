@@ -22,7 +22,8 @@ from typing import Awaitable, Callable
 from worker.examiner import rules
 from worker.examiner.llm import generate_json
 from worker.examiner.rules import SCRIPT, NextQuestionInput
-from worker.examiner.speech import is_noise, is_repeat_request, looks_unfinished
+from worker.examiner.speech import (extract_call_name, is_noise, is_off_topic_question, is_repeat_request,
+                                    looks_unfinished)
 
 RUNS = Path(__file__).resolve().parent.parent / "runs"
 Send = Callable[[dict], Awaitable[None]]
@@ -94,7 +95,12 @@ class ExamSession:
         self.part3_q = 0
         self.long_turn: list[str] = []
         self.long_turn_last = 0.0
-        self.tell_more_done = False
+        self.p2_nudges = 0                 # prompts given in this long turn: 1 = ask once, 2 = reminder (never more)
+        self._bot_stopped_at = 0.0
+        # Part 2 silence: seconds of quiet before the examiner prompts (never started / stopped early) and before the reminder
+        self.p2_silence_s = float(os.getenv("PART2_SILENCE_S", "10"))
+        self.p2_early_s = float(os.getenv("PART2_EARLY_STOP_S", "8"))
+        self.p2_remind_s = float(os.getenv("PART2_REMIND_S", "10"))
         # patience: seconds of quiet (after the turn-end detector) before the examiner answers
         self.pause_s = float(os.getenv("ANSWER_PAUSE_S", "1.2"))
         self.extra_s = float(os.getenv("INCOMPLETE_EXTRA_S", "1.5"))     # more patience after "...and", "...because"
@@ -117,6 +123,7 @@ class ExamSession:
 
     def bot_stopped(self, tail: float = 0.7) -> None:
         self.bot_speaking = False
+        self._bot_stopped_at = self.clock()
         self.quiet_until = self.clock() + tail
 
     def note_audio(self, data: bytes) -> None:
@@ -168,6 +175,7 @@ class ExamSession:
     async def start(self) -> None:
         self.started, self.muted = True, False
         await self.set_phase(INTRO)
+        self.last_question = "Can you tell me your full name, please?"      # re-asked after an off-test question
         await self.say(SCRIPT["greeting"](rules.EXAMINER, rules.time_of_day(self.hour)))
         self._ticker = asyncio.create_task(self._tick_loop())
 
@@ -228,13 +236,25 @@ class ExamSession:
     async def _respond(self, text: str) -> None:
         self.history.append(("candidate", text))
         p = self.phase
+        gave_name = p in (INTRO, NAME) and bool(extract_call_name(text) or (p == NAME and extract_name(text)))
         if p in (PART1, PART3) and is_repeat_request(text) and self.last_question:
             await self.repeat_question()            # they asked for it: say it again (simpler words in Part 3)
+        elif p in (INTRO, NAME, PART1, PART2_FOLLOWUP, PART3) and not gave_name and self.last_question \
+                and is_off_topic_question(text):
+            # "Are you an AI?", "What's your name?", "How am I doing?": never answered; remind them and re-ask
+            await self.say(f"{SCRIPT['offTopic']} {self.last_question}")
         elif p == INTRO:
-            await self.set_phase(NAME)
-            await self.say(SCRIPT["callName"])
+            called = extract_call_name(text)
+            if called:                              # "You can call me Rahim": do not ask "what can I call you?" again
+                self.name = called
+                self.known.append(f"likes to be called {called}")
+                await self.start_part1(f"Thank you, {called}. " + SCRIPT["part1Intro"])
+            else:
+                await self.set_phase(NAME)
+                self.last_question = SCRIPT["callName"].replace("Thank you. ", "")
+                await self.say(SCRIPT["callName"])
         elif p == NAME:
-            self.name = extract_name(text)
+            self.name = extract_call_name(text) or extract_name(text)
             if self.name:
                 self.known.append(f"likes to be called {self.name}")
             lead = f"Thank you, {self.name}." if self.name else "Thank you."
@@ -297,6 +317,9 @@ class ExamSession:
         if not nq.say:
             await self.next_topic_or_part2()
             return
+        if nq.reply == "redirect":                    # off-test question: remind, re-ask, do not advance
+            await self.say(nq.say)
+            return
         self.known.extend(f for f in nq.facts if f not in self.known)
         self.q_in_topic += 1
         self.asked.append(rules.question_part(nq.say))
@@ -328,7 +351,7 @@ class ExamSession:
 
     async def start_long_turn(self) -> None:
         self.muted = False
-        self.long_turn, self.long_turn_last, self.tell_more_done = [], 0.0, False
+        self.long_turn, self.long_turn_last, self.p2_nudges = [], 0.0, 0
         card = self.plan["cueCard"]
         await self.set_phase(PART2_SPEAK, cue_card={"prompt": card["prompt"], "bullets": card["bullets"], "closing": card["closing"]})
         await self.say(SCRIPT["part2Start"])
@@ -376,6 +399,9 @@ class ExamSession:
             questions_on_topic=8, history=list(self.history), cue_card=self.plan["cueCard"]["prompt"],
             fallback=left[0], known=list(self.known))
         nq = await rules.next_question(inp, self.llm, self.test_id)
+        if nq.reply == "redirect":                    # off-test question: remind, re-ask, do not advance
+            await self.say(nq.say)
+            return
         say = nq.say or left[0]
         self.known.extend(f for f in nq.facts if f not in self.known)
         self.part3_q += 1
@@ -433,9 +459,28 @@ class ExamSession:
         elif self.phase == PART2_SPEAK:
             if self.elapsed() >= limit:
                 await self.end_long_turn()
-            elif self.long_turn and not self.tell_more_done and self.clock() - self.long_turn_last > 8:
-                self.tell_more_done = True            # they stopped early: ask for more, once
-                await self.say(SCRIPT["tellMeMore"])
+            else:
+                await self._part2_silence_check()
+
+    async def _part2_silence_check(self) -> None:
+        """Candidate is quiet during the long turn (time remains): ask once, then remind, then leave them be.
+
+        1st prompt: never started -> "Can you tell me about the topic you have been given?"
+                    stopped early  -> "Can you tell me anything more about that?"  (company script)
+        2nd prompt: still quiet    -> "Remember, you have one to two minutes ... Can you start speaking now, please?"
+        """
+        if self.p2_nudges >= 2 or self.listening_blocked() or self._speaking_now():
+            return                                    # done nudging, examiner talking, or they are talking
+        started = bool(self.long_turn)
+        # quiet time counts from the latest of: their last words, the examiner finishing, the long turn starting
+        since = max(self.long_turn_last, self._bot_stopped_at, self._phase_start)
+        quiet = self.clock() - since
+        need = (self.p2_early_s if started else self.p2_silence_s) if self.p2_nudges == 0 else self.p2_remind_s
+        if quiet < need:
+            return
+        line = (SCRIPT["tellMeMore"] if started else SCRIPT["part2Prompt"]) if self.p2_nudges == 0 else SCRIPT["part2Remind"]
+        self.p2_nudges += 1
+        await self.say(line)
 
     # ---- hooks used by the pipeline taps ---------------------------------------------------------
     async def on_latency(self, seconds: float) -> None:

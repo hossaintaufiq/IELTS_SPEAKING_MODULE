@@ -68,6 +68,7 @@ def main() -> None:
     r.add_argument("offer_id")
     r.add_argument("--max-price", type=float, required=True, help="refuse if the offer costs more per hour")
     r.add_argument("--disk", type=int, default=DEFAULT_DISK_GB)
+    r.add_argument("--gpu", default="RTX_4090", help="GPU name used to look the offer up, e.g. RTX_3090")
     r.add_argument("--yes", action="store_true", help="actually rent (without it this is a dry run)")
     sub.add_parser("status")
     stp = sub.add_parser("stop")      # pauses compute billing; the disk (and your setup) is kept, storage still billed
@@ -82,7 +83,7 @@ def main() -> None:
         cli("search", "offers", offer_query(a.gpu, a.min_vram_gb), "-o", "dph_total", "--limit", "15", "--storage", str(DEFAULT_DISK_GB))
     elif a.cmd == "rent":
         # The `id=` filter returns nothing, so look the offer up in the normal search results.
-        found = json.loads(cli("search", "offers", offer_query(), "-o", "dph_total", "--limit", "200",
+        found = json.loads(cli("search", "offers", f"gpu_name={a.gpu} num_gpus=1 verified=true rentable=true", "-o", "dph_total", "--limit", "200",
                                "--storage", str(a.disk), "--raw", capture=True) or "[]")
         offers = [o for o in found if str(o.get("id")) == str(a.offer_id)]
         if not offers:

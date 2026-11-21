@@ -57,7 +57,7 @@
 
 ## 3. What the GPU testing actually cost
 
-**Measured: $1.39 of the $8.99 credit** (credit $8.99 → $7.60). The budget I was given for the first test was **$0.55**, so **I overspent it**: I under-estimated one cost.
+**First session, measured: $1.39 of the $8.99 credit** (credit $8.99 → $7.60). The budget I was given for the first test was **$0.55**, so **I overspent it**: I under-estimated one cost.
 
 | Item | Amount | Basis |
 |---|---|---|
@@ -73,6 +73,21 @@
 4. A **cold start** (boot + model load) is billed time. Budget about 15 extra minutes per lease.
 
 ---
+
+### Second session (applying the lessons): about $0.19
+
+| Item | Amount |
+|---|---|
+| Host | RTX 3090 (24 GB), Bulgaria, **$0.214/h**, download price about $0.0014/GB |
+| Session length | about 50 minutes (setup, automated checks, live testing) |
+| Bandwidth billed | about 13.4 GB, which cost almost nothing at that rate |
+| **Cost** | **about $0.19** (credit $7.60 → $7.41), against $1.39 for the first session |
+
+**Total spent on GPU testing across both sessions: about $1.58** (credit $8.99 → $7.41).
+
+What the cheaper host cost us: a slower GPU than the 4090, and **about 198 ms of network round trip** to Bulgaria (stable, no loss). That delay is physical distance and made audio playback click until the page was given a larger audio buffer. For a nearer host, search Asia (Singapore, India, Japan) and accept a somewhat higher hourly price.
+
+Setup lesson: `kokoro-onnx` pulls in the CPU `onnxruntime`, which overwrites `onnxruntime-gpu` if installed afterwards. Install the GPU build **last** or Kokoro takes about 48 s per sentence instead of 0.2 s. The setup script now does this and stops if the GPU provider is missing.
 
 ## 4. Renting GPUs: cost per test
 

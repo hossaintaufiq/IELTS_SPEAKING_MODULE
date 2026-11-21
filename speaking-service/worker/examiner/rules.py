@@ -47,11 +47,16 @@ SCRIPT = {
     "part2Start": ("All right? Remember you have one to two minutes for this, so don't worry if I stop you. I'll tell you when the "
                    "time is up. Can you start speaking now, please?"),
     "startNow": "Can you start speaking now, please?",
+    # Part 2 silence handling (requested by the tester; built from the company's own phrases)
+    "part2Prompt": "Can you tell me about the topic you have been given?",
+    "part2Remind": "Remember, you have one to two minutes for this. Can you start speaking now, please?",
     "tellMeMore": "Can you tell me anything more about that?",
     "part2Stop": "Thank you.",
     "part3Intro": lambda subject: f"We've been talking about {subject}, and I'd like to discuss with you one or two more general questions related to this.",
     "part3First": "Let's consider first of all",
     "closing": "Thank you. That is the end of the speaking test.",
+    # reminder that this is a test (requested by the tester)
+    "offTopic": "This is an IELTS speaking test, so let's carry on.",
 }
 
 # examiner.ts SYSTEM (verbatim)
@@ -77,7 +82,10 @@ Rules:
   If a planned question is already answered, choose another one, or build on what they said (e.g. "You said you cook pasta. Who taught you?").
 - If the candidate's LAST turn only asks you to repeat or explain the question (e.g. "Sorry?", "Can you repeat?", "I didn't understand"),
   set "reply" to "repeat" and "say" to the same question again: word for word in Part 1, or in simpler words in Part 3. Otherwise "reply" is "answer".
-Reply as JSON: {"reply": "answer" | "repeat", "pick": <number> | null, "say": "<exactly what the examiner says next>", "facts": ["<new fact the candidate stated in their LAST answer>", ...]}
+- If the candidate asks you something that is not part of the test (for example whether you are an AI or a real person, your name, your age,
+  where you are from, their score, or any personal question about you), do not answer it. Set "reply" to "redirect" and "say" to this reminder
+  followed by the question you last asked, word for word: "This is an IELTS speaking test, so let's carry on."
+Reply as JSON: {"reply": "answer" | "repeat" | "redirect", "pick": <number> | null, "say": "<exactly what the examiner says next>", "facts": ["<new fact the candidate stated in their LAST answer>", ...]}
 "pick": in Part 1, the number of the bank question you are asking word for word; null if you wrote your own question. Always null in Part 3.
 "facts": at most 3 short facts from the LAST answer only (e.g. "lives in Dhaka", "cooks pasta", "doesn't like reading"); [] if none."""
 
@@ -304,6 +312,13 @@ def fallback_question(inp: NextQuestionInput) -> str:
     return next((f for f in inp.frames if fresh(f)), "")
 
 
+def last_examiner_question(inp: NextQuestionInput) -> str:
+    for speaker, text in reversed(inp.history):
+        if speaker == "examiner" and "?" in text:
+            return question_part(text)
+    return ""
+
+
 def origin_of(say: str, frames: list[str]) -> str:
     q = question_part(say)
     best = max([0.0] + [similarity(q, f) for f in frames])
@@ -314,8 +329,15 @@ async def next_question(inp: NextQuestionInput, llm: JsonLLM, test_id: str = "")
     mode = choose_mode(inp, test_id)
     js = await llm(SYSTEM, build_prompt(inp, mode, test_id))
     say = spoken_line(js, inp) if js else ""
+    if js and js.get("reply") == "redirect":
+        say = say or "redirect"      # handled below; the LLM's own wording is never spoken
     if not js or not say:
         return NextQuestion(fallback_question(inp), "script", "fallback")
+    if js.get("reply") == "redirect":
+        # Trust the LLM only if the candidate really asked a short question; the wording is always ours, not the LLM's.
+        ans, q = last_answer(inp), last_examiner_question(inp)
+        if q and "?" in ans and len(ans.split()) <= 14:
+            return NextQuestion(f"{SCRIPT['offTopic']} {q}", "ai", "redirect", "redirect")
     facts = [f.strip()[:120] for f in js.get("facts", []) if isinstance(f, str) and len(f.strip()) > 2][:3] \
         if isinstance(js.get("facts"), list) else []
     # The examiner may only repeat a question when the candidate really asked for it. An LLM that
