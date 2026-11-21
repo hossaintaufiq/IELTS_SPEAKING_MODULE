@@ -1,0 +1,37 @@
+# Decision Log
+
+One entry per decision, newest last. Add a new entry instead of rewriting an old one; mark the old one superseded.
+
+## D1: Separate service, fully local (2026-11-21)
+The speaking module is its own service, hosted on GPUs, called by the company's Node app over an API. No external AI APIs. Load target: 10-12 concurrent students.
+
+## D2: GPU is a pluggable resource (2026-11-21)
+Phase 1 rents GPUs from two data centres (a lease of about one hour per class). Phase 2 uses 2-3 company-owned GPUs. Both sit behind `GpuProvisioner` so the Node-facing API does not change. See `control_plane/gpu_provisioner/base.py`.
+
+## D3: Build on Pipecat (2026-11-21)
+Pipecat (BSD-2, Python) is the framework for the live voice pipeline. Hugging Face `speech-to-speech` is used only for a quick latency benchmark, not as the base. LiveKit Agents was rejected because it adds a media server we do not need at this scale. Re-check if Pipecat's local-model support proves weak.
+
+## D4: Model stack (2026-11-21), provisional
+- STT: faster-whisper (model size to be chosen on real non-native speech).
+- TTS: Kokoro-82M (see `doc/TTS_Tuning_and_Decisions.md` in the repo root).
+- LLM: an open model served with vLLM behind an OpenAI-compatible endpoint. Model chosen by evaluation, not by benchmark rankings. Ollama is for development only.
+- No fine-tuning until prompts and a good base model show a specific gap.
+
+## D5: Hybrid examiner (2026-11-21)
+Intro, Part 1 and the Part 2 prompt are scripted with pre-rendered audio. The LLM is used for Part 2 follow-up and Part 3 only. Fluency is computed from STT timestamps, not guessed by the LLM. Pronunciation needs an audio-based method; it is never inferred from text alone.
+
+## D6: Results are estimates (2026-11-21)
+Output is labelled as estimated practice feedback, never an official IELTS band.
+
+## Open decisions
+
+| Question | Current assumption | Owner |
+|---|---|---|
+| GPU models/VRAM (rented and planned) | 24 GB+ card hosts everything | Infra |
+| Lease lead time from Node app | Requested ahead of class | Node team |
+| Node team's LLM-service API shape | Reuse for leases/webhooks | Node team |
+| Human-scored data source | Needed for eval + any fine-tune | Academic |
+| Result format | Four criteria with bands, labelled estimates | Product |
+| Audio retention/deletion | Store transcripts; audio kept for a limited time | Product/legal |
+| Lease-end grace period | A few minutes | Product |
+| Multi-tenant | No, company only | Product |

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IELTS Speaking Test Bench</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header>
+    <h1>IELTS Speaking <span>test bench</span></h1>
+    <div id="conn" class="pill off">Not connected</div>
+  </header>
+
+  <main>
+    <section class="stage">
+      <div class="phase-row">
+        <div id="phase" class="phase">Ready</div>
+        <div id="timer" class="timer">--:--</div>
+      </div>
+      <div class="bar"><div id="bar-fill"></div></div>
+
+      <div id="card" class="card hidden">
+        <h2>Part 2 cue card</h2>
+        <p id="card-prompt"></p>
+        <p class="you-should">You should say:</p>
+        <ul id="card-bullets"></ul>
+        <p id="card-note" class="note"></p>
+      </div>
+
+      <div id="orb" class="orb idle" aria-live="polite"><span id="orb-label">Press Start</span></div>
+
+      <div class="controls">
+        <button id="start" class="primary">Start test</button>
+        <button id="next" disabled>Next part &rarr;</button>
+        <button id="end" disabled>End test</button>
+      </div>
+      <p class="hint">Use <strong>headphones</strong>. Speakers leak into the mic and the examiner will interrupt itself.</p>
+
+      <div class="stats">
+        <div><span id="lat-last">-</span><small>last reply delay (s)</small></div>
+        <div><span id="lat-avg">-</span><small>average (s)</small></div>
+        <div><span id="lat-max">-</span><small>worst (s)</small></div>
+        <div><span id="lat-n">0</span><small>turns</small></div>
+      </div>
+    </section>
+
+    <section class="transcript">
+      <div class="t-head">
+        <h2>Transcript</h2>
+        <button id="dl" disabled>Download</button>
+      </div>
+      <div id="log" class="log"></div>
+    </section>
+  </main>
+  <script src="/static/app.js"></script>
+</body>
+</html>
