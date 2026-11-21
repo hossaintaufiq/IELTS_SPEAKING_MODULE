@@ -58,3 +58,23 @@ button.primary { background: var(--accent); color: #07231c; border-color: var(--
 .msg.examiner { background: #1f2d29; border: 1px solid #2b4a42; align-self: flex-start; }
 .msg.user { background: #1d2a3d; border: 1px solid #2c4468; align-self: flex-end; }
 .msg.sys { align-self: center; color: var(--muted); font-size: 12.5px; background: none; border: none; }
+
+.msg.interim { opacity: .75; border-style: dashed; font-style: italic; }
+
+.meter { height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; margin: 0 auto 6px; max-width: 260px; }
+#meter-fill { height: 100%; width: 0; background: var(--user); transition: width .08s linear; }
+.mic-status { text-align: center; color: var(--muted); font-size: 12px; margin: 0 0 14px; }
+
+.mic-warn { text-align: center; color: var(--danger); font-size: 13px; border: 1px solid var(--danger); border-radius: 8px; padding: 8px 10px; margin: 0 0 12px; }
+.mic-pick { display: block; text-align: center; color: var(--muted); font-size: 12.5px; margin: 0 0 12px; }
+.mic-pick select { background: #202a35; color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; max-width: 70%; }
+
+.miccheck { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin: 0 0 14px; text-align: center; }
+.miccheck h2 { margin-bottom: 6px; }
+#spectrum { width: 100%; max-width: 420px; height: 90px; background: #10161c; border-radius: 6px; display: block; margin: 6px auto; }
+.mic-info { font: 12px ui-monospace, Consolas, monospace; color: var(--muted); }
+.mic-verdict { font-size: 13px; margin: 6px 0 2px; color: var(--muted); }
+.mic-verdict.ok { color: var(--accent); }
+.mic-verdict.bad { color: var(--danger); }
+.mic-track { font-size: 11px; color: var(--muted); margin: 2px 0 0; word-break: break-word; }
+.hint a { color: var(--muted); }

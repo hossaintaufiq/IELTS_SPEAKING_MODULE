@@ -4,9 +4,8 @@ import json
 import pytest
 
 import worker.session as sess
-from worker.examiner.flow import FlowConfig, Phase
 from worker.protocol import BrowserSerializer
-from worker.session import ExamSession
+from worker.session import ExamSession, extract_name
 
 
 class FakeTask:
@@ -22,113 +21,196 @@ def tmp_runs(tmp_path, monkeypatch):
     monkeypatch.setattr(sess, "RUNS", tmp_path)
 
 
-def make(cfg=None):
+async def default_llm(system, prompt):
+    return {"reply": "answer", "pick": None, "say": "What do you like most about your neighbourhood?", "facts": ["lives in Dhaka"]}
+
+
+def make(llm=None, clock=None):
     events = []
 
     async def send(e):
         events.append(e)
 
-    s = ExamSession(send, cfg or FlowConfig(), seed=1)
+    kw = {"clock": clock} if clock else {}
+    s = ExamSession(send, seed=3, llm=llm or default_llm, hour=9, **kw)
     s.task = FakeTask()
     return s, events
 
 
-def kinds(task):
-    return [type(f).__name__ for f in task.frames]
+def spoken(s):
+    return [f.text for f in s.task.frames]
 
 
-def test_start_sets_part1_instructions_then_speaks_intro():
+async def run_until_part2(s):
+    await s.handle_control({"action": "start"})
+    s._ticker.cancel()
+    await s.on_candidate_turn("My name is Rahim Ahmed.")
+    await s.on_candidate_turn("Please call me Rahim.")
+    for _ in range(8):
+        if s.phase != "part1":
+            break
+        await s.on_candidate_turn("I live in Dhaka and I like the food there very much.")
+
+
+def test_extract_name():
+    assert extract_name("Please call me Rahim.") == "Rahim"
+    assert extract_name("My name is Rahim Ahmed") == "Rahim"
+    assert extract_name("Rahim") == "Rahim"
+    assert extract_name("uh well it is a long story really") == ""
+
+
+def test_greeting_name_part1_script_lines():
     async def go():
         s, ev = make()
         await s.handle_control({"action": "start"})
         s._ticker.cancel()
+        await s.on_candidate_turn("My name is Rahim Ahmed.")
+        await s.on_candidate_turn("Call me Rahim.")
         return s, ev
 
     s, ev = asyncio.run(go())
-    assert kinds(s.task) == ["LLMMessagesAppendFrame", "TTSSpeakFrame"]
-    assert "PART 1" in s.task.frames[0].messages[0]["content"]
-    assert not s.muted and s.started
-    assert any(e["type"] == "transcript" and e["role"] == "examiner" for e in ev)
+    lines = spoken(s)
+    assert lines[0] == ("Good morning. My name is Alex Morgan and I'm your examiner today. "
+                        "Can you tell me your full name, please?")
+    assert lines[1] == "Thank you. And what can I call you?"
+    assert lines[2].startswith("Thank you, Rahim. Now, in this first part, I'd like to ask you some questions "
+                               "about yourself. Let's talk about ")
+    assert lines[2].endswith("?")
+    assert s.phase == "part1"
+    users = [e["text"] for e in ev if e["type"] == "transcript" and e["role"] == "user"]
+    assert users == ["My name is Rahim Ahmed.", "Call me Rahim."]
 
 
-def test_full_walkthrough_with_part2_monologue_held():
+def test_part1_follow_up_comes_from_llm_with_the_answer_and_then_moves_on():
+    seen = []
+
+    async def llm(system, prompt):
+        seen.append(prompt)
+        return {"reply": "answer", "pick": None, "say": "What do you like most about Dhaka?", "facts": ["lives in Dhaka"]}
+
+    async def go():
+        s, ev = make(llm)
+        await run_until_part2(s)
+        return s
+
+    s = asyncio.run(go())
+    assert any("I live in Dhaka" in p for p in seen)
+    assert "lives in Dhaka" in s.known
+    assert s.phase == "part2_intro" or s.phase == "part1"
+    if s.phase == "part2_intro":
+        assert "Do you understand?" in spoken(s)[-1]
+
+
+def test_part2_card_prep_long_turn_followup_and_part3():
     async def go():
         s, ev = make()
-        await s.handle_control({"action": "start"})
-        s._ticker.cancel()
-        await s.advance()                       # -> PART1
-        await s.advance()                       # -> PART2_PREP
-        assert s.muted and s.flow.phase == Phase.PART2_PREP
-        assert any(e.get("cue_card") for e in ev if e["type"] == "phase")
-        await s.advance()                       # -> PART2_SPEAK
-        assert s.hold and not s.muted
-        assert await s.on_user_text("I want to talk about a park") is False   # held, not answered
-        assert await s.on_user_text("it is near my house") is False
-        await s.advance()                       # -> PART2_FOLLOWUP
-        followup = s.task.frames[-1]
-        assert followup.run_llm is True
-        assert "park" in followup.messages[-1]["content"] and "near my house" in followup.messages[-1]["content"]
-        assert not s.hold
-        assert await s.on_user_text("yes") is True        # normal turns answered again
-        await s.advance()                       # -> PART3
-        assert s.task.frames[-1].run_llm is True
-        await s.advance()                       # -> DONE (speaks goodbye, finishes)
+        await run_until_part2(s)
+        if s.phase == "part1":
+            await s.skip_part()
+        assert s.phase == "part2_intro"
+        await s.on_candidate_turn("Yes, I understand.")
+        assert s.phase == "part2_prep" and s.muted
+        card = [e for e in ev if e["type"] == "phase" and e["phase"] == "part2_prep"][0]["cue_card"]
+        assert card["bullets"] and card["closing"]
+        await s.skip_part()
+        assert s.phase == "part2_speak" and not s.muted
+        n = len(spoken(s))
+        await s.on_candidate_turn("I want to talk about my village and the river near it.")
+        await s.on_candidate_turn("We used to swim there every summer.")
+        assert len(spoken(s)) == n                       # examiner stays silent during the talk
+        await s.skip_part()
+        assert s.phase == "part2_followup" and spoken(s)[-1].startswith("Thank you.")
+        await s.on_candidate_turn("Yes, almost every year.")
+        assert s.phase == "part3"
+        p3 = spoken(s)[-1]
+        assert p3.startswith("We've been talking about ") and "Let's consider first of all" in p3
+        await s.on_candidate_turn("I think places like that matter a lot for people in cities.")
+        assert s.phase == "part3"
+        await s.skip_part()
         return s, ev
 
     s, ev = asyncio.run(go())
-    assert s.flow.phase == Phase.DONE and s.muted
-    assert ev[-1]["type"] == "done"
-    saved = list(sess.RUNS.glob("run_*.json"))
-    assert len(saved) == 1
-    data = json.loads(saved[0].read_text())
-    assert data["card"] and data["events"]
+    assert s.phase == "done" and spoken(s)[-1] == "Thank you. That is the end of the speaking test."
+    runs = list(sess.RUNS.glob("run_*.json"))
+    assert len(runs) == 1
+    data = json.loads(runs[0].read_text())
+    assert data["name"] == "Rahim" and data["events"]
 
 
-def test_timer_advances_phase():
+def test_llm_down_falls_back_to_bank_questions():
+    async def down(system, prompt):
+        return None
+
+    async def go():
+        s, ev = make(down)
+        await s.handle_control({"action": "start"})
+        s._ticker.cancel()
+        await s.on_candidate_turn("Rahim")
+        await s.on_candidate_turn("Rahim")
+        before = len(spoken(s))
+        await s.on_candidate_turn("I work in a bank in Dhaka and I like it.")
+        return s, before
+
+    s, before = asyncio.run(go())
+    assert len(spoken(s)) == before + 1 and spoken(s)[-1].endswith("?")
+
+
+def test_part2_tell_me_more_when_candidate_stops_early():
     t = {"now": 0.0}
 
     async def go():
-        events = []
-
-        async def send(e):
-            events.append(e)
-
-        s = ExamSession(send, FlowConfig(part1_s=1), clock=lambda: t["now"], seed=1)
-        s.task = FakeTask()
-        await s.handle_control({"action": "start"})
-        s._ticker.cancel()
-        await s.advance()                       # PART1
-        t["now"] = 2.0
-        prev = s.flow.phase
-        new = s.flow.tick()
-        await s._enter(prev, new)
+        s, ev = make(clock=lambda: t["now"])
+        await run_until_part2(s)
+        if s.phase == "part1":
+            await s.skip_part()
+        await s.on_candidate_turn("Yes.")
+        await s.skip_part()
+        t["now"] = 10
+        await s.on_candidate_turn("It is a nice place.")
+        t["now"] = 30
+        await s._on_tick(s._limit(s.phase))
         return s
 
-    assert asyncio.run(go()).flow.phase == Phase.PART2_PREP
+    s = asyncio.run(go())
+    assert spoken(s)[-1] == "Can you tell me anything more about that?" and s.phase == "part2_speak"
 
 
-def test_latency_is_logged_and_saved():
-    async def go():
-        s, ev = make()
-        await s.on_latency(1.234)
-        return s.abort()
-
-    path = asyncio.run(go())
-    assert json.loads(path.read_text())["latencies_s"] == [1.23]
-
-
-def test_serializer_drops_audio_when_muted_and_routes_control():
+def test_serializer_counts_audio_drops_when_muted_and_routes_control():
     async def go():
         s, ev = make()
         ser = BrowserSerializer(s)
         assert s.muted
-        assert await ser.deserialize(b"\x00\x00" * 640) is None
+        assert await ser.deserialize(b"\x01\x00" * 640) is None
+        assert s.mic_chunks == 1 and s.mic_rms > 0
         s.muted = False
         frame = await ser.deserialize(b"\x00\x00" * 640)
-        assert frame.sample_rate == 16000 and frame.num_channels == 1
-        assert await ser.deserialize("not json") is None
+        assert frame.sample_rate == 16000
         await ser.deserialize(json.dumps({"action": "start"}))
         s._ticker.cancel()
         return s
 
     assert asyncio.run(go()).started
+
+
+def test_mic_is_ignored_while_examiner_speaks_and_for_a_short_tail():
+    t = {"now": 0.0}
+
+    async def go():
+        s, ev = make(clock=lambda: t["now"])
+        s.muted = False
+        ser = BrowserSerializer(s)
+        pcm = b"\x10\x00" * 640
+        assert await ser.deserialize(pcm) is not None            # normal: audio passes
+        s.bot_started()
+        assert await ser.deserialize(pcm) is None                # examiner speaking: dropped (no echo loop)
+        t["now"] = 5.0
+        s.bot_stopped(tail=0.7)
+        assert await ser.deserialize(pcm) is None                # short tail after it stops
+        t["now"] = 5.8
+        assert await ser.deserialize(pcm) is not None            # then listening again
+        s.bot_started()
+        t["now"] = 50.0                                          # a missed 'stopped' signal cannot lock the mic
+        assert await ser.deserialize(pcm) is not None
+        return s
+
+    asyncio.run(go())

@@ -2,8 +2,9 @@
 __pycache__/
 *.pyc
 .env
+deploy/vast/.env
 models/cache/
 eval/data/audio/
 *.wav
 .pytest_cache/
-deploy/vast/.env runs/
+runs/

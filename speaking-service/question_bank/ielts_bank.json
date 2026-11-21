@@ -1,0 +1,2651 @@
+{
+ "source": "ieltsup/services/examCoreAPI/experimental/deepgram/question-bank (converted unchanged)",
+ "part1": [
+  {
+   "topic": "Work or studies",
+   "theme": "work-study",
+   "opening": true,
+   "local": true,
+   "season": "",
+   "questions": [
+    {
+     "text": "Do you work or are you a student?",
+     "ifNegative": null
+    },
+    {
+     "text": "What do you enjoy most about your work or studies?",
+     "ifNegative": null
+    },
+    {
+     "text": "Why did you choose that job or subject?",
+     "ifNegative": null
+    },
+    {
+     "text": "What is the most difficult part of your work or studies?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you usually work or study better in the morning or at night?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Where you live",
+   "theme": "home",
+   "opening": true,
+   "local": true,
+   "season": "",
+   "questions": [
+    {
+     "text": "Where do you live at the moment?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you live in a house or a flat?",
+     "ifNegative": null
+    },
+    {
+     "text": "How long have you lived there?",
+     "ifNegative": null
+    },
+    {
+     "text": "What do you like most about the place where you live?",
+     "ifNegative": null
+    },
+    {
+     "text": "Would you like to live somewhere else in the future?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Your hometown",
+   "theme": "home",
+   "opening": true,
+   "local": true,
+   "season": "",
+   "questions": [
+    {
+     "text": "Where is your hometown?",
+     "ifNegative": null
+    },
+    {
+     "text": "What is your hometown famous for?",
+     "ifNegative": null
+    },
+    {
+     "text": "Has your hometown changed much since you were a child?",
+     "ifNegative": null
+    },
+    {
+     "text": "What would you show a visitor in your hometown?",
+     "ifNegative": null
+    },
+    {
+     "text": "Would you like to live in your hometown when you are older?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Your neighbourhood",
+   "theme": "home",
+   "opening": true,
+   "local": true,
+   "season": "",
+   "questions": [
+    {
+     "text": "Do you like your neighbourhood?",
+     "ifNegative": null
+    },
+    {
+     "text": "What kind of shops and places are there near your home?",
+     "ifNegative": null
+    },
+    {
+     "text": "Is your neighbourhood usually quiet or busy?",
+     "ifNegative": null
+    },
+    {
+     "text": "What would you like to change about your neighbourhood?",
+     "ifNegative": null
+    },
+    {
+     "text": "Is your neighbourhood a good place for children to grow up?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Your home",
+   "theme": "home",
+   "opening": true,
+   "local": true,
+   "season": "",
+   "questions": [
+    {
+     "text": "Can you describe the home you live in now?",
+     "ifNegative": null
+    },
+    {
+     "text": "Which room do you spend the most time in?",
+     "ifNegative": null
+    },
+    {
+     "text": "What is your favourite thing about your home?",
+     "ifNegative": null
+    },
+    {
+     "text": "Is there anything you would like to change about your home?",
+     "ifNegative": null
+    },
+    {
+     "text": "Did you live in a different kind of home as a child?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Your daily routine",
+   "theme": "personal-growth",
+   "opening": true,
+   "local": true,
+   "season": "",
+   "questions": [
+    {
+     "text": "What does a typical day look like for you?",
+     "ifNegative": null
+    },
+    {
+     "text": "What time do you usually get up in the morning?",
+     "ifNegative": null
+    },
+    {
+     "text": "Which part of the day do you enjoy most?",
+     "ifNegative": null
+    },
+    {
+     "text": "Is your routine at the weekend different from your weekday routine?",
+     "ifNegative": null
+    },
+    {
+     "text": "Would you like to change anything about your daily routine?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "The rainy season",
+   "theme": "weather-nature",
+   "opening": false,
+   "local": true,
+   "season": "monsoon",
+   "questions": [
+    {
+     "text": "Do you like the rainy season?",
+     "ifNegative": null
+    },
+    {
+     "text": "What do you usually do on a rainy day?",
+     "ifNegative": null
+    },
+    {
+     "text": "Does heavy rain ever cause problems in your area?",
+     "ifNegative": null
+    },
+    {
+     "text": "Did you enjoy playing in the rain when you were a child?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you prefer staying indoors or going out when it rains?",
+     "ifNegative": null
+    },
+    {
+     "text": "Is there any food you especially like to eat during the monsoon?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Getting around your city",
+   "theme": "transport",
+   "opening": false,
+   "local": true,
+   "season": "",
+   "questions": [
+    {
+     "text": "How do you usually travel around your city?",
+     "ifNegative": null
+    },
+    {
+     "text": "How long does it take you to get to work or college?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you prefer taking a rickshaw or a bus for short trips?",
+     "ifNegative": null
+    },
+    {
+     "text": "Is traffic a big problem where you live?",
+     "ifNegative": null
+    },
+    {
+     "text": "Did you walk to school when you were a child?",
+     "ifNegative": null
+    },
+    {
+     "text": "Would you like to drive your own car in the future?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Tea",
+   "theme": "food",
+   "opening": false,
+   "local": true,
+   "season": "",
+   "questions": [
+    {
+     "text": "Do you often drink tea?",
+     "ifNegative": null
+    },
+    {
+     "text": "How many cups of tea do you usually have in a day?",
+     "ifNegative": "What do you usually drink instead of tea?"
+    },
+    {
+     "text": "Do you prefer tea with milk or without milk?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you ever have tea at a roadside tea stall?",
+     "ifNegative": null
+    },
+    {
+     "text": "Why do you think tea is so popular in your country?",
+     "ifNegative": null
+    },
+    {
+     "text": "Did you drink tea when you were a child?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Street food",
+   "theme": "food",
+   "opening": false,
+   "local": true,
+   "season": "",
+   "questions": [
+    {
+     "text": "Do you like eating street food?",
+     "ifNegative": null
+    },
+    {
+     "text": "What kind of street food do you like best?",
+     "ifNegative": "Why don't you like street food?"
+    },
+    {
+     "text": "Is street food popular with young people where you live?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you think street food is healthy?",
+     "ifNegative": null
+    },
+    {
+     "text": "Did you buy snacks from street sellers when you were a child?",
+     "ifNegative": null
+    },
+    {
+     "text": "Who do you usually go with when you eat street food?",
+     "ifNegative": "What do you usually eat when you are outside instead?"
+    }
+   ]
+  },
+  {
+   "topic": "Cricket",
+   "theme": "sport-leisure",
+   "opening": false,
+   "local": true,
+   "season": "",
+   "questions": [
+    {
+     "text": "Do you like cricket?",
+     "ifNegative": null
+    },
+    {
+     "text": "Did you play cricket with friends when you were a child?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you prefer watching cricket at home or with friends?",
+     "ifNegative": "Why don't you enjoy watching cricket?"
+    },
+    {
+     "text": "Why do you think cricket is so popular in Bangladesh?",
+     "ifNegative": null
+    },
+    {
+     "text": "Have you ever watched a cricket match in a stadium?",
+     "ifNegative": null
+    },
+    {
+     "text": "Apart from cricket, which sports do people enjoy in your country?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Festivals",
+   "theme": "festivals-culture",
+   "opening": false,
+   "local": true,
+   "season": "",
+   "questions": [
+    {
+     "text": "What is your favourite festival?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you celebrate Pohela Boishakh?",
+     "ifNegative": null
+    },
+    {
+     "text": "How do you usually spend Eid?",
+     "ifNegative": null
+    },
+    {
+     "text": "Did you enjoy festivals more when you were a child?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you prefer celebrating festivals at home or in your village?",
+     "ifNegative": null
+    },
+    {
+     "text": "Is there any festival from another country you would like to experience?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Traditional clothes",
+   "theme": "festivals-culture",
+   "opening": false,
+   "local": true,
+   "season": "",
+   "questions": [
+    {
+     "text": "Do you often wear traditional clothes?",
+     "ifNegative": null
+    },
+    {
+     "text": "On what occasions do people wear traditional clothes in your country?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you prefer traditional clothes or modern clothes?",
+     "ifNegative": null
+    },
+    {
+     "text": "Did you get new clothes for Eid when you were a child?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you think young people still like wearing traditional clothes?",
+     "ifNegative": null
+    },
+    {
+     "text": "Would you ever wear traditional clothes from another country?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Rivers and boats",
+   "theme": "weather-nature",
+   "opening": false,
+   "local": true,
+   "season": "",
+   "questions": [
+    {
+     "text": "Is there a river near where you live?",
+     "ifNegative": null
+    },
+    {
+     "text": "Have you ever travelled by boat or launch?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you enjoy spending time near rivers?",
+     "ifNegative": null
+    },
+    {
+     "text": "Did you ever swim in a river or pond as a child?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you prefer travelling by boat or by road?",
+     "ifNegative": null
+    },
+    {
+     "text": "Would you like to take a long river trip one day?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Paying for things",
+   "theme": "shopping-money",
+   "opening": false,
+   "local": true,
+   "season": "",
+   "questions": [
+    {
+     "text": "Do you usually pay for things in cash?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you ever use mobile payment apps like bKash?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you prefer paying by cash or by phone?",
+     "ifNegative": null
+    },
+    {
+     "text": "Is it easy to pay by card in the shops near your home?",
+     "ifNegative": null
+    },
+    {
+     "text": "Did you get pocket money when you were a child?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you think people will stop using cash in the future?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Village life",
+   "theme": "community",
+   "opening": false,
+   "local": true,
+   "season": "",
+   "questions": [
+    {
+     "text": "Have you ever spent time in a village?",
+     "ifNegative": null
+    },
+    {
+     "text": "What do you like most about villages in your country?",
+     "ifNegative": null
+    },
+    {
+     "text": "Did you visit a village during school holidays as a child?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you prefer life in the city or in the countryside?",
+     "ifNegative": null
+    },
+    {
+     "text": "Would you like to live in a village when you are older?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you think village life has changed much in recent years?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Family gatherings",
+   "theme": "family-people",
+   "opening": false,
+   "local": true,
+   "season": "",
+   "questions": [
+    {
+     "text": "Does your family often get together?",
+     "ifNegative": null
+    },
+    {
+     "text": "Where does your family usually meet for big gatherings?",
+     "ifNegative": null
+    },
+    {
+     "text": "What do you enjoy most about family gatherings?",
+     "ifNegative": null
+    },
+    {
+     "text": "Did you enjoy meeting your cousins when you were a child?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you prefer small family meals or large gatherings?",
+     "ifNegative": null
+    },
+    {
+     "text": "Is food an important part of family gatherings in your country?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Markets",
+   "theme": "shopping-money",
+   "opening": false,
+   "local": true,
+   "season": "",
+   "questions": [
+    {
+     "text": "Do you often go to markets?",
+     "ifNegative": null
+    },
+    {
+     "text": "What do you usually buy at the market?",
+     "ifNegative": "Where do you usually do your shopping instead?"
+    },
+    {
+     "text": "Are you good at bargaining?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you prefer shopping at a bazaar or in a supermarket?",
+     "ifNegative": null
+    },
+    {
+     "text": "Did you go to the market with your parents as a child?",
+     "ifNegative": null
+    },
+    {
+     "text": "Is there a famous market in your city?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Fruit",
+   "theme": "food",
+   "opening": false,
+   "local": true,
+   "season": "summer",
+   "questions": [
+    {
+     "text": "Do you like eating fruit?",
+     "ifNegative": null
+    },
+    {
+     "text": "What is your favourite fruit?",
+     "ifNegative": "Why don't you eat much fruit?"
+    },
+    {
+     "text": "Do you look forward to the mango season?",
+     "ifNegative": null
+    },
+    {
+     "text": "Have you ever picked fruit straight from a tree?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you prefer eating fresh fruit or drinking fruit juice?",
+     "ifNegative": null
+    },
+    {
+     "text": "Did you eat more fruit as a child than you do now?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Neighbours",
+   "theme": "community",
+   "opening": false,
+   "local": true,
+   "season": "",
+   "questions": [
+    {
+     "text": "Do you know your neighbours well?",
+     "ifNegative": null
+    },
+    {
+     "text": "How often do you talk to your neighbours?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do neighbours in your area help each other?",
+     "ifNegative": null
+    },
+    {
+     "text": "Did you play with neighbours' children when you were young?",
+     "ifNegative": null
+    },
+    {
+     "text": "What makes someone a good neighbour?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you think people in cities are less close to their neighbours?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Plants and gardening",
+   "theme": "environment",
+   "opening": false,
+   "local": true,
+   "season": "",
+   "questions": [
+    {
+     "text": "Do you have any plants at home?",
+     "ifNegative": null
+    },
+    {
+     "text": "Have you ever grown fruit or vegetables yourself?",
+     "ifNegative": null
+    },
+    {
+     "text": "Are rooftop gardens popular where you live?",
+     "ifNegative": null
+    },
+    {
+     "text": "Did anyone in your family enjoy gardening when you were a child?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you prefer flowers or green plants?",
+     "ifNegative": null
+    },
+    {
+     "text": "Would you like to have a garden in the future?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Private tuition",
+   "theme": "education",
+   "opening": false,
+   "local": true,
+   "season": "",
+   "questions": [
+    {
+     "text": "Have you ever had private tuition?",
+     "ifNegative": null
+    },
+    {
+     "text": "Why do so many students go to coaching centres?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you prefer studying alone or with a tutor?",
+     "ifNegative": null
+    },
+    {
+     "text": "Did you have a home tutor when you were at school?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you think private tuition is really necessary?",
+     "ifNegative": null
+    },
+    {
+     "text": "Would you like to work as a tutor yourself?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Languages",
+   "theme": "education",
+   "opening": false,
+   "local": true,
+   "season": "",
+   "questions": [
+    {
+     "text": "How many languages can you speak?",
+     "ifNegative": null
+    },
+    {
+     "text": "When did you start learning English?",
+     "ifNegative": null
+    },
+    {
+     "text": "What do you find most difficult about learning English?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you speak a different dialect at home?",
+     "ifNegative": null
+    },
+    {
+     "text": "Would you like to learn another language in the future?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you prefer reading in Bangla or in English?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Sweets",
+   "theme": "food",
+   "opening": false,
+   "local": true,
+   "season": "",
+   "questions": [
+    {
+     "text": "Do you like sweet food?",
+     "ifNegative": null
+    },
+    {
+     "text": "What is your favourite kind of sweet?",
+     "ifNegative": "What kind of food do you prefer instead?"
+    },
+    {
+     "text": "Do people give sweets on special occasions in your country?",
+     "ifNegative": null
+    },
+    {
+     "text": "Did you eat a lot of sweets when you were a child?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you prefer homemade sweets or ones from a sweet shop?",
+     "ifNegative": null
+    },
+    {
+     "text": "Have you ever tried making sweets at home?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Winter",
+   "theme": "weather-nature",
+   "opening": false,
+   "local": true,
+   "season": "winter",
+   "questions": [
+    {
+     "text": "Do you like winter?",
+     "ifNegative": null
+    },
+    {
+     "text": "What is winter usually like where you live?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you enjoy eating pitha in winter?",
+     "ifNegative": null
+    },
+    {
+     "text": "Does fog ever cause problems where you live?",
+     "ifNegative": null
+    },
+    {
+     "text": "Did you enjoy winter more when you were a child?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you prefer winter or summer?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Weddings",
+   "theme": "festivals-culture",
+   "opening": false,
+   "local": true,
+   "season": "",
+   "questions": [
+    {
+     "text": "Do you enjoy going to weddings?",
+     "ifNegative": null
+    },
+    {
+     "text": "When did you last go to a wedding?",
+     "ifNegative": null
+    },
+    {
+     "text": "What is your favourite part of a wedding?",
+     "ifNegative": null
+    },
+    {
+     "text": "Did you go to many weddings when you were a child?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you prefer big weddings or small ones?",
+     "ifNegative": null
+    },
+    {
+     "text": "How have weddings in your country changed in recent years?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Reading",
+   "theme": "media-arts",
+   "opening": false,
+   "local": false,
+   "season": "",
+   "questions": [
+    {
+     "text": "Do you enjoy reading?",
+     "ifNegative": null
+    },
+    {
+     "text": "What kind of books do you enjoy most?",
+     "ifNegative": "Why don't you enjoy reading?"
+    },
+    {
+     "text": "Did you read much when you were a child?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you prefer reading on paper or on a screen?",
+     "ifNegative": null
+    },
+    {
+     "text": "Where do you usually like to read?",
+     "ifNegative": "Is there anything that might make you read more in the future?"
+    },
+    {
+     "text": "Would you like to write a book one day?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Music",
+   "theme": "media-arts",
+   "opening": false,
+   "local": false,
+   "season": "",
+   "questions": [
+    {
+     "text": "Do you listen to music often?",
+     "ifNegative": null
+    },
+    {
+     "text": "What kind of music do you like best?",
+     "ifNegative": "Why don't you listen to music very much?"
+    },
+    {
+     "text": "Have you ever learnt to play a musical instrument?",
+     "ifNegative": null
+    },
+    {
+     "text": "Did you sing songs at school when you were younger?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you prefer listening to music alone or with other people?",
+     "ifNegative": null
+    },
+    {
+     "text": "Is music an important part of celebrations in your country?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Films",
+   "theme": "media-arts",
+   "opening": false,
+   "local": false,
+   "season": "",
+   "questions": [
+    {
+     "text": "Do you like watching films?",
+     "ifNegative": null
+    },
+    {
+     "text": "What kind of films do you enjoy most?",
+     "ifNegative": "Why aren't you very interested in films?"
+    },
+    {
+     "text": "Do you prefer watching films at home or at the cinema?",
+     "ifNegative": null
+    },
+    {
+     "text": "What films did you enjoy when you were a child?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you prefer films from your own country or from abroad?",
+     "ifNegative": null
+    },
+    {
+     "text": "Would you like to act in a film one day?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Exercise",
+   "theme": "health",
+   "opening": false,
+   "local": false,
+   "season": "",
+   "questions": [
+    {
+     "text": "Do you do any exercise?",
+     "ifNegative": null
+    },
+    {
+     "text": "What kind of exercise do you do most often?",
+     "ifNegative": "Why don't you exercise very much?"
+    },
+    {
+     "text": "Did you play any sports when you were at school?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you prefer exercising alone or with friends?",
+     "ifNegative": null
+    },
+    {
+     "text": "Is it easy to find places to exercise where you live?",
+     "ifNegative": null
+    },
+    {
+     "text": "Is there a new sport or activity you would like to try?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Friends",
+   "theme": "family-people",
+   "opening": false,
+   "local": false,
+   "season": "",
+   "questions": [
+    {
+     "text": "Do you spend a lot of time with your friends?",
+     "ifNegative": null
+    },
+    {
+     "text": "What do you usually do when you meet your friends?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you prefer having a few close friends or lots of friends?",
+     "ifNegative": null
+    },
+    {
+     "text": "Are you still in touch with your friends from primary school?",
+     "ifNegative": null
+    },
+    {
+     "text": "How do you usually keep in touch with friends who live far away?",
+     "ifNegative": null
+    },
+    {
+     "text": "Is it easy to make new friends as you get older?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Photographs",
+   "theme": "media-arts",
+   "opening": false,
+   "local": false,
+   "season": "",
+   "questions": [
+    {
+     "text": "Do you like taking photos?",
+     "ifNegative": null
+    },
+    {
+     "text": "What do you usually take photos of?",
+     "ifNegative": "Why don't you take many photos?"
+    },
+    {
+     "text": "Do you prefer taking photos with your phone or with a camera?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you like having your photo taken?",
+     "ifNegative": null
+    },
+    {
+     "text": "Does your family keep old photo albums at home?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you ever print your photos, or do you keep them all on your phone?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Using the internet",
+   "theme": "technology",
+   "opening": false,
+   "local": false,
+   "season": "",
+   "questions": [
+    {
+     "text": "How often do you use the internet?",
+     "ifNegative": null
+    },
+    {
+     "text": "What do you mostly use the internet for?",
+     "ifNegative": null
+    },
+    {
+     "text": "When did you first start using the internet?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you prefer using the internet on a phone or a computer?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you think you spend too much time online?",
+     "ifNegative": null
+    },
+    {
+     "text": "Could you live without the internet for a week?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Mobile phones",
+   "theme": "technology",
+   "opening": false,
+   "local": false,
+   "season": "",
+   "questions": [
+    {
+     "text": "How often do you use your mobile phone?",
+     "ifNegative": null
+    },
+    {
+     "text": "What do you use your phone for most?",
+     "ifNegative": null
+    },
+    {
+     "text": "How old were you when you got your first mobile phone?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you prefer calling people or sending messages?",
+     "ifNegative": null
+    },
+    {
+     "text": "Are there any apps you couldn't live without?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you ever turn off your phone to take a break from it?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Online shopping",
+   "theme": "shopping-money",
+   "opening": false,
+   "local": false,
+   "season": "",
+   "questions": [
+    {
+     "text": "Do you ever shop online?",
+     "ifNegative": null
+    },
+    {
+     "text": "What kind of things do you usually buy online?",
+     "ifNegative": "Why don't you shop online?"
+    },
+    {
+     "text": "Do you prefer shopping online or in local shops?",
+     "ifNegative": null
+    },
+    {
+     "text": "Has online shopping become more popular in your country recently?",
+     "ifNegative": null
+    },
+    {
+     "text": "Have you ever had a problem with something you bought online?",
+     "ifNegative": "Do people in your family shop online?"
+    },
+    {
+     "text": "Is there anything you would never buy online?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Sleep",
+   "theme": "health",
+   "opening": false,
+   "local": false,
+   "season": "",
+   "questions": [
+    {
+     "text": "Do you usually get enough sleep?",
+     "ifNegative": null
+    },
+    {
+     "text": "What time do you usually go to bed?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you ever have a nap during the day?",
+     "ifNegative": null
+    },
+    {
+     "text": "Did you go to bed earlier when you were a child?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you prefer to get up early or stay up late?",
+     "ifNegative": null
+    },
+    {
+     "text": "What do you usually do before you go to sleep?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Free time",
+   "theme": "sport-leisure",
+   "opening": false,
+   "local": false,
+   "season": "",
+   "questions": [
+    {
+     "text": "What do you usually do in your free time?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you prefer spending free time alone or with others?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you have more free time on weekdays or at the weekend?",
+     "ifNegative": null
+    },
+    {
+     "text": "How did you spend your free time when you were a child?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you think you have enough free time these days?",
+     "ifNegative": null
+    },
+    {
+     "text": "Is there a new hobby you would like to try?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Cooking",
+   "theme": "food",
+   "opening": false,
+   "local": false,
+   "season": "",
+   "questions": [
+    {
+     "text": "Do you enjoy cooking?",
+     "ifNegative": null
+    },
+    {
+     "text": "What dish can you cook best?",
+     "ifNegative": "Why don't you enjoy cooking?"
+    },
+    {
+     "text": "Who usually does the cooking in your home?",
+     "ifNegative": null
+    },
+    {
+     "text": "Did you help in the kitchen when you were a child?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you prefer home-cooked food or food from restaurants?",
+     "ifNegative": null
+    },
+    {
+     "text": "Is there a dish you would like to learn to cook?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Animals",
+   "theme": "environment",
+   "opening": false,
+   "local": false,
+   "season": "",
+   "questions": [
+    {
+     "text": "Do you like animals?",
+     "ifNegative": null
+    },
+    {
+     "text": "What's your favourite animal?",
+     "ifNegative": "Why aren't you very keen on animals?"
+    },
+    {
+     "text": "Did you have any pets when you were a child?",
+     "ifNegative": null
+    },
+    {
+     "text": "Are pets popular in your country?",
+     "ifNegative": null
+    },
+    {
+     "text": "What animals do you often see in the area where you live?",
+     "ifNegative": null
+    },
+    {
+     "text": "Would you like to visit a zoo or a wildlife park soon?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Clothes and fashion",
+   "theme": "shopping-money",
+   "opening": false,
+   "local": false,
+   "season": "",
+   "questions": [
+    {
+     "text": "Are you interested in fashion?",
+     "ifNegative": null
+    },
+    {
+     "text": "What kind of clothes do you usually wear?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you prefer comfortable clothes or fashionable ones?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you wear traditional clothes on special occasions?",
+     "ifNegative": null
+    },
+    {
+     "text": "Did you choose your own clothes when you were a child?",
+     "ifNegative": null
+    },
+    {
+     "text": "Where do you usually buy your clothes?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Birthdays",
+   "theme": "family-people",
+   "opening": false,
+   "local": false,
+   "season": "",
+   "questions": [
+    {
+     "text": "Do you usually celebrate your birthday?",
+     "ifNegative": null
+    },
+    {
+     "text": "How did you celebrate your last birthday?",
+     "ifNegative": "Why don't you celebrate your birthday?"
+    },
+    {
+     "text": "Do you remember a birthday from your childhood?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you prefer a big birthday party or a quiet celebration?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you find it easy to remember other people's birthdays?",
+     "ifNegative": null
+    },
+    {
+     "text": "Are birthdays celebrated differently now than in the past in your country?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Gifts",
+   "theme": "family-people",
+   "opening": false,
+   "local": false,
+   "season": "",
+   "questions": [
+    {
+     "text": "Do you enjoy giving gifts?",
+     "ifNegative": null
+    },
+    {
+     "text": "What was the last gift you gave someone?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you prefer giving gifts or receiving them?",
+     "ifNegative": null
+    },
+    {
+     "text": "What kind of gifts did you like getting as a child?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you find it difficult to choose gifts for people?",
+     "ifNegative": null
+    },
+    {
+     "text": "On what occasions do people give gifts in your country?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Being on time",
+   "theme": "personal-growth",
+   "opening": false,
+   "local": false,
+   "season": "",
+   "questions": [
+    {
+     "text": "Are you usually on time?",
+     "ifNegative": null
+    },
+    {
+     "text": "How do you feel when other people are late?",
+     "ifNegative": null
+    },
+    {
+     "text": "What usually makes people late where you live?",
+     "ifNegative": null
+    },
+    {
+     "text": "Were you often late for school as a child?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you use alarms or reminders to help you be on time?",
+     "ifNegative": null
+    },
+    {
+     "text": "Is being on time more important for some events than others?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Learning English",
+   "theme": "education",
+   "opening": false,
+   "local": false,
+   "season": "",
+   "questions": [
+    {
+     "text": "How long have you been learning English?",
+     "ifNegative": null
+    },
+    {
+     "text": "What do you find most difficult about learning English?",
+     "ifNegative": null
+    },
+    {
+     "text": "How did you learn English when you were at school?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you prefer learning English in a class or by yourself?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you ever watch films or videos in English?",
+     "ifNegative": null
+    },
+    {
+     "text": "Would you like to learn another language in the future?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Art and drawing",
+   "theme": "media-arts",
+   "opening": false,
+   "local": false,
+   "season": "",
+   "questions": [
+    {
+     "text": "Do you like drawing or painting?",
+     "ifNegative": null
+    },
+    {
+     "text": "What do you like to draw or paint?",
+     "ifNegative": "Why don't you enjoy drawing very much?"
+    },
+    {
+     "text": "Did you have art lessons when you were at school?",
+     "ifNegative": null
+    },
+    {
+     "text": "Have you ever been to an art gallery or exhibition?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you have any pictures or paintings on the walls at home?",
+     "ifNegative": null
+    },
+    {
+     "text": "Would you like to take an art class in the future?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Noise",
+   "theme": "community",
+   "opening": false,
+   "local": false,
+   "season": "",
+   "questions": [
+    {
+     "text": "Is the area where you live quiet or noisy?",
+     "ifNegative": null
+    },
+    {
+     "text": "What kinds of noise do you often hear where you live?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you prefer studying in a quiet place or with some background noise?",
+     "ifNegative": null
+    },
+    {
+     "text": "Were you a noisy child?",
+     "ifNegative": null
+    },
+    {
+     "text": "Does noise ever stop you from sleeping?",
+     "ifNegative": null
+    },
+    {
+     "text": "Would you like to live somewhere quieter in the future?",
+     "ifNegative": null
+    }
+   ]
+  }
+ ],
+ "cueCards": [
+  {
+   "id": "1",
+   "topic": "a festival you celebrate with your family",
+   "prompt": "Describe a festival you celebrate with your family.",
+   "bullets": [
+    "what the festival is",
+    "when it takes place",
+    "what you and your family do"
+   ],
+   "closing": "and explain why this festival is important to you.",
+   "theme": "festivals-culture",
+   "local": true,
+   "season": "",
+   "discussionTopic": "Family celebrations and festivals",
+   "part3": [
+    "Why are festivals important to people in your country?",
+    "How have the ways people celebrate festivals changed in recent years?",
+    "Do young people enjoy traditional festivals as much as older people do?",
+    "Are festivals celebrated differently in cities like Dhaka compared with villages?",
+    "Do you think festivals have become too commercial nowadays?",
+    "How can festivals help people from different backgrounds understand each other?"
+   ]
+  },
+  {
+   "id": "2",
+   "topic": "a time you were stuck in heavy traffic",
+   "prompt": "Describe a time you were stuck in heavy traffic.",
+   "bullets": [
+    "when and where it happened",
+    "where you were going",
+    "how long you were stuck"
+   ],
+   "closing": "and explain how you felt about the situation.",
+   "theme": "transport",
+   "local": true,
+   "season": "",
+   "discussionTopic": "Traffic and city transport",
+   "part3": [
+    "What are the main causes of traffic congestion in big cities like Dhaka?",
+    "How does heavy traffic affect people's daily lives and work?",
+    "What can the government do to reduce traffic jams?",
+    "Do you think public transport will become more popular in the future?",
+    "Should people be encouraged to walk or cycle more in cities?",
+    "How has transport in your country changed compared with twenty years ago?"
+   ]
+  },
+  {
+   "id": "3",
+   "topic": "a natural place you have visited",
+   "prompt": "Describe a river, lake or other natural place you have visited.",
+   "bullets": [
+    "where it is",
+    "when you went there and who with",
+    "what you did there"
+   ],
+   "closing": "and explain why you remember this place.",
+   "theme": "weather-nature",
+   "local": true,
+   "season": "",
+   "discussionTopic": "Rivers and natural landscapes",
+   "part3": [
+    "Why do people enjoy spending time in natural places?",
+    "How important are rivers to the way of life in your country?",
+    "Do children today spend enough time outdoors in nature?",
+    "What are the main threats to natural places nowadays?",
+    "Should tourists be allowed to visit every natural area, or should some be protected?",
+    "Who should be responsible for keeping rivers and lakes clean?"
+   ]
+  },
+  {
+   "id": "4",
+   "topic": "a small business in your area that you like",
+   "prompt": "Describe a small business in your area that you like.",
+   "bullets": [
+    "what kind of business it is",
+    "who runs it",
+    "how often you go there"
+   ],
+   "closing": "and explain why you like this business.",
+   "theme": "shopping-money",
+   "local": true,
+   "season": "",
+   "discussionTopic": "Local businesses",
+   "part3": [
+    "Why do some people prefer small local shops to large supermarkets?",
+    "What difficulties do small businesses face today?",
+    "How has online shopping affected small shops in your country?",
+    "What qualities does a person need to run a successful small business?",
+    "Should the government give more support to small businesses?",
+    "Do you think more young people will start their own businesses in the future?"
+   ]
+  },
+  {
+   "id": "5",
+   "topic": "a time the weather changed your plans",
+   "prompt": "Describe a time when the weather changed your plans.",
+   "bullets": [
+    "what you had planned to do",
+    "what the weather was like",
+    "what you did instead"
+   ],
+   "closing": "and explain how you felt about the change of plans.",
+   "theme": "weather-nature",
+   "local": true,
+   "season": "monsoon",
+   "discussionTopic": "Weather and daily life",
+   "part3": [
+    "How does the weather affect people's mood and behaviour?",
+    "In what ways does the monsoon season affect daily life in your country?",
+    "How can people prepare better for extreme weather such as floods or cyclones?",
+    "Are weather forecasts more reliable now than in the past?",
+    "Do people in cities and villages experience bad weather differently?",
+    "Do you think the weather is changing in your country? Why?"
+   ]
+  },
+  {
+   "id": "6",
+   "topic": "a traditional dish from your country",
+   "prompt": "Describe a traditional dish from your country that you enjoy.",
+   "bullets": [
+    "what the dish is",
+    "how it is made",
+    "when people usually eat it"
+   ],
+   "closing": "and explain why you enjoy this dish.",
+   "theme": "food",
+   "local": true,
+   "season": "",
+   "discussionTopic": "Traditional cooking",
+   "part3": [
+    "Why is traditional food important to a country's culture?",
+    "Do young people in your country know how to cook traditional dishes?",
+    "How has fast food changed the way people eat?",
+    "Is home-cooked food always healthier than food from restaurants?",
+    "Should schools teach children how to cook?",
+    "Do you think traditional dishes will still be popular in fifty years?"
+   ]
+  },
+  {
+   "id": "7",
+   "topic": "a market or bazaar you like to visit",
+   "prompt": "Describe a market or bazaar you like to visit.",
+   "bullets": [
+    "where it is",
+    "what you can buy there",
+    "how often you go there"
+   ],
+   "closing": "and explain why you like visiting this market.",
+   "theme": "shopping-money",
+   "local": true,
+   "season": "",
+   "discussionTopic": "Markets and shopping habits",
+   "part3": [
+    "Why do many people still prefer traditional markets to shopping malls?",
+    "Is bargaining over prices a good habit? Why or why not?",
+    "How have shopping habits changed in your country over the last ten years?",
+    "Do older and younger people shop in different ways?",
+    "What are the advantages and disadvantages of buying things online?",
+    "Do you think traditional markets will disappear in the future?"
+   ]
+  },
+  {
+   "id": "8",
+   "topic": "a visit to relatives in a village",
+   "prompt": "Describe a visit to your grandparents' or relatives' home in a village.",
+   "bullets": [
+    "whose home it was and where",
+    "when you went there",
+    "what you did during the visit"
+   ],
+   "closing": "and explain how you felt about this visit.",
+   "theme": "family-people",
+   "local": true,
+   "season": "",
+   "discussionTopic": "Village and city life",
+   "part3": [
+    "What are the main differences between life in a village and life in a city?",
+    "Why do so many people move from villages to big cities like Dhaka?",
+    "What problems does migration to cities cause?",
+    "Do you think village life will change a lot in the future?",
+    "Is it important for children who grow up in cities to visit villages?",
+    "How could the government make life in rural areas more attractive?"
+   ]
+  },
+  {
+   "id": "9",
+   "topic": "a wedding you attended",
+   "prompt": "Describe a wedding you attended.",
+   "bullets": [
+    "whose wedding it was",
+    "where and when it took place",
+    "what happened at the wedding"
+   ],
+   "closing": "and explain how you felt about the occasion.",
+   "theme": "festivals-culture",
+   "local": true,
+   "season": "",
+   "discussionTopic": "Weddings and ceremonies",
+   "part3": [
+    "Why do people spend so much money on weddings?",
+    "How have weddings in your country changed compared with the past?",
+    "Do you think large weddings are better than small ones?",
+    "What role do families play in organising weddings in your country?",
+    "Is it important to keep traditional ceremonies alive? Why?",
+    "How do social media affect the way people celebrate special events?"
+   ]
+  },
+  {
+   "id": "10",
+   "topic": "a sports match you remember well",
+   "prompt": "Describe a sports match you watched and remember well.",
+   "bullets": [
+    "which teams or players were involved",
+    "where you watched it",
+    "what happened"
+   ],
+   "closing": "and explain why you remember this match so well.",
+   "theme": "sport-leisure",
+   "local": true,
+   "season": "",
+   "discussionTopic": "Watching and supporting sport",
+   "part3": [
+    "Why do people enjoy watching sport so much?",
+    "Which sports are most popular in your country, and why?",
+    "Is it better to watch a match at the stadium or at home?",
+    "Do professional athletes earn too much money?",
+    "How can international sporting success affect a country?",
+    "Should the government spend more money on sports facilities for young people?"
+   ]
+  },
+  {
+   "id": "11",
+   "topic": "a person in your community who helps others",
+   "prompt": "Describe a person in your community who helps others.",
+   "bullets": [
+    "who this person is",
+    "how you know them",
+    "what they do to help people"
+   ],
+   "closing": "and explain what you think of this person.",
+   "theme": "community",
+   "local": true,
+   "season": "",
+   "discussionTopic": "Helping in the community",
+   "part3": [
+    "Why do some people choose to help others without being paid?",
+    "Are people less willing to help their neighbours than in the past?",
+    "Is community spirit stronger in villages or in cities?",
+    "Who should help people in need: the government, charities or individuals?",
+    "How can young people be encouraged to do voluntary work?",
+    "How do communities in your country support each other after floods or disasters?"
+   ]
+  },
+  {
+   "id": "12",
+   "topic": "a teacher who helped you a lot",
+   "prompt": "Describe a teacher who helped you a lot.",
+   "bullets": [
+    "who this teacher was",
+    "what subject they taught you",
+    "how they helped you"
+   ],
+   "closing": "and explain why this teacher was important to you.",
+   "theme": "education",
+   "local": true,
+   "season": "",
+   "discussionTopic": "Teachers and teaching",
+   "part3": [
+    "What qualities make someone a good teacher?",
+    "Is teaching a respected profession in your country?",
+    "How has the role of teachers changed with the internet?",
+    "Do you think computers could ever replace teachers?",
+    "Should teachers be paid more? Why or why not?",
+    "Is private tuition a good thing, or does it put too much pressure on students?"
+   ]
+  },
+  {
+   "id": "13",
+   "topic": "a park or open space in your city",
+   "prompt": "Describe a park or open space in your city.",
+   "bullets": [
+    "where it is",
+    "what it looks like",
+    "what people do there"
+   ],
+   "closing": "and explain how you feel about this place.",
+   "theme": "environment",
+   "local": true,
+   "season": "",
+   "discussionTopic": "Green spaces in cities",
+   "part3": [
+    "Why are parks and open spaces important in big cities?",
+    "Do cities like Dhaka have enough green spaces?",
+    "Should land in cities be used for parks or for housing and offices?",
+    "How do people of different ages use public parks?",
+    "Who should be responsible for keeping public spaces clean?",
+    "What might cities look like in the future if green spaces keep disappearing?"
+   ]
+  },
+  {
+   "id": "14",
+   "topic": "a historical place in your country",
+   "prompt": "Describe a historical place in your country that you have visited or would like to visit.",
+   "bullets": [
+    "where it is",
+    "what you know about its history",
+    "what people can see there"
+   ],
+   "closing": "and explain why this place interests you.",
+   "theme": "travel-places",
+   "local": true,
+   "season": "",
+   "discussionTopic": "History and heritage sites",
+   "part3": [
+    "Why is it important to protect historical buildings and sites?",
+    "Do young people in your country take an interest in history?",
+    "Should historical sites be free for everyone to visit?",
+    "How can tourism both help and harm historical places?",
+    "Is it better to learn about history from books or by visiting places?",
+    "Should old buildings ever be knocked down to make way for new development?"
+   ]
+  },
+  {
+   "id": "15",
+   "topic": "an app that makes daily life easier",
+   "prompt": "Describe an app you use that makes your daily life easier.",
+   "bullets": [
+    "what the app is",
+    "how you found out about it",
+    "what you use it for"
+   ],
+   "closing": "and explain how it makes your life easier.",
+   "theme": "technology",
+   "local": true,
+   "season": "",
+   "discussionTopic": "Mobile apps and everyday life",
+   "part3": [
+    "How have smartphone apps changed the way people live?",
+    "Why has mobile banking become so popular in your country?",
+    "Do older people find it difficult to use new apps? Why?",
+    "Are people too dependent on their phones nowadays?",
+    "What are the risks of sharing personal information through apps?",
+    "What kinds of apps do you think will be popular in the future?"
+   ]
+  },
+  {
+   "id": "16",
+   "topic": "a time you had no electricity or internet",
+   "prompt": "Describe a time when you had no electricity or internet for a long time.",
+   "bullets": [
+    "when it happened",
+    "why there was no power or connection",
+    "what you did during that time"
+   ],
+   "closing": "and explain how you felt about the experience.",
+   "theme": "technology",
+   "local": true,
+   "season": "",
+   "discussionTopic": "Dependence on technology",
+   "part3": [
+    "How would daily life change if there were no internet for a week?",
+    "Are people today too dependent on technology?",
+    "Did people have a better quality of life before the internet?",
+    "Is it a good idea for people to have a regular break from technology?",
+    "Should access to the internet be treated as a basic right?",
+    "How can a country make sure everyone has reliable electricity?"
+   ]
+  },
+  {
+   "id": "17",
+   "topic": "a family tradition you enjoy",
+   "prompt": "Describe a family tradition you enjoy.",
+   "bullets": [
+    "what the tradition is",
+    "how it started",
+    "who takes part in it"
+   ],
+   "closing": "and explain why you enjoy this tradition.",
+   "theme": "family-people",
+   "local": true,
+   "season": "",
+   "discussionTopic": "Family traditions",
+   "part3": [
+    "Why do families keep traditions going from one generation to the next?",
+    "Are family traditions less important to young people today?",
+    "How has the move from extended families to smaller families changed family life?",
+    "Do families spend enough time together nowadays?",
+    "How do family traditions in cities differ from those in villages?",
+    "Do you think new traditions are being created today? Can you give examples?"
+   ]
+  },
+  {
+   "id": "18",
+   "topic": "a very crowded place you have been to",
+   "prompt": "Describe a very crowded place you have been to.",
+   "bullets": [
+    "where it was",
+    "when you went there",
+    "why it was so crowded"
+   ],
+   "closing": "and explain how you felt about being there.",
+   "theme": "community",
+   "local": true,
+   "season": "",
+   "discussionTopic": "Crowds and population",
+   "part3": [
+    "Why do some people enjoy busy places while others avoid them?",
+    "What problems are caused by overcrowding in cities?",
+    "How can large crowds be managed safely at events?",
+    "Do you think cities in your country will become more or less crowded in future?",
+    "Should the government encourage people to live outside the capital?",
+    "How does living in a crowded city affect people's health and well-being?"
+   ]
+  },
+  {
+   "id": "19",
+   "topic": "a journey you made by boat, bus or train",
+   "prompt": "Describe a journey you made by boat, bus or train.",
+   "bullets": [
+    "where you went",
+    "who you travelled with",
+    "what happened during the journey"
+   ],
+   "closing": "and explain how you felt about this journey.",
+   "theme": "travel-places",
+   "local": true,
+   "season": "",
+   "discussionTopic": "Long-distance travel",
+   "part3": [
+    "Why do some people prefer travelling by train or boat rather than by air?",
+    "How has long-distance travel in your country changed in recent years?",
+    "What makes a journey enjoyable or stressful?",
+    "Is it more important for transport to be cheap, fast or safe?",
+    "How do people travel home during big holidays in your country, and what problems arise?",
+    "Do you think people will travel less in the future because of the cost or environment?"
+   ]
+  },
+  {
+   "id": "20",
+   "topic": "a handmade or traditional item",
+   "prompt": "Describe a handmade or traditional item that you own or have seen.",
+   "bullets": [
+    "what the item is",
+    "where it came from",
+    "what it is made of and how it is used"
+   ],
+   "closing": "and explain why you find this item special.",
+   "theme": "festivals-culture",
+   "local": true,
+   "season": "",
+   "discussionTopic": "Traditional crafts",
+   "part3": [
+    "Why are handmade products often more expensive than factory-made ones?",
+    "Are traditional crafts such as weaving or pottery dying out in your country?",
+    "Should the government support people who make traditional crafts?",
+    "Do young people value handmade items as much as older people do?",
+    "How has the garments industry changed the way clothes are made and bought?",
+    "Can traditional crafts help attract tourists to a country?"
+   ]
+  },
+  {
+   "id": "21",
+   "topic": "a song or poem in your language that you like",
+   "prompt": "Describe a song or poem in your language that you like.",
+   "bullets": [
+    "what it is called and who wrote it",
+    "what it is about",
+    "when you first heard it"
+   ],
+   "closing": "and explain why you like it.",
+   "theme": "media-arts",
+   "local": true,
+   "season": "",
+   "discussionTopic": "Music, poetry and language",
+   "part3": [
+    "Why are songs and poems important to a country's culture?",
+    "Do young people today read poetry as much as previous generations did?",
+    "How has the internet changed the way people listen to music?",
+    "Should children learn poems by heart at school?",
+    "Is it important to protect and promote a country's own language?",
+    "Do you think traditional music will become more or less popular in the future?"
+   ]
+  },
+  {
+   "id": "22",
+   "topic": "something you learnt from an older person",
+   "prompt": "Describe something you learnt from an older person.",
+   "bullets": [
+    "who the person was",
+    "what you learnt",
+    "how they taught you"
+   ],
+   "closing": "and explain why this was useful to you.",
+   "theme": "family-people",
+   "local": true,
+   "season": "",
+   "discussionTopic": "Generations and wisdom",
+   "part3": [
+    "What can young people learn from older generations?",
+    "Do young people respect older people as much as they did in the past?",
+    "What can older people learn from the younger generation?",
+    "Are older people in your country usually cared for by their families?",
+    "How has technology created a gap between generations?",
+    "Should older people keep working after the usual retirement age?"
+   ]
+  },
+  {
+   "id": "23",
+   "topic": "a person from your country you admire",
+   "prompt": "Describe a person from your country whom you admire.",
+   "bullets": [
+    "who this person is",
+    "what they are known for",
+    "how you learnt about them"
+   ],
+   "closing": "and explain why you admire this person.",
+   "theme": "family-people",
+   "local": true,
+   "season": "",
+   "discussionTopic": "Admiration and national figures",
+   "part3": [
+    "What kinds of people are most admired in your country?",
+    "Do young people admire different people from those their parents admired?",
+    "Should famous people be good role models?",
+    "Are scientists and social workers given enough recognition compared with celebrities?",
+    "How do the media influence who people admire?",
+    "Is it possible to admire someone without wanting to be like them?"
+   ]
+  },
+  {
+   "id": "24",
+   "topic": "a time you tried a food for the first time",
+   "prompt": "Describe a time when you tried a food for the first time.",
+   "bullets": [
+    "what the food was",
+    "where and when you tried it",
+    "who you were with"
+   ],
+   "closing": "and explain how you felt about trying it.",
+   "theme": "food",
+   "local": true,
+   "season": "",
+   "discussionTopic": "Food from other cultures",
+   "part3": [
+    "Why are people sometimes unwilling to try new food?",
+    "Are foreign foods becoming more popular in your country?",
+    "How do food habits change when people move abroad to work?",
+    "Is it important for children to try many different kinds of food?",
+    "Does trying food from other countries help people understand other cultures?",
+    "How do you think people's diets will change in the future?"
+   ]
+  },
+  {
+   "id": "25",
+   "topic": "a time you helped someone",
+   "prompt": "Describe a time when you helped someone.",
+   "bullets": [
+    "who you helped",
+    "what the situation was",
+    "what you did to help"
+   ],
+   "closing": "and explain how you felt after helping this person.",
+   "theme": "community",
+   "local": true,
+   "season": "",
+   "discussionTopic": "Kindness and helping others",
+   "part3": [
+    "Why do people feel good when they help others?",
+    "Should children be taught to help others at school?",
+    "Are people more willing to help strangers or people they know?",
+    "Has modern city life made people less helpful to each other?",
+    "How can technology make it easier for people to help those in need?",
+    "Should helping the community be a required part of education?"
+   ]
+  },
+  {
+   "id": "26",
+   "topic": "a skill you are proud of",
+   "prompt": "Describe a skill you learnt that you are proud of.",
+   "bullets": [
+    "what the skill is",
+    "when and how you learnt it",
+    "how difficult it was to learn"
+   ],
+   "closing": "and explain why you are proud of this skill.",
+   "theme": "personal-growth",
+   "local": false,
+   "season": "",
+   "discussionTopic": "Learning skills",
+   "part3": [
+    "What skills do young people today most want to learn?",
+    "Do you think schools should teach practical skills, like cooking or managing money?",
+    "How has technology changed the way people learn new skills?",
+    "Is it better to learn a skill from a teacher or by yourself?",
+    "Why do some adults find it harder to learn new things than children do?",
+    "Which skills do you think will be most valuable in the job market in the future?"
+   ]
+  },
+  {
+   "id": "27",
+   "topic": "a place you would like to visit",
+   "prompt": "Describe a place you would like to visit in the future.",
+   "bullets": [
+    "where it is",
+    "how you know about it",
+    "what you would do there"
+   ],
+   "closing": "and explain why you would like to visit this place.",
+   "theme": "travel-places",
+   "local": false,
+   "season": "",
+   "discussionTopic": "Travel and tourism",
+   "part3": [
+    "Why do people enjoy travelling to other countries?",
+    "How does tourism affect local communities?",
+    "Do you think people will travel more or less in the future?",
+    "Is it better to travel alone or in a group?",
+    "What could your country do to attract more foreign tourists?",
+    "Has social media changed the places people choose to visit?"
+   ]
+  },
+  {
+   "id": "28",
+   "topic": "a person who has influenced you",
+   "prompt": "Describe a person who has had an important influence on your life.",
+   "bullets": [
+    "who this person is",
+    "how you know them",
+    "what they have done for you"
+   ],
+   "closing": "and explain how they have influenced you.",
+   "theme": "family-people",
+   "local": false,
+   "season": "",
+   "discussionTopic": "Role models",
+   "part3": [
+    "Who do young people look up to in your country?",
+    "Do famous people have a responsibility to be good role models?",
+    "How do parents influence the way children grow up?",
+    "Are role models more important now than in the past?",
+    "Can teachers have as much influence on children as parents do?",
+    "Do you think online influencers have a positive or negative effect on teenagers?"
+   ]
+  },
+  {
+   "id": "29",
+   "topic": "a piece of technology you use",
+   "prompt": "Describe a piece of technology you find very useful.",
+   "bullets": [
+    "what it is",
+    "when you started using it",
+    "how often you use it"
+   ],
+   "closing": "and explain why you find it so useful.",
+   "theme": "technology",
+   "local": false,
+   "season": "",
+   "discussionTopic": "Technology in daily life",
+   "part3": [
+    "How has technology changed the way people communicate?",
+    "Do you think people depend too much on their phones?",
+    "Should children be allowed to use technology freely?",
+    "What new technology do you think will change our lives in the future?",
+    "Do older people in your country find it difficult to keep up with new technology?",
+    "Has technology made people's lives less stressful or more stressful?"
+   ]
+  },
+  {
+   "id": "30",
+   "topic": "a memorable event",
+   "prompt": "Describe a celebration or event you enjoyed.",
+   "bullets": [
+    "what the event was",
+    "when and where it happened",
+    "who was there"
+   ],
+   "closing": "and explain why you enjoyed it so much.",
+   "theme": "festivals-culture",
+   "local": false,
+   "season": "",
+   "discussionTopic": "Celebrations",
+   "part3": [
+    "What are the most important celebrations in your country?",
+    "Have celebrations changed compared with the past?",
+    "Why do some people prefer small celebrations to big ones?",
+    "Do you think traditional celebrations will still be important in the future?",
+    "Do people spend too much money on weddings and other celebrations nowadays?",
+    "How are celebrations in cities different from those in villages?"
+   ]
+  },
+  {
+   "id": "31",
+   "topic": "a book you found interesting",
+   "prompt": "Describe a book you read that you found interesting.",
+   "bullets": [
+    "what the book was",
+    "when you read it",
+    "what it was about"
+   ],
+   "closing": "and explain why you found it interesting.",
+   "theme": "media-arts",
+   "local": false,
+   "season": "",
+   "discussionTopic": "Reading habits",
+   "part3": [
+    "Do young people in your country read as much as older people?",
+    "What are the advantages of reading printed books compared with e-books?",
+    "How can parents encourage their children to read more?",
+    "Why do some people prefer reading novels to watching films?",
+    "Do you think libraries will still be needed in the future?",
+    "Should schools let students choose the books they study?"
+   ]
+  },
+  {
+   "id": "32",
+   "topic": "a film or TV programme you enjoyed",
+   "prompt": "Describe a film or TV programme you enjoyed.",
+   "bullets": [
+    "what it was called",
+    "when and where you watched it",
+    "what it was about"
+   ],
+   "closing": "and explain why you enjoyed it.",
+   "theme": "media-arts",
+   "local": false,
+   "season": "",
+   "discussionTopic": "Films and entertainment",
+   "part3": [
+    "What kinds of films are most popular in your country?",
+    "Do you think going to the cinema will become less common in the future?",
+    "How has streaming changed the way people watch films and programmes?",
+    "Should films be made mainly to entertain or to educate people?",
+    "Why do some people prefer foreign films to films made in their own country?",
+    "Do you think violent films have a negative effect on young people?"
+   ]
+  },
+  {
+   "id": "33",
+   "topic": "a good decision you made",
+   "prompt": "Describe a good decision you made.",
+   "bullets": [
+    "what the decision was",
+    "when you made it",
+    "how you made the decision"
+   ],
+   "closing": "and explain why you think it was a good decision.",
+   "theme": "personal-growth",
+   "local": false,
+   "season": "",
+   "discussionTopic": "Decision making",
+   "part3": [
+    "Do young people in your country make their own decisions about their education?",
+    "Is it better to make important decisions quickly or slowly?",
+    "Why do some people find it hard to make decisions?",
+    "Should parents make important decisions for their teenage children?",
+    "Do people make better decisions as they get older?",
+    "How does having too many choices affect the decisions people make?"
+   ]
+  },
+  {
+   "id": "34",
+   "topic": "a goal you would like to achieve",
+   "prompt": "Describe a goal you would like to achieve in the future.",
+   "bullets": [
+    "what the goal is",
+    "when you hope to achieve it",
+    "what you are doing to achieve it"
+   ],
+   "closing": "and explain why this goal is important to you.",
+   "theme": "work-study",
+   "local": false,
+   "season": "",
+   "discussionTopic": "Ambitions and goals",
+   "part3": [
+    "What kinds of goals do young people in your country usually have?",
+    "Is it important for children to set goals at school?",
+    "Do you think people's ambitions change as they get older?",
+    "Why do some people give up on their goals?",
+    "Is it better to have one big goal or several small ones?",
+    "Should young people follow their own ambitions or their parents' wishes?"
+   ]
+  },
+  {
+   "id": "35",
+   "topic": "a time you were late",
+   "prompt": "Describe a time you were late for something important.",
+   "bullets": [
+    "what you were late for",
+    "why you were late",
+    "what happened as a result"
+   ],
+   "closing": "and explain how you felt about being late.",
+   "theme": "personal-growth",
+   "local": false,
+   "season": "",
+   "discussionTopic": "Punctuality",
+   "part3": [
+    "Is punctuality considered important in your country?",
+    "Why are people often late in big cities like Dhaka?",
+    "In which situations is it most important to be on time?",
+    "Should employers punish workers who are regularly late?",
+    "Do you think young people are less punctual than older people?",
+    "How can people improve their time management?"
+   ]
+  },
+  {
+   "id": "36",
+   "topic": "a time you waited a long time",
+   "prompt": "Describe a time you had to wait a long time for something.",
+   "bullets": [
+    "what you were waiting for",
+    "where you were",
+    "how long you had to wait"
+   ],
+   "closing": "and explain how you felt while you were waiting.",
+   "theme": "personal-growth",
+   "local": false,
+   "season": "",
+   "discussionTopic": "Patience",
+   "part3": [
+    "In what situations do people in your country often have to wait?",
+    "Do you think people today are less patient than in the past?",
+    "How has technology affected people's patience?",
+    "Is patience something that can be learnt, or are people born with it?",
+    "What can businesses do to make waiting less frustrating for customers?",
+    "Why is patience an important quality for teachers and parents?"
+   ]
+  },
+  {
+   "id": "37",
+   "topic": "a website you visit often",
+   "prompt": "Describe a website you visit often.",
+   "bullets": [
+    "what the website is",
+    "how you found out about it",
+    "what you use it for"
+   ],
+   "closing": "and explain why you visit it so often.",
+   "theme": "technology",
+   "local": false,
+   "season": "",
+   "discussionTopic": "The internet",
+   "part3": [
+    "How has the internet changed the way people study?",
+    "Do you think people spend too much time online nowadays?",
+    "How can people tell whether information on the internet is reliable?",
+    "Is there a big difference in internet use between cities and villages in your country?",
+    "Should parents control which websites their children visit?",
+    "How do you think the internet will change in the next twenty years?"
+   ]
+  },
+  {
+   "id": "38",
+   "topic": "an interesting older person you know",
+   "prompt": "Describe an interesting older person you know.",
+   "bullets": [
+    "who this person is",
+    "how you know them",
+    "what they are like"
+   ],
+   "closing": "and explain why you find this person interesting.",
+   "theme": "family-people",
+   "local": false,
+   "season": "",
+   "discussionTopic": "Older people in society",
+   "part3": [
+    "How are older people treated in your country?",
+    "What can young people learn from older people?",
+    "Is it better for older people to live with their families or on their own?",
+    "How has the role of grandparents changed compared with the past?",
+    "Should older people continue working after retirement age?",
+    "What can the government do to improve the lives of older people?"
+   ]
+  },
+  {
+   "id": "39",
+   "topic": "a time you saved money",
+   "prompt": "Describe a time you saved money to buy something.",
+   "bullets": [
+    "what you wanted to buy",
+    "how you saved the money",
+    "how long it took"
+   ],
+   "closing": "and explain how you felt when you finally bought it.",
+   "theme": "shopping-money",
+   "local": false,
+   "season": "",
+   "discussionTopic": "Saving and spending",
+   "part3": [
+    "Do young people in your country tend to save or spend their money?",
+    "At what age should children start learning how to manage money?",
+    "Is it a good idea to buy things on credit?",
+    "Why do some people find it hard to save money?",
+    "Has online shopping made people spend more money?",
+    "Should schools teach students how to manage their personal finances?"
+   ]
+  },
+  {
+   "id": "40",
+   "topic": "a sport you would like to try",
+   "prompt": "Describe a sport or physical activity you would like to try.",
+   "bullets": [
+    "what the sport or activity is",
+    "how you know about it",
+    "where you could do it"
+   ],
+   "closing": "and explain why you would like to try it.",
+   "theme": "sport-leisure",
+   "local": false,
+   "season": "",
+   "discussionTopic": "Sport and fitness",
+   "part3": [
+    "Which sports are most popular in your country, and why?",
+    "Why is cricket so popular in Bangladesh compared with other sports?",
+    "Do children today get enough exercise?",
+    "What can be done to encourage people in cities to be more active?",
+    "Should the government spend more money on sports facilities?",
+    "Is it more important to win or to take part in sport?"
+   ]
+  },
+  {
+   "id": "41",
+   "topic": "a building you find attractive",
+   "prompt": "Describe a building you find attractive.",
+   "bullets": [
+    "where it is",
+    "what it looks like",
+    "what it is used for"
+   ],
+   "closing": "and explain why you find it attractive.",
+   "theme": "travel-places",
+   "local": false,
+   "season": "",
+   "discussionTopic": "Architecture",
+   "part3": [
+    "Do you think old buildings should be protected?",
+    "How are modern buildings in your country different from older ones?",
+    "Is it more important for a building to be beautiful or practical?",
+    "What problems are caused by tall buildings in crowded cities?",
+    "How are homes in villages different from homes in cities in your country?",
+    "What do you think buildings will look like in the future?"
+   ]
+  },
+  {
+   "id": "42",
+   "topic": "an advertisement you remember",
+   "prompt": "Describe an advertisement you remember.",
+   "bullets": [
+    "what product or service it was for",
+    "where you saw it",
+    "what it showed"
+   ],
+   "closing": "and explain why you remember it.",
+   "theme": "media-arts",
+   "local": false,
+   "season": "",
+   "discussionTopic": "Advertising",
+   "part3": [
+    "Where do people in your country usually see advertisements?",
+    "Do you think advertising makes people buy things they don't need?",
+    "Should advertisements aimed at children be controlled?",
+    "Why do companies often use famous people in their advertisements?",
+    "How is online advertising different from advertising on television?",
+    "Do you think advertisements are a useful source of information?"
+   ]
+  },
+  {
+   "id": "43",
+   "topic": "a time you were very busy",
+   "prompt": "Describe a time you were very busy.",
+   "bullets": [
+    "when it was",
+    "what you had to do",
+    "how you managed your time"
+   ],
+   "closing": "and explain how you felt during this busy time.",
+   "theme": "work-study",
+   "local": false,
+   "season": "",
+   "discussionTopic": "Busy lifestyles",
+   "part3": [
+    "Why are people's lives so busy nowadays?",
+    "Are people in cities busier than people in villages?",
+    "How can people balance work or study with free time?",
+    "Do you think students today have more pressure than students in the past?",
+    "Should employers do more to reduce stress at work?",
+    "Will people have more free time or less free time in the future?"
+   ]
+  },
+  {
+   "id": "44",
+   "topic": "a place where you study or work well",
+   "prompt": "Describe a place where you can study or work well.",
+   "bullets": [
+    "where it is",
+    "what it is like",
+    "how often you go there"
+   ],
+   "closing": "and explain why you can study or work well there.",
+   "theme": "education",
+   "local": false,
+   "season": "",
+   "discussionTopic": "Study environments",
+   "part3": [
+    "What makes a good environment for studying?",
+    "Is it better for students to study at home or in a library?",
+    "Do you think working from home is a good idea?",
+    "How can schools create better spaces for learning?",
+    "Why do some people prefer to study with background noise or music?",
+    "How might classrooms change in the future?"
+   ]
+  },
+  {
+   "id": "45",
+   "topic": "a time you lost something",
+   "prompt": "Describe a time you lost something important.",
+   "bullets": [
+    "what you lost",
+    "when and where you lost it",
+    "what you did to find it"
+   ],
+   "closing": "and explain how you felt when you lost it.",
+   "theme": "personal-growth",
+   "local": false,
+   "season": "",
+   "discussionTopic": "Losing and finding things",
+   "part3": [
+    "What kinds of things do people most often lose?",
+    "Why do some people lose things more often than others?",
+    "What should people do if they find something that belongs to someone else?",
+    "How has technology made it easier to find lost things?",
+    "Do people care less about their belongings now than in the past?",
+    "Is it easier to get lost items back in a village than in a big city?"
+   ]
+  },
+  {
+   "id": "46",
+   "topic": "a rule or law you think is important",
+   "prompt": "Describe a rule or law you think is important.",
+   "bullets": [
+    "what the rule or law is",
+    "where it applies",
+    "how people follow it"
+   ],
+   "closing": "and explain why you think it is important.",
+   "theme": "community",
+   "local": false,
+   "season": "",
+   "discussionTopic": "Rules and laws",
+   "part3": [
+    "Why do some people break rules even when they know them?",
+    "What rules should children learn at home?",
+    "Are school rules in your country stricter than in the past?",
+    "Is it better to punish people who break rules or to educate them?",
+    "Why are traffic rules often ignored in busy cities?",
+    "Do you think there should be rules about how much time children spend online?"
+   ]
+  },
+  {
+   "id": "47",
+   "topic": "a time you helped your community",
+   "prompt": "Describe a time you did volunteer work or helped your community.",
+   "bullets": [
+    "what you did",
+    "when and where you did it",
+    "who you did it with"
+   ],
+   "closing": "and explain how you felt about helping others.",
+   "theme": "community",
+   "local": false,
+   "season": "",
+   "discussionTopic": "Volunteering",
+   "part3": [
+    "What kinds of volunteer work are common in your country?",
+    "Why do some people choose to work without being paid?",
+    "Should schools require students to do volunteer work?",
+    "Do people help their neighbours less than they did in the past?",
+    "Is helping the community the responsibility of individuals or the government?",
+    "How can young people be encouraged to volunteer more?"
+   ]
+  },
+  {
+   "id": "48",
+   "topic": "a piece of good news you received",
+   "prompt": "Describe a piece of good news you received.",
+   "bullets": [
+    "what the news was",
+    "when you received it",
+    "who told you about it"
+   ],
+   "closing": "and explain how you felt when you heard it.",
+   "theme": "personal-growth",
+   "local": false,
+   "season": "",
+   "discussionTopic": "Good news and media",
+   "part3": [
+    "Why does the media report more bad news than good news?",
+    "How do people in your country usually share good news with others?",
+    "Do you think social media has changed the way people share news?",
+    "Should newspapers and TV channels report more positive stories?",
+    "Do older and younger people get their news from different sources?",
+    "How can people tell whether a news story is true?"
+   ]
+  },
+  {
+   "id": "49",
+   "topic": "a photograph you like",
+   "prompt": "Describe a photograph you like.",
+   "bullets": [
+    "what the photograph shows",
+    "who took it",
+    "when and where it was taken"
+   ],
+   "closing": "and explain why you like this photograph.",
+   "theme": "media-arts",
+   "local": false,
+   "season": "",
+   "discussionTopic": "Photography",
+   "part3": [
+    "Why do people like taking photographs?",
+    "How has the mobile phone changed photography?",
+    "Do people take too many photos nowadays?",
+    "Are printed photographs still important to families?",
+    "Is it acceptable to take photos of people without asking them?",
+    "Do you think photography is a form of art?"
+   ]
+  },
+  {
+   "id": "50",
+   "topic": "a friend's achievement",
+   "prompt": "Describe a friend's achievement that made you proud.",
+   "bullets": [
+    "who your friend is",
+    "what they achieved",
+    "how they achieved it"
+   ],
+   "closing": "and explain why it made you proud.",
+   "theme": "family-people",
+   "local": false,
+   "season": "",
+   "discussionTopic": "Success and achievement",
+   "part3": [
+    "What do people in your country think of as success?",
+    "Is success mainly the result of hard work or luck?",
+    "Do you think society pays too much attention to exam results?",
+    "Should children be rewarded for their achievements?",
+    "Why do some successful people become role models for young people?",
+    "Is it possible to be successful without earning a lot of money?"
+   ]
+  }
+ ]
+}

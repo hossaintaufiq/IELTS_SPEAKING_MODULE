@@ -25,7 +25,7 @@ Offers are volatile: the list changes between calls, so an offer ID may vanish w
 Pick offers with a high `Net_down`, `R` (reliability) above 98, and a $/hr you are comfortable with. Prefer on-demand over interruptible so the run is not cut off.
 
 ```
-scp -P PORT -i ~/.ssh/vast_ed25519 -r . root@HOST:/workspace/speaking-service
+bash deploy/vast/upload.sh HOST PORT      # excludes .env, .venv, runs; NEVER use scp -r . (it would send your API key)
 ssh -p PORT -i ~/.ssh/vast_ed25519 root@HOST -L 8080:localhost:8080
 cd /workspace/speaking-service && bash deploy/vast/setup_instance.sh
 ```

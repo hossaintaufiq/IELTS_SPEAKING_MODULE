@@ -30,12 +30,26 @@
 
       <div id="orb" class="orb idle" aria-live="polite"><span id="orb-label">Press Start</span></div>
 
+      <div class="meter"><div id="meter-fill"></div></div>
+      <p id="mic-status" class="mic-status">Mic not started</p>
+
+      <p id="mic-warn" class="mic-warn hidden">The browser is sending silence. Choose a different microphone, check Windows Settings &gt; Privacy &gt; Microphone, and check the mic is not muted.</p>
+
+      <div class="miccheck">
+        <h2>Microphone check</h2>
+        <label class="mic-pick">Microphone <select id="mic-select"><option value="">default</option></select></label>
+        <canvas id="spectrum" width="420" height="90"></canvas>
+        <div class="mic-info"><span id="mic-level">level 0.000</span> &middot; <span id="mic-freq">- Hz</span> &middot; <span id="mic-peakfreq">peak - Hz</span></div>
+        <p id="mic-verdict" class="mic-verdict">Say "testing, one two three". The bars should move.</p>
+        <p id="mic-track" class="mic-track"></p>
+      </div>
+
       <div class="controls">
-        <button id="start" class="primary">Start test</button>
+        <button id="start" class="primary" disabled>Start test</button>
         <button id="next" disabled>Next part &rarr;</button>
         <button id="end" disabled>End test</button>
       </div>
-      <p class="hint">Use <strong>headphones</strong>. Speakers leak into the mic and the examiner will interrupt itself.</p>
+      <p class="hint"><a href="#" id="skip-check">skip mic check</a> &middot; Use <strong>headphones</strong>. Speakers leak into the mic and the examiner will interrupt itself.</p>
 
       <div class="stats">
         <div><span id="lat-last">-</span><small>last reply delay (s)</small></div>

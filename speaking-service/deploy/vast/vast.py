@@ -20,7 +20,7 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).parent
-IMAGE = "pytorch/pytorch:2.5.1-cuda12.4-cudnn9-runtime"  # CUDA + Python; setup_instance.sh adds the rest
+IMAGE = "vastai/pytorch:cuda-12.4.1-auto"  # vast.ai base image: includes sshd (plain pytorch/pytorch has none and never starts)
 DEFAULT_DISK_GB = 100
 
 
@@ -33,7 +33,7 @@ def load_env() -> None:
                 os.environ.setdefault(k.strip(), v.strip())
 
 
-def cli(*args: str, capture: bool = False) -> str:
+def cli(*args: str, capture: bool = False, yes: bool = False) -> str:
     """Run one vastai CLI command in a fresh process.
 
     The CLI keeps global argparse state, so it cannot be called twice in one process, and the
@@ -46,7 +46,7 @@ def cli(*args: str, capture: bool = False) -> str:
     code = "import sys; from vastai.cli.main import main; sys.argv = %r; main()" % (argv,)
     env = {**os.environ, "PYTHONIOENCODING": "utf-8"}
     res = subprocess.run([sys.executable, "-c", code], env=env, text=True,
-                         capture_output=capture, encoding="utf-8")
+                         capture_output=capture, encoding="utf-8", input="y\n" if yes else None)
     if res.returncode != 0:
         sys.exit(res.returncode if not capture else (res.stderr or res.stdout))
     return res.stdout if capture else ""
@@ -70,6 +70,10 @@ def main() -> None:
     r.add_argument("--disk", type=int, default=DEFAULT_DISK_GB)
     r.add_argument("--yes", action="store_true", help="actually rent (without it this is a dry run)")
     sub.add_parser("status")
+    stp = sub.add_parser("stop")      # pauses compute billing; the disk (and your setup) is kept, storage still billed
+    stp.add_argument("instance_id")
+    sta = sub.add_parser("start")
+    sta.add_argument("instance_id")
     d = sub.add_parser("destroy")
     d.add_argument("instance_id")
     a = ap.parse_args()
@@ -94,8 +98,12 @@ def main() -> None:
     elif a.cmd == "status":
         cli("show", "instances")
         cli("show", "user")
+    elif a.cmd == "stop":
+        cli("stop", "instance", a.instance_id)
+    elif a.cmd == "start":
+        cli("start", "instance", a.instance_id)
     elif a.cmd == "destroy":
-        cli("destroy", "instance", a.instance_id)
+        cli("destroy", "instance", a.instance_id, yes=True)
 
 
 if __name__ == "__main__":

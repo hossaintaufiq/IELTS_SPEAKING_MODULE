@@ -20,7 +20,6 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from worker.examiner.flow import FlowConfig, Phase
 from worker.session import ExamSession
 
 log = logging.getLogger("speaking.server")
@@ -28,14 +27,28 @@ WEB = Path(__file__).resolve().parent.parent / "web"
 MOCK = os.getenv("MOCK") == "1"
 
 
-def flow_config() -> FlowConfig:
-    """Time limits in seconds; shorten them with env vars for quick tests."""
-    g = lambda k, d: int(os.getenv(k, d))  # noqa: E731
-    return FlowConfig(part1_s=g("PART1_S", 270), part2_prep_s=g("PART2_PREP_S", 60),
-                      part2_speak_s=g("PART2_SPEAK_S", 120), part3_s=g("PART3_S", 270))
-
-
 app = FastAPI(title="Speaking test bench")
+
+if not MOCK:
+    from worker import warm
+
+    try:
+        warm.install()      # share one loaded Whisper/Kokoro between sessions (must precede pipecat's kokoro import)
+    except Exception:       # e.g. a dev PC without the model libraries: the cache is best-effort
+        log.warning("model cache not installed; sessions will load models themselves")
+
+    @app.on_event("startup")
+    async def _preload_models():
+        import asyncio
+        import threading
+
+        def work():
+            try:
+                warm.preload()
+            except Exception:
+                log.exception("model preload failed; sessions will load models on demand")
+
+        threading.Thread(target=work, daemon=True).start()
 
 
 @app.get("/")
@@ -51,7 +64,7 @@ def health():
 @app.websocket("/ws")
 async def ws_endpoint(websocket: WebSocket):
     await websocket.accept()
-    session = ExamSession(send=websocket.send_json, cfg=flow_config())
+    session = ExamSession(send=websocket.send_json)
     try:
         if MOCK:
             await run_mock(websocket, session)
@@ -88,8 +101,8 @@ async def run_mock(websocket: WebSocket, session: ExamSession):
             return
         if msg.get("text"):
             await session.handle_control(json.loads(msg["text"]))
-        elif msg.get("bytes") and not session.muted and session.flow.phase == Phase.PART1:
-            pass  # mic audio is ignored in mock mode
+        elif msg.get("bytes"):
+            session.note_audio(msg["bytes"])    # mic audio is counted but not transcribed in mock mode
 
 
 def beep(ms: int = 300, hz: int = 660, rate: int = 24000) -> bytes:

@@ -30,7 +30,8 @@ class BrowserSerializer(FrameSerializer):
 
     async def deserialize(self, data: str | bytes) -> Frame | None:
         if isinstance(data, (bytes, bytearray)):
-            if self.session.muted:
+            self.session.note_audio(bytes(data))
+            if self.session.muted or self.session.listening_blocked():
                 return None
             return InputAudioRawFrame(audio=bytes(data), sample_rate=MIC_RATE, num_channels=1)
         try:

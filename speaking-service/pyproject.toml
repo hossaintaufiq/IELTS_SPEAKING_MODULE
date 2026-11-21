@@ -7,7 +7,7 @@ dependencies = []
 
 [project.optional-dependencies]
 # Heavy runtime deps are installed on the GPU box only. Versions get pinned after the first benchmark.
-worker = ["pipecat-ai", "faster-whisper", "kokoro-onnx", "openai"]
+worker = ["pipecat-ai==0.0.108", "faster-whisper", "kokoro-onnx", "openai"]
 control = ["fastapi", "uvicorn", "httpx", "sqlalchemy", "redis", "celery"]
 dev = ["pytest"]
 

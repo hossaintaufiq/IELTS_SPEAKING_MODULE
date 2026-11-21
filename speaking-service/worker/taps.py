@@ -4,13 +4,19 @@ from __future__ import annotations
 import time
 
 from pipecat.frames.frames import (
+    BotStartedSpeakingFrame,
+    BotStoppedSpeakingFrame,
+    InputAudioRawFrame,
     InterruptionFrame,
-    LLMFullResponseEndFrame,
-    LLMTextFrame,
+    TTSStartedFrame,
+    TTSStoppedFrame,
+    TTSTextFrame,
     TranscriptionFrame,
     TTSAudioRawFrame,
     UserStartedSpeakingFrame,
     UserStoppedSpeakingFrame,
+    VADUserStartedSpeakingFrame,
+    VADUserStoppedSpeakingFrame,
 )
 from pipecat.processors.frame_processor import FrameDirection, FrameProcessor
 
@@ -41,18 +47,99 @@ class OutputTap(FrameProcessor):
 
     async def process_frame(self, frame, direction: FrameDirection):
         await super().process_frame(frame, direction)
-        if isinstance(frame, UserStoppedSpeakingFrame):
+        if isinstance(frame, (BotStartedSpeakingFrame, TTSStartedFrame)):
+            self.session.bot_started()
+        elif isinstance(frame, BotStoppedSpeakingFrame):
+            self.session.bot_stopped()
+        elif isinstance(frame, UserStoppedSpeakingFrame):
             self._t_stop = time.perf_counter()
         elif isinstance(frame, (UserStartedSpeakingFrame, InterruptionFrame)):
             await self._send({"type": "interrupt"})
-        elif isinstance(frame, LLMTextFrame):
-            self._text.append(frame.text)
-        elif isinstance(frame, LLMFullResponseEndFrame):
-            text = "".join(self._text).strip()
-            self._text = []
-            if text:
-                await self.session.on_examiner_text(text)
         elif isinstance(frame, TTSAudioRawFrame) and self._t_stop is not None:
             await self.session.on_latency(time.perf_counter() - self._t_stop)
             self._t_stop = None
+        await self.push_frame(frame, direction)
+
+
+class LiveCaptionTap(FrameProcessor):
+    """Streams a rolling partial transcript while the candidate speaks (live captions).
+
+    Sits right after the transport input. It listens for the VAD speaking frames (broadcast from the
+    user aggregator) and every `interval` seconds transcribes the audio so far with a small, fast
+    Whisper, sending {"type": "interim", "text": ...}. The accurate final transcript still comes from
+    the main STT; the page replaces the caption with it.
+    """
+
+    PRE_ROLL = 16000 * 2 * 4 // 10     # 0.4 s of 16 kHz PCM16, so the first word is not cut off
+    MAX_BYTES = 16000 * 2 * 15         # never transcribe more than the last 15 s
+
+    def __init__(self, send, model_name: str = "small.en", device: str = "cuda",
+                 compute_type: str = "float16", interval: float = 0.9):
+        super().__init__()
+        self._send, self._interval = send, interval
+        self._cfg = (model_name, device, compute_type)
+        self._model = None
+        self._pre = bytearray()
+        self._buf = bytearray()
+        self._active = False
+        self._task = None
+
+    def _load(self):
+        from faster_whisper import WhisperModel
+
+        if self._model is None:
+            name, device, compute = self._cfg
+            self._model = WhisperModel(name, device=device, compute_type=compute)
+        return self._model
+
+    def _transcribe(self, pcm: bytes) -> str:
+        import numpy as np
+
+        audio = np.frombuffer(pcm, dtype=np.int16).astype(np.float32) / 32768.0
+        segs, _ = self._load().transcribe(audio, language="en", beam_size=1, vad_filter=False,
+                                          condition_on_previous_text=False)
+        return " ".join(s.text.strip() for s in segs).strip()
+
+    async def _loop(self):
+        import asyncio
+
+        loop = asyncio.get_running_loop()
+        last = ""
+        while self._active:
+            await asyncio.sleep(self._interval)
+            if not self._active or len(self._buf) < 16000 * 2 // 2:    # need at least 0.5 s
+                continue
+            pcm = bytes(self._buf[-self.MAX_BYTES:])
+            try:
+                text = await loop.run_in_executor(None, self._transcribe, pcm)
+            except Exception:   # a failed caption must never break the exam
+                continue
+            if self._active and text and text != last:
+                last = text
+                await self._send({"type": "interim", "text": text})
+
+    def _begin(self):
+        import asyncio
+
+        if self._active:
+            return
+        self._active = True
+        self._buf = bytearray(self._pre)
+        self._task = asyncio.create_task(self._loop())
+
+    def _end(self):
+        self._active = False
+
+    async def process_frame(self, frame, direction: FrameDirection):
+        await super().process_frame(frame, direction)
+        if isinstance(frame, (VADUserStartedSpeakingFrame, UserStartedSpeakingFrame)):
+            self._begin()
+        elif isinstance(frame, (VADUserStoppedSpeakingFrame, UserStoppedSpeakingFrame)):
+            self._end()
+        elif isinstance(frame, InputAudioRawFrame):
+            if self._active:
+                self._buf.extend(frame.audio)
+            else:
+                self._pre.extend(frame.audio)
+                del self._pre[:-self.PRE_ROLL]
         await self.push_frame(frame, direction)
