@@ -33,8 +33,15 @@ def make(llm=None, clock=None):
 
     kw = {"clock": clock} if clock else {}
     s = ExamSession(send, seed=3, llm=llm or default_llm, hour=9, **kw)
+    s.pause_s = s.extra_s = 0.0          # no waiting in tests; the pause behaviour has its own tests below
     s.task = FakeTask()
     return s, events
+
+
+async def turn(s, text):
+    """The candidate says something and the examiner finishes answering it."""
+    await s.on_candidate_turn(text)
+    await s.settle()
 
 
 def spoken(s):
@@ -44,12 +51,12 @@ def spoken(s):
 async def run_until_part2(s):
     await s.handle_control({"action": "start"})
     s._ticker.cancel()
-    await s.on_candidate_turn("My name is Rahim Ahmed.")
-    await s.on_candidate_turn("Please call me Rahim.")
+    await turn(s, "My name is Rahim Ahmed.")
+    await turn(s, "Please call me Rahim.")
     for _ in range(8):
         if s.phase != "part1":
             break
-        await s.on_candidate_turn("I live in Dhaka and I like the food there very much.")
+        await turn(s, "I live in Dhaka and I like the food there very much.")
 
 
 def test_extract_name():
@@ -64,8 +71,8 @@ def test_greeting_name_part1_script_lines():
         s, ev = make()
         await s.handle_control({"action": "start"})
         s._ticker.cancel()
-        await s.on_candidate_turn("My name is Rahim Ahmed.")
-        await s.on_candidate_turn("Call me Rahim.")
+        await turn(s, "My name is Rahim Ahmed.")
+        await turn(s, "Call me Rahim.")
         return s, ev
 
     s, ev = asyncio.run(go())
@@ -108,23 +115,23 @@ def test_part2_card_prep_long_turn_followup_and_part3():
         if s.phase == "part1":
             await s.skip_part()
         assert s.phase == "part2_intro"
-        await s.on_candidate_turn("Yes, I understand.")
+        await turn(s, "Yes, I understand.")
         assert s.phase == "part2_prep" and s.muted
         card = [e for e in ev if e["type"] == "phase" and e["phase"] == "part2_prep"][0]["cue_card"]
         assert card["bullets"] and card["closing"]
         await s.skip_part()
         assert s.phase == "part2_speak" and not s.muted
         n = len(spoken(s))
-        await s.on_candidate_turn("I want to talk about my village and the river near it.")
-        await s.on_candidate_turn("We used to swim there every summer.")
+        await turn(s, "I want to talk about my village and the river near it.")
+        await turn(s, "We used to swim there every summer.")
         assert len(spoken(s)) == n                       # examiner stays silent during the talk
         await s.skip_part()
         assert s.phase == "part2_followup" and spoken(s)[-1].startswith("Thank you.")
-        await s.on_candidate_turn("Yes, almost every year.")
+        await turn(s, "Yes, almost every year.")
         assert s.phase == "part3"
         p3 = spoken(s)[-1]
         assert p3.startswith("We've been talking about ") and "Let's consider first of all" in p3
-        await s.on_candidate_turn("I think places like that matter a lot for people in cities.")
+        await turn(s, "I think places like that matter a lot for people in cities.")
         assert s.phase == "part3"
         await s.skip_part()
         return s, ev
@@ -145,10 +152,10 @@ def test_llm_down_falls_back_to_bank_questions():
         s, ev = make(down)
         await s.handle_control({"action": "start"})
         s._ticker.cancel()
-        await s.on_candidate_turn("Rahim")
-        await s.on_candidate_turn("Rahim")
+        await turn(s, "Rahim")
+        await turn(s, "Rahim")
         before = len(spoken(s))
-        await s.on_candidate_turn("I work in a bank in Dhaka and I like it.")
+        await turn(s, "I work in a bank in Dhaka and I like it.")
         return s, before
 
     s, before = asyncio.run(go())
@@ -163,10 +170,10 @@ def test_part2_tell_me_more_when_candidate_stops_early():
         await run_until_part2(s)
         if s.phase == "part1":
             await s.skip_part()
-        await s.on_candidate_turn("Yes.")
+        await turn(s, "Yes.")
         await s.skip_part()
         t["now"] = 10
-        await s.on_candidate_turn("It is a nice place.")
+        await turn(s, "It is a nice place.")
         t["now"] = 30
         await s._on_tick(s._limit(s.phase))
         return s
