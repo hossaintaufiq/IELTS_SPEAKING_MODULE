@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+deploy/vast/.env
+models/cache/
+eval/data/audio/
+*.wav
+.pytest_cache/
+runs/

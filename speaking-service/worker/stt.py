@@ -1,0 +1,86 @@
+"""Speech recognition tuned for the exam. Replaces Pipecat's stock Whisper service.
+
+What changes compared with the stock service:
+- Decoding runs in a worker thread. The stock service iterates Whisper's lazy generator on the event
+  loop, which stalls audio handling and the whole pipeline while it decodes (the lag).
+- A keyterm hint (ported from ieltsup keyterms.ts): Bangladeshi places, foods and exam words, plus the
+  content words of the question just asked, so "Chattogram" or "fuchka" are not misheard.
+- `condition_on_previous_text=False`, a log-probability floor and a compression-ratio limit, to stop
+  Whisper looping or inventing text, and segments it is not confident about are dropped.
+"""
+from __future__ import annotations
+
+import asyncio
+import os
+import re
+from typing import AsyncGenerator
+
+import numpy as np
+from pipecat.frames.frames import ErrorFrame, Frame, TranscriptionFrame
+from pipecat.services.whisper.stt import WhisperSTTService
+from pipecat.utils.time import time_now_iso8601
+
+# ieltsup/services/examCoreAPI/experimental/deepgram/lib/speaking/transcript/keyterms.ts
+FIXED = [
+    "cue card", "IELTS", "Bangladesh", "Bangladeshi", "Dhaka", "Puran Dhaka", "Chattogram", "Sylhet", "Rajshahi",
+    "Khulna", "Barishal", "Cox's Bazar", "Sundarbans", "rickshaw", "Eid", "Pohela Boishakh", "Bangla",
+    "BRAC University", "BUET", "North South University", "Dhaka University", "Mirpur", "Dhanmondi", "Gulshan",
+    "Uttara", "Mohammadpur", "Narayanganj", "Gazipur", "Mymensingh", "Comilla", "biryani", "fuchka", "pitha",
+    "bhorta", "khichuri", "hilsa", "Durga Puja", "Ramadan", "metro rail", "CNG", "bKash",
+]
+STOP = set("""about above after again also always another anything around because been before being
+  between both could describe does doing during each either enjoy ever every explain feel
+  from have having into just like many more most much often other people person should
+  some something sometimes than that their them then there these they thing things think
+  this those through usually very want what when where which while whom whose with would
+  your yours you'd you're today usually really""".split())
+MAX_QUESTION_TERMS = 8
+
+
+def keyterms_for(question: str | None) -> list[str]:
+    words = [w for w in re.sub(r"[^a-z\s'-]", " ", (question or "").lower()).split() if len(w) >= 4 and w not in STOP]
+    unique = list(dict.fromkeys(words))[:MAX_QUESTION_TERMS]
+    fixed_lower = {f.lower() for f in FIXED}
+    return FIXED + [w for w in unique if w not in fixed_lower]
+
+
+def initial_prompt(question: str | None) -> str:
+    return "IELTS speaking test. Words that may come up: " + ", ".join(keyterms_for(question)) + "."
+
+
+class ExamWhisperSTTService(WhisperSTTService):
+    MIN_AVG_LOGPROB = -1.0
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.question_hint: str | None = None     # the examiner's latest line; the session keeps this current
+
+    def _decode(self, audio_float: np.ndarray) -> list[tuple[str, float, float]]:
+        segments, _ = self._model.transcribe(
+            audio_float,
+            language=self._settings.language,
+            initial_prompt=initial_prompt(self.question_hint),
+            condition_on_previous_text=False,
+            beam_size=5,
+            temperature=[0.0, 0.2],
+            log_prob_threshold=-1.0,
+            compression_ratio_threshold=2.4,
+            vad_filter=os.getenv("STT_VAD_FILTER", "1") == "1",   # set 0 if quiet speech is being clipped
+            vad_parameters={"threshold": 0.35, "min_silence_duration_ms": 600, "speech_pad_ms": 300},
+        )
+        # Materialise here, inside the worker thread: the generator does the real decoding as it is read.
+        return [(s.text.strip(), s.no_speech_prob, s.avg_logprob) for s in segments]
+
+    async def run_stt(self, audio: bytes) -> AsyncGenerator[Frame, None]:
+        if not self._model:
+            yield ErrorFrame("Whisper model not available")
+            return
+        await self.start_processing_metrics()
+        audio_float = np.frombuffer(audio, dtype=np.int16).astype(np.float32) / 32768.0
+        parts = await asyncio.to_thread(self._decode, audio_float)
+        text = " ".join(t for t, no_speech, logprob in parts
+                        if t and no_speech < self._settings.no_speech_prob and logprob > self.MIN_AVG_LOGPROB)
+        await self.stop_processing_metrics()
+        if text:
+            await self._handle_transcription(text, True, self._settings.language)
+            yield TranscriptionFrame(text, self._user_id, time_now_iso8601(), self._settings.language)

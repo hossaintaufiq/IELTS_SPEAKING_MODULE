@@ -1,0 +1,17 @@
+{
+  "version": "0.1-draft",
+  "note": "Placeholder original practice questions written for development. Replace with the academic team's approved, versioned bank.",
+  "intro": [
+    "Good morning. My name is Sarah, and I'll be your examiner today. Could you tell me your full name, please?",
+    "Thank you. And what should I call you?"
+  ],
+  "part1_topics": [
+    {"topic": "Hometown", "questions": ["Where is your hometown?", "What do you like most about it?", "Has your hometown changed much in recent years?"]},
+    {"topic": "Work or studies", "questions": ["Do you work or are you a student?", "What do you enjoy most about it?", "Is there anything you would like to change about it?"]},
+    {"topic": "Free time", "questions": ["What do you like to do in your free time?", "Do you prefer spending time alone or with others?", "Is there a hobby you would like to try?"]}
+  ],
+  "part2_cue_cards": [
+    {"id": "cc-001", "prompt": "Describe a place you enjoy visiting.", "bullets": ["where it is", "how often you go there", "what you do there", "and explain why you enjoy it"], "part3": ["Why do people like to visit quiet places?", "How have public spaces changed in your country?", "Do you think cities should have more green areas?"]},
+    {"id": "cc-002", "prompt": "Describe a skill you would like to learn.", "bullets": ["what the skill is", "why you want to learn it", "how you would learn it", "and explain how it would help you"], "part3": ["What skills are most valued by employers today?", "Is it better to learn skills at school or on the job?", "How will technology change the skills people need?"]}
+  ]
+}
