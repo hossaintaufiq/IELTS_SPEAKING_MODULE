@@ -42,6 +42,8 @@ def test_negative_answer_forces_bank_mode_and_fallback_skips_asked():
 
 def test_next_question_uses_llm_and_falls_back_on_bad_output():
     async def good(system, prompt):
+        if system == rules.SEMANTIC_SYSTEM:                    # the meaning check: nothing is covered
+            return {"covered": []}
         assert "Question bank for this topic" in prompt and "Not really" in prompt
         return {"reply": "answer", "pick": None, "say": "Why don't you enjoy reading?", "facts": ["doesn't like reading"]}
 
