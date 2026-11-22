@@ -29,7 +29,7 @@ def make(llm, pause=0.05, extra=0.3):
         pass
 
     s = ExamSession(send, seed=3, llm=llm, hour=9)
-    s.pause_s, s.extra_s = pause, extra
+    s.test_mode(); s.pause_s, s.extra_s = pause, extra
     s.task = FakeTask()
     return s
 
@@ -76,7 +76,7 @@ def test_noise_turn_gets_no_reply_and_is_not_counted_as_an_answer():
 def test_keyterms_hint_has_company_terms_and_the_question_words():
     terms = keyterms_for("What do you like about Chattogram food markets?")
     assert "Chattogram" in terms and "fuchka" in terms and "markets" in terms and "food" in terms
-    assert initial_prompt(None).startswith("IELTS speaking test.")
+    assert "IELTS" not in initial_prompt(None) and len(keyterms_for(None)) <= 10      # short: a long prompt makes Whisper hallucinate
 
 
 # ---- waiting for the pause ----------------------------------------------------------------------
@@ -220,7 +220,9 @@ def make_timed(llm=llm_ok):
         pass
 
     s = ExamSession(send, seed=3, llm=llm, hour=9, clock=lambda: t["now"])
-    s.pause_s = s.extra_s = 0.0
+    s.test_mode()
+    s.p2_silence_s, s.p2_early_s, s.p2_remind_s, s.p2_giveup_s = 8, 6, 8, 8       # the ladder is tested with round numbers
+    s.p2_early_s, s.p2_early_giveup_s = 6, 8
     s.task = FakeTask()
     return s, t
 
@@ -233,62 +235,120 @@ async def into_long_turn(s):
     s._bot_stopped_at = 0.0          # the examiner has finished its "please begin speaking now"
 
 
-def test_part2_never_started_prompts_once_then_reminds_then_stops_nudging():
+def test_part2_never_started_prompts_then_says_there_is_time_then_moves_on_to_part3():
     async def go():
         s, t = make_timed()
         await into_long_turn(s)
         limit = s._limit(s.phase)
         n = len(spoken(s))
+        t["now"] = 7
+        await s._on_tick(limit)
+        assert len(spoken(s)) == n                                   # not yet: 8 s of silence required
+        t["now"] = 8.5
+        await s._on_tick(limit)
+        assert spoken(s)[-1] == "Can you tell me about the topic you have been given?"      # 1st: asked once
         t["now"] = 9
+        s.bot_stopped()
+        t["now"] = 16
         await s._on_tick(limit)
-        assert len(spoken(s)) == n                                   # not yet: 10 s of silence required
-        t["now"] = 10.5
+        assert spoken(s)[-1] == "Can you tell me about the topic you have been given?"      # not yet: 7 s since
+        t["now"] = 17.5
         await s._on_tick(limit)
-        assert spoken(s)[-1] == "Can you tell me about the topic you have been given?"      # asked once
-        t["now"] = 12
-        s.bot_stopped()                                              # the examiner finished that line
-        t["now"] = 21
-        await s._on_tick(limit)
-        assert spoken(s)[-1] == "Can you tell me about the topic you have been given?"      # not yet: 9 s since
-        t["now"] = 22.5
-        await s._on_tick(limit)
-        assert spoken(s)[-1] == ("Remember, you have one to two minutes for this. "
-                                 "Can you start speaking now, please?")                     # the reminder
-        t["now"] = 22.6
+        assert spoken(s)[-1] == "You still have time, so please take a moment and tell me about the topic."   # 2nd: there is time
+        t["now"] = 18
         s.bot_stopped()
         count = len(spoken(s))
-        for later in (35, 50, 80, 110):
-            t["now"] = later
-            await s._on_tick(limit)
-        assert len(spoken(s)) == count                               # never nags a third time
-        t["now"] = 121                                               # time is up: moves on, as before
+        t["now"] = 25
         await s._on_tick(limit)
+        assert len(spoken(s)) == count and s.phase == "part2_speak"  # not yet: 7 s since
+        t["now"] = 26.5
+        await s._on_tick(limit)                                      # still nothing: skip to the next part
         return s
 
-    assert asyncio.run(go()).phase == "part2_followup"
+    s = asyncio.run(go())
+    assert s.phase == "part3"
+    line = spoken(s)[-1]
+    assert line.startswith("That's all right. Let's move on.") and "?" in line     # the first Part 3 question
+    assert not any("you said" in l.lower() for l in spoken(s))                       # nothing is made up about silence
 
 
-def test_part2_stopped_early_asks_for_more_then_reminds():
+def test_part2_stopped_early_gets_one_gentle_line_then_time_to_finish_then_moves_on():
     async def go():
         s, t = make_timed()
         await into_long_turn(s)
         limit = s._limit(s.phase)
         t["now"] = 5
-        await s.on_candidate_turn("It is a nice place near my house.")      # they did speak
+        await s.on_candidate_turn("It is a nice place near my house where I go with my friends every weekend.")
+        n = len(spoken(s))
+        t["now"] = 10
+        await s._on_tick(limit)
+        assert len(spoken(s)) == n                                   # 5 s quiet: they are allowed to think
+        t["now"] = 11.5
+        await s._on_tick(limit)
+        assert spoken(s)[-1] == "You still have time, so please tell me a little more about it."      # the ONE nudge
         t["now"] = 12
-        await s._on_tick(limit)
-        assert len(s.task.frames) and spoken(s)[-1] != "Can you tell me anything more about that?"   # only 7 s quiet
-        t["now"] = 14
-        await s._on_tick(limit)
-        assert spoken(s)[-1] == "Can you tell me anything more about that?"                   # company line
-        t["now"] = 15
         s.bot_stopped()
-        t["now"] = 26
+        t["now"] = 19
+        await s._on_tick(limit)
+        assert s.phase == "part2_speak"                              # 7 s after the nudge: still waiting for them to finish
+        t["now"] = 20.5
+        await s._on_tick(limit)                                      # 8.5 s: nothing more is coming
+        return s
+
+    s = asyncio.run(go())
+    assert s.phase in ("part2_followup", "part3") and "Thank you." in " ".join(spoken(s)[-1:])
+    assert not any("anything more" in line for line in spoken(s))    # that line is gone for good
+
+
+def test_part2_stray_words_from_silence_do_not_count_as_speaking():
+    async def go():
+        s, t = make_timed()
+        await into_long_turn(s)
+        limit = s._limit(s.phase)
+        t["now"] = 4
+        await s.on_candidate_turn("Okay then")                       # two stray words: not a start
+        t["now"] = 8.5
         await s._on_tick(limit)
         return s
 
     s = asyncio.run(go())
-    assert spoken(s)[-1].startswith("Remember, you have one to two minutes")
+    assert spoken(s)[-1] == "Can you tell me about the topic you have been given?"          # still treated as "never started"
+
+
+def test_part2_short_talk_gets_no_invented_question():
+    seen = []
+
+    async def llm(system, prompt):
+        seen.append(prompt)
+        return {"say": "Why did the dragon fly over the mountain?"}
+
+    async def go():
+        s, t = make_timed(llm)
+        await into_long_turn(s)
+        await s.on_candidate_turn("It is a nice park.")
+        await s.end_long_turn()
+        return s
+
+    s = asyncio.run(go())
+    assert seen == [] and s.phase == "part3"                          # the LLM is not even asked
+
+
+def test_part2_followup_must_be_built_from_what_was_said():
+    async def llm(system, prompt):
+        return {"say": "Why did the dragon fly over the mountain?"}
+
+    async def go():
+        s, t = make_timed(llm)
+        await into_long_turn(s)
+        await s.on_candidate_turn("I want to talk about a book called Alchemist, it is about a shepherd who travels to Egypt "
+                                  "to find a treasure and learns about life on the way.")
+        await s.end_long_turn()
+        return s
+
+    s = asyncio.run(go())
+    assert s.phase == "part3"                                        # the made-up question was dropped: thanked, then Part 3
+    assert spoken(s)[-1].startswith("Thank you. We've been talking about")
+    assert not any("dragon" in line for line in spoken(s))
 
 
 def test_part2_no_nudge_while_candidate_or_examiner_is_talking():
@@ -311,25 +371,25 @@ def test_part2_no_nudge_while_candidate_or_examiner_is_talking():
     asyncio.run(go())
 
 
-def test_part2_candidate_speaks_after_the_prompt_so_only_one_more_nudge_is_possible():
+def test_part2_candidate_speaks_after_the_prompt_so_the_clock_restarts():
     async def go():
         s, t = make_timed()
         await into_long_turn(s)
         limit = s._limit(s.phase)
-        t["now"] = 10.5
+        t["now"] = 8.5
         await s._on_tick(limit)                                      # prompt 1
-        t["now"] = 11
+        t["now"] = 9
         s.bot_stopped()
-        t["now"] = 14
-        await s.on_candidate_turn("Well, it is about a park I like.")    # they start talking
-        t["now"] = 30
-        await s._on_tick(limit)                                      # quiet again: the reminder (2nd and last)
-        t["now"] = 31
-        s.bot_stopped()
-        count = len(spoken(s))
-        t["now"] = 100
+        t["now"] = 12
+        await s.on_candidate_turn("Well, it is about a park I like very much near my home.")    # they start talking
+        t["now"] = 17
         await s._on_tick(limit)
-        assert len(spoken(s)) == count
+        assert "still have time" not in spoken(s)[-1]                # only 5 s quiet since their words
+        t["now"] = 20.5
+        await s._on_tick(limit)                                      # 8 s quiet again: the "you still have time" line
+        assert spoken(s)[-1] == "You still have time, so please tell me a little more about it."
         return s
 
     asyncio.run(go())
+
+

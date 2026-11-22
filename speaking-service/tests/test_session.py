@@ -21,6 +21,13 @@ def tmp_runs(tmp_path, monkeypatch):
     monkeypatch.setattr(sess, "RUNS", tmp_path)
 
 
+async def rounding_llm(system, prompt):
+    """Writes a grounded rounding-off question after Part 2, the usual reply otherwise."""
+    if "rounding-off" in prompt:
+        return {"say": "Do you still go to the river?"}
+    return await default_llm(system, prompt)
+
+
 async def default_llm(system, prompt):
     return {"reply": "answer", "pick": None, "say": "What do you like most about your neighbourhood?", "facts": ["lives in Dhaka"]}
 
@@ -33,7 +40,7 @@ def make(llm=None, clock=None):
 
     kw = {"clock": clock} if clock else {}
     s = ExamSession(send, seed=3, llm=llm or default_llm, hour=9, **kw)
-    s.pause_s = s.extra_s = 0.0          # no waiting in tests; the pause behaviour has its own tests below
+    s.test_mode()          # no waiting in tests; the pause behaviour has its own tests below
     s.task = FakeTask()
     return s, events
 
@@ -110,7 +117,7 @@ def test_part1_follow_up_comes_from_llm_with_the_answer_and_then_moves_on():
 
 def test_part2_card_prep_long_turn_followup_and_part3():
     async def go():
-        s, ev = make()
+        s, ev = make(rounding_llm)
         await run_until_part2(s)
         if s.phase == "part1":
             await s.skip_part()
@@ -162,7 +169,7 @@ def test_llm_down_falls_back_to_bank_questions():
     assert len(spoken(s)) == before + 1 and spoken(s)[-1].endswith("?")
 
 
-def test_part2_tell_me_more_when_candidate_stops_early():
+def test_part2_says_there_is_still_time_when_candidate_stops_early():
     t = {"now": 0.0}
 
     async def go():
@@ -179,7 +186,7 @@ def test_part2_tell_me_more_when_candidate_stops_early():
         return s
 
     s = asyncio.run(go())
-    assert spoken(s)[-1] == "Can you tell me anything more about that?" and s.phase == "part2_speak"
+    assert spoken(s)[-1] == "You still have time, so please tell me a little more about it." and s.phase == "part2_speak"
 
 
 def test_serializer_counts_audio_drops_when_muted_and_routes_control():

@@ -19,7 +19,7 @@ def test_bank_loaded_and_plan_shape():
     bank = rules.load_bank()
     assert len(bank["part1"]) == 46 and len(bank["cueCards"]) == 50
     plan = rules.choose_plan(bank, random.Random(1))
-    assert 2 <= len(plan["part1"]) <= 3 and plan["cueCard"]["bullets"] and len(plan["part3"]["questions"]) >= 4
+    assert 3 <= len(plan["part1"]) <= 3 + rules.RESERVE_TOPICS and plan["cueCard"]["bullets"] and len(plan["part3"]["questions"]) >= 4
     assert plan["part1"][0]["questions"][0]["ifNegative"] is None
 
 

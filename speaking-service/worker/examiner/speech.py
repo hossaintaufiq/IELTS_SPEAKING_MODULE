@@ -21,23 +21,45 @@ _HALLU_PATTERNS = re.compile(r"^(subtitles? by|translated by|transcribed by|www\
 UNFINISHED_LAST_WORDS = {
     "and", "but", "because", "so", "or", "then", "also", "like", "that", "which", "when", "if", "um", "uh", "er",
     "well", "the", "a", "an", "to", "of", "my", "is", "are", "was", "with", "for", "in", "on", "at", "as",
+    "actually", "basically", "maybe", "perhaps", "means", "about", "from", "by", "than", "how", "what", "who",
+    "where", "why", "very", "really", "some", "will", "would", "could", "should",
+    "umm", "ummm", "uhh", "erm", "hmm", "aa", "aaa",
 }
+# Phrases a learner uses while searching for the next words
+UNFINISHED_ENDINGS = ("for example", "for instance", "such as", "i think", "i mean", "you know", "let me think",
+                      "that is", "that means", "because of", "so that", "i don't know how to say", "how to say",
+                      "what to say", "kind of", "sort of")
 
 _REPEAT = re.compile(
     r"\b(sorry|pardon|repeat|say (?:that|it) again|once more|come again|didn'?t (?:hear|catch|get|understand)|"
     r"did not (?:hear|catch|understand)|can'?t hear|what do you mean|what was (?:the|that)|could you (?:say|repeat)|"
-    r"can you (?:say|repeat)|i don'?t understand|not clear|what did you say)\b", re.I)
+    r"can you (?:say|repeat)|i don'?t understand|not clear|what did you say|excuse me|pardon me|once again|again please|"
+    r"one more time|speak (?:more )?slowly|slowly please|slow down|too fast|"
+    r"i (?:can'?t|cannot|could not|couldn'?t) (?:hear|understand|catch)|"
+    r"what is the meaning|what does (?:it|that|this) mean|meaning of (?:this|that|the question))\b", re.I)
 
 
 def _norm(text: str) -> str:
     return re.sub(r"\s+", " ", re.sub(r"[^a-z0-9' .]", "", text.lower())).strip(" .")
 
 
+# "ummm", "aaa", "hmm", "erm": thinking noises, not answers (learners from South Asia use them a lot)
+_FILLER_WORD = r"(?:u+h*m*|e+r+m*|e+h+|a+h+|a{2,}|h+m+|m+h*m*|o+h+)"
+_FILLERS = re.compile(rf"^{_FILLER_WORD}(?:\s+{_FILLER_WORD})*$")
+_HONORIFIC = re.compile(r"\b(?:sir|madam|madame|ma'am|maam|mam|miss)\b")
+
+
 def is_noise(text: str) -> bool:
-    """True for empty text and for the stock phrases Whisper hallucinates on silence or noise."""
+    """True for empty text, thinking noises, and the stock phrases Whisper hallucinates on silence or noise."""
     raw = text.strip()
     n = _norm(raw)
-    return not n or n in HALLUCINATIONS or bool(_HALLU_PATTERNS.match(raw))
+    if not n or n in HALLUCINATIONS or _FILLERS.match(re.sub(r"\s+", " ", re.sub(r"[^a-z]", " ", n)).strip()) or bool(_HALLU_PATTERNS.match(raw)):
+        return True
+    words = n.split()
+    if len(words) >= 4 and len(set(words)) / len(words) <= 0.34:     # "you you you you": Whisper looping on silence
+        return True
+    bare =re.sub(r"\s+", " ", _HONORIFIC.sub("", n)).strip(" .")      # "thank you sir" is not an answer either
+    return bare != n and (not bare or bare in HALLUCINATIONS)
 
 
 def looks_unfinished(text: str) -> bool:
@@ -45,8 +67,9 @@ def looks_unfinished(text: str) -> bool:
     raw = text.strip()
     if raw.endswith((",", "-", "–", "…", "...")):
         return True
-    words = _norm(raw).split()
-    return bool(words) and words[-1] in UNFINISHED_LAST_WORDS
+    n = _norm(raw)
+    words = n.split()
+    return bool(words) and (words[-1] in UNFINISHED_LAST_WORDS or n.endswith(UNFINISHED_ENDINGS))
 
 
 # Questions aimed at the examiner instead of answering: "Are you an AI?", "What's your name?", "How am I doing?"
@@ -64,6 +87,9 @@ _OFF_TOPIC = [re.compile(p, re.I) for p in (
     r"\bis (that|it) (good|ok|okay|correct|right|fine)\b|\bdid i (do|answer|pass|speak)\b|\bhow many (marks|bands|points)\b",
     r"\b(can|could|will|would) you (help|tell|give|show|explain|teach|answer|recommend|suggest)\b",
     r"\btell me (about|something about) yourself\b|\bwhich company\b|\bwho (owns|runs) (this|you)\b",
+    # asking to skip or change what the examiner asks: not an answer either
+    r"\b(change|skip|switch)\b.{0,12}\b(topic|question|subject)\b|\b(next|another|different) (topic|question)\b.{0,12}\b(please|now)\b|"
+    r"\bcan (i|we) (go|move) (to|on to) (the )?next\b|\b(give|ask) me (the |a |another )?(next|different|easier) (one|question)\b",
 )]
 _CALL_ME = re.compile(
     r"\b(?:call(?:s)? me|(?:i am|i'm|i was|i'm being) called|i go by|(?:everyone|everybody|people|friends|they) calls? me|"
