@@ -28,7 +28,7 @@ from worker.examiner.naturalness import AckPicker
 from worker.examiner.pacing import wait_seconds
 from worker.examiner.rules import SCRIPT, NextQuestionInput
 from worker.examiner.speech import (extract_call_name, is_noise, is_off_topic_question, is_repeat_request,
-                                    looks_unfinished)
+                                    looks_unfinished, strip_foreign)
 
 RUNS = Path(__file__).resolve().parent.parent / "runs"
 log = logging.getLogger("speaking.session")
@@ -268,7 +268,7 @@ class ExamSession:
     async def on_candidate_turn(self, text: str) -> None:
         """A speech turn was finished. The examiner does NOT answer yet: it waits for the candidate's
         natural pause, and merges turns that arrive in pieces, so it never cuts an answer short."""
-        text = text.strip()
+        text = strip_foreign(text.strip())          # another language's stock phrase at the end is not the candidate's
         if not text or self.phase == DONE:
             return
         if is_noise(text):                          # "ummm", Whisper hallucination on noise/silence: not an answer
@@ -587,9 +587,12 @@ class ExamSession:
         card = self.plan["cueCard"]["prompt"]
         prompt = (f'Part 2 has just ended. The candidate talked about: "{card}".\n'
                   f"What they said (speech recognition, may contain errors): {talk}\n"
-                  "Ask ONE short rounding-off question, like a real IELTS examiner (under 12 words, ending with a question mark), "
-                  "about the thing they described. It must be easy to answer in a sentence, for example "
-                  '"Do you still have it?", "Do many people go there?", "Do you see him often?". '
+                  "Ask ONE short rounding-off question, as a real IELTS examiner does after Part 2 (under 12 words, ending with a "
+                  "question mark). It must be about the MAIN subject of the topic, not a small incidental detail they happened to "
+                  "mention (not a tea stall, a colour, a brand), be easy to answer in a sentence or two, and link to the candidate's "
+                  'own life, habits, feelings or plans, for example "Do you often get stuck in traffic like that?", '
+                  '"Do you still have it?", "Do you think you will go there again?", "Did you tell anyone about it?", '
+                  '"Do many people in your country do this?". '
                   "Use only what they said; never add or assume any detail they did not mention, and never refer to "
                   'the conversation, the talk, or what they "said" or "mentioned". '
                   "Do not use a name or word they did not say. "
@@ -644,7 +647,10 @@ class ExamSession:
         if nq.reply == "redirect":                    # off-test question: remind, re-ask (or warn, or end), do not advance
             await self._handle_off_topic()
             return
-        say = nq.say or (left[0] if left else "")
+        say = nq.say
+        if not say:                                   # nothing suitable left in the bank: the company's generic follow-ups, then close
+            generic = self.unasked(PART3_FOLLOW_UPS)
+            say = generic[0] if generic else ""
         if not say:
             await self.close()
             return

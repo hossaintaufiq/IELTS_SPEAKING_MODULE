@@ -117,3 +117,20 @@ def is_repeat_request(text: str) -> bool:
     """True only if the candidate really asked the examiner to repeat or explain the question."""
     t = text.strip()
     return len(t.split()) <= 12 and bool(_REPEAT.search(t) or re.fullmatch(r"(what|huh)\??", t.strip(" ."), re.I))
+
+
+# ---- text in another language ------------------------------------------------------------------------------------------
+# On trailing silence or noise Whisper sometimes writes a stock phrase in another language ("Izlediginiz icin tesekkur ederim" =
+# "thank you for watching", "Altyazi M.K." = a Turkish subtitle credit), even with English forced. The candidate speaks English
+# in this test, so a sentence containing letters from outside the Latin-1 range (Turkish g/s/i-dotless, Bengali, Arabic, Chinese...)
+# is not theirs. Accented letters Whisper uses for English words (cafe, resume) are inside Latin-1 and are kept.
+def has_foreign_script(text: str) -> bool:
+    return any(ord(c) > 0xFF and c.isalpha() for c in text)
+
+
+def strip_foreign(text: str) -> str:
+    """Remove the sentences that are not English; what the candidate really said stays."""
+    if not has_foreign_script(text):
+        return text
+    parts = re.split(r"(?<=[.!?])\s+", text.strip())
+    return " ".join(p for p in parts if not has_foreign_script(p)).strip()
