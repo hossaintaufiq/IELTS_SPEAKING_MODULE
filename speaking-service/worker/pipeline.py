@@ -47,6 +47,7 @@ def build_task(websocket, cfg: WorkerConfig, session):
         LLMUserAggregatorParams,
     )
     from pipecat.services.kokoro.tts import KokoroTTSService
+    from worker.tts import ExamKokoroTTSService
     from pipecat.transports.websocket.fastapi import FastAPIWebsocketParams, FastAPIWebsocketTransport
 
     from worker.stt import ExamWhisperSTTService
@@ -66,7 +67,7 @@ def build_task(websocket, cfg: WorkerConfig, session):
         compute_type=cfg.whisper_compute_type,
         settings=ExamWhisperSTTService.Settings(model=cfg.whisper_model),
     )
-    tts = KokoroTTSService(
+    tts = ExamKokoroTTSService(
         model_path=cfg.kokoro_model_path,
         voices_path=cfg.kokoro_voices_path,
         settings=KokoroTTSService.Settings(voice=cfg.kokoro_voice),

@@ -33,7 +33,7 @@ def make(llm=llm_ok):
         pass
 
     s = ExamSession(send, seed=3, llm=llm, hour=9)
-    s.pause_s = s.extra_s = 0.0
+    s.test_mode()
     s.task = FakeTask()
     return s
 

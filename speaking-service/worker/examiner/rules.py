@@ -10,6 +10,7 @@ Wording is kept as in the originals. Only the language changed (TypeScript -> Py
 from __future__ import annotations
 
 import json
+import os
 import random
 import re
 from dataclasses import dataclass, field
@@ -50,13 +51,26 @@ SCRIPT = {
     # Part 2 silence handling (requested by the tester; built from the company's own phrases)
     "part2Prompt": "Can you tell me about the topic you have been given?",
     "part2Remind": "Remember, you have one to two minutes for this. Can you start speaking now, please?",
-    "tellMeMore": "Can you tell me anything more about that?",
+    # the reminder after the first prompt: say there is still time (never repeats "start speaking now" to someone who has started)
+    "part2Time": "You still have time, so please take a moment and tell me about the topic.",
+    "part2TimeMore": "You still have time, so please tell me a little more about it.",
+    "part2Skip": "That's all right. Let's move on.",
     "part2Stop": "Thank you.",
     "part3Intro": lambda subject: f"We've been talking about {subject}, and I'd like to discuss with you one or two more general questions related to this.",
     "part3First": "Let's consider first of all",
     "closing": "Thank you. That is the end of the speaking test.",
     # reminder that this is a test (requested by the tester)
     "offTopic": "This is an IELTS speaking test, so let's carry on.",
+    # the second irrelevant question gets this warning too; the third ends the test
+    "offTopicWarn": "If you ask another question that is not part of the test, I will have to end the test.",
+    "offTopicEnd": "I'm sorry, but we have to end the speaking test here. Thank you.",
+    # the candidate asked to stop
+    "finishAsk": "Do you want to finish the speaking test, or would you like to continue?",
+    "finishUnclear": "Sorry, please say \"finish\" if you want to end the test, or \"continue\" if you want to carry on.",
+    "finishContinue": "All right, let's continue.",
+    "finishContinueTalk": "All right, please carry on with your talk.",
+    "recover": "Sorry, could you say that again, please?",
+    "finishDone": "All right. Thank you. That is the end of the speaking test.",
 }
 
 # examiner.ts SYSTEM (verbatim)
@@ -99,7 +113,8 @@ MAX_LINE_LENGTH = 300
 MAX_WORDS = {1: 30, 3: 40}
 EARLIER_ANSWERS = 4
 MAX_FACTS = 40
-AI_NEW_QUESTION_SHARE = 0.5     # env AI_NEW_QUESTION_SHARE in the original; its value is not in the files we have
+AI_NEW_QUESTION_SHARE = float(os.getenv("AI_NEW_QUESTION_SHARE", "0.7"))   # share of Part 1 turns where the LLM writes its own follow-up
+PERSONAL_MIN_WORDS = int(os.getenv("PERSONAL_MIN_WORDS", "6"))            # shorter answers always use the bank (company rule)
 
 PART3_ANGLES = [
     "compare the past with the present (how things have changed and why)",
@@ -133,6 +148,7 @@ class NextQuestionInput:
     fallback: str
     cue_card: str = ""
     known: list[str] = field(default_factory=list)
+    probe_ok: bool = False          # the previous examiner turn was not a follow-up probe, so a short answer may get one
 
 
 @dataclass
@@ -142,8 +158,10 @@ class NextQuestion:
     origin: str                     # bank | reworded | new | fallback | repeat
     reply: str = "answer"
     facts: list[str] = field(default_factory=list)
+    why: str = ""                   # why the script fallback was used instead of the LLM's question (for the run log)
 
 
+from worker.examiner.answered import already_answered  # noqa: E402
 from worker.examiner.speech import is_repeat_request  # noqa: E402
 
 JsonLLM = Callable[[str, str], Awaitable["dict | None"]]
@@ -192,12 +210,27 @@ def last_answer(inp: NextQuestionInput) -> str:
     return ""
 
 
+RESERVE_TOPICS = 2
+PROBE_MAX_WORDS = {1: 5, 3: 8}      # an answer this short or shorter gets a natural follow-up before the next question
+_NO_ANSWER = re.compile(r"\b(?:don'?t|do not|didn'?t|can'?t|cannot) (?:know|remember|think)\b|\bno idea\b|\bnot sure\b|\bno\b$", re.I)
+PROBES = ["Why is that?", "Could you give me an example?", "Why do you say that?", "Can you explain that a little?"]
+
+
+def wants_probe(answer: str, part: int, probe_ok: bool) -> bool:
+    """A very short, real answer ("Yes, I do.", "Mostly football.") is followed up like a real examiner would ("Why is that?")
+    before moving to the next question. Not after "I don't know", and never two probes in a row."""
+    words = len(answer.split())
+    return probe_ok and 1 <= words <= PROBE_MAX_WORDS.get(part, 5) and not _NO_ANSWER.search(answer.strip(" ."))
+
+
 def choose_mode(inp: NextQuestionInput, test_id: str = "") -> str:
+    if wants_probe(last_answer(inp), inp.part, inp.probe_ok):
+        return "probe"
     if inp.part == 3:
         return "discussion"
     answer = last_answer(inp)
     words = len(answer.split())
-    if inp.question_number < 2 or words < 8:
+    if inp.question_number < 2 or words < PERSONAL_MIN_WORDS:
         return "bank"
     if re.search(r"\b(no|not|don't|never|hate|dislike)\b", answer, re.I) and words < 15:
         return "bank"
@@ -232,6 +265,15 @@ def build_prompt(inp: NextQuestionInput, mode: str, test_id: str = "") -> str:
         memory += f"\nWhat the candidate said earlier in the test:\n{earlier}\n"
     asked_list = asked_in_test(inp)
     asked = "\n".join(f"- {a}" for a in asked_list) if asked_list else "- (none yet)"
+
+    if mode == "probe":
+        return (f'This is Part {inp.part} of the IELTS Speaking test. Topic: "{inp.topic}". The candidate has just given a very short answer.\n'
+                f"Conversation so far:\n{history}\n\n"
+                "Listen to what they said, then ask ONE short, natural follow-up that invites them to explain or give an example, "
+                'like a real examiner (for example "Why is that?", "Why do you like it?", "Could you give me an example?", '
+                '"How often do you do that?"). It must fit their LAST answer and use only what they actually said. '
+                "Do not comment on the answer, do not praise it, do not repeat an earlier question. Under 12 words, exactly one question mark.\n"
+                'Reply as JSON: {"reply": "answer", "pick": null, "say": "<the follow-up>", "facts": []}')
 
     if inp.part == 1:
         intro = (f'This is the first question on this topic. If you pick a bank question, the topic introduction is added for you. '
@@ -306,10 +348,18 @@ def fallback_question(inp: NextQuestionInput) -> str:
     def fresh(q: str) -> bool:
         return not any(similarity(question_part(q), p) >= 0.6 for p in previous)
 
-    if fresh(inp.fallback):
+    said = " ".join(t for s, t in inp.history if s == "candidate")
+
+    def usable(q: str) -> bool:                  # not asked before AND not already answered in something they said
+        return fresh(q) and not already_answered(q, said)
+
+    if usable(inp.fallback):
         return inp.fallback
-    # Never hand back a question that was already asked: "" tells the caller the bank is used up.
-    return next((f for f in inp.frames if fresh(f)), "")
+    # Never hand back a question that was already asked or answered: "" tells the caller the bank is used up.
+    return next((f for f in inp.frames if usable(f)), "")
+
+
+MARKS_ANSWER = re.compile(r"\b(you said|you mentioned|your answer|that is (?:good|interesting)|that's (?:good|interesting))\b", re.I)
 
 
 def last_examiner_question(inp: NextQuestionInput) -> str:
@@ -325,14 +375,28 @@ def origin_of(say: str, frames: list[str]) -> str:
     return "bank" if best >= 0.8 else "reworded" if best >= 0.45 else "new"
 
 
+def fallback_probe(inp: NextQuestionInput) -> str:
+    """A safe follow-up that does not repeat the one just used."""
+    recent = [question_part(t) for s, t in inp.history if s == "examiner"][-4:]
+    return next((p for p in PROBES if p not in recent), PROBES[0])
+
+
 async def next_question(inp: NextQuestionInput, llm: JsonLLM, test_id: str = "") -> NextQuestion:
     mode = choose_mode(inp, test_id)
     js = await llm(SYSTEM, build_prompt(inp, mode, test_id))
+    if mode == "probe":
+        say = clean(js["say"]) if js and isinstance(js.get("say"), str) else ""
+        ok = (say.endswith("?") and say.count("?") == 1 and 2 <= len(say.split()) <= 14 and not BANNED.search(say)
+              and not PRAISE.search(say) and not MARKS_ANSWER.search(say))
+        if ok:
+            return NextQuestion(say, "ai", "probe")
+        why = "the LLM did not answer in time" if not js else "the follow-up was not a clean short question"
+        return NextQuestion(fallback_probe(inp), "script", "probe", why=why)
     say = spoken_line(js, inp) if js else ""
     if js and js.get("reply") == "redirect":
         say = say or "redirect"      # handled below; the LLM's own wording is never spoken
     if not js or not say:
-        return NextQuestion(fallback_question(inp), "script", "fallback")
+        return NextQuestion(fallback_question(inp), "script", "fallback", why="the LLM did not answer in time" if not js else "the LLM reply had no question")
     if js.get("reply") == "redirect":
         # Trust the LLM only if the candidate really asked a short question; the wording is always ours, not the LLM's.
         ans, q = last_answer(inp), last_examiner_question(inp)
@@ -343,8 +407,12 @@ async def next_question(inp: NextQuestionInput, llm: JsonLLM, test_id: str = "")
     # The examiner may only repeat a question when the candidate really asked for it. An LLM that
     # claims so without a request (it did, after a noisy turn) would repeat questions unasked.
     repeat = js.get("reply") == "repeat" and is_repeat_request(last_answer(inp))
-    if check_question(say, inp, repeat=repeat):
-        return NextQuestion(fallback_question(inp), "script", "fallback", facts=facts)
+    rejected = check_question(say, inp, repeat=repeat)
+    if (not rejected and not repeat and inp.part == 1 and origin_of(say, inp.frames) == "bank"
+            and already_answered(question_part(say), " ".join(t for sp, t in inp.history if sp == "candidate"))):
+        rejected = "already answered by the candidate"      # a bank question they have in effect answered before
+    if rejected:
+        return NextQuestion(fallback_question(inp), "script", "fallback", facts=facts, why=f"LLM question rejected: {rejected}")
     return NextQuestion(say, "ai", "repeat" if repeat else origin_of(say, inp.frames),
                         "repeat" if repeat else "answer", facts)
 
@@ -381,6 +449,8 @@ def choose_plan(bank: dict | None = None, rng: random.Random | None = None) -> d
     others = [t for t in topics if not t["opening"]]
     for pool in rng.sample([[t for t in others if t["local"]], [t for t in others if not t["local"]]], 2):
         pick(pool or others)
+    for _ in range(RESERVE_TOPICS):                 # reserves: asked only if the three main topics finish with time to spare
+        pick(others)
 
     part1 = []
     for t in picked:
