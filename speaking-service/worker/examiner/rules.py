@@ -161,7 +161,7 @@ class NextQuestion:
     why: str = ""                   # why the script fallback was used instead of the LLM's question (for the run log)
 
 
-from worker.examiner.answered import already_answered  # noqa: E402
+from worker.examiner.answered import already_answered, content_words  # noqa: E402
 from worker.examiner.speech import is_repeat_request  # noqa: E402
 
 JsonLLM = Callable[[str, str], Awaitable["dict | None"]]
@@ -359,6 +359,73 @@ def fallback_question(inp: NextQuestionInput) -> str:
     return next((f for f in inp.frames if usable(f)), "")
 
 
+# ---- meaning-based repetition check ----------------------------------------------------------------------------------
+# Word overlap cannot see that "Why do traffic jams happen?" and "What are the main causes of congestion?" are one question,
+# or that "Which events matter for being on time?" was just answered by "interviews or exams". A short, strict LLM check can.
+SEMANTIC_SYSTEM = (
+    "You help an IELTS speaking examiner avoid asking something that has already been covered. "
+    "A proposed question is COVERED only if (a) it asks for the same information as a question already asked, even in different words "
+    '(for example "Why do traffic jams happen?" and "What are the main causes of congestion?"), or (b) it asks for a specific fact the '
+    "candidate has already clearly stated (for example they said they get up at 6 a.m. and the question asks what time they get up, "
+    "or they listed interviews and exams and the question asks which events matter). "
+    "A question that asks the candidate to explain, give reasons or an example, or say more about something they mentioned is NOT covered. "
+    "When unsure, it is NOT covered. Reply only with JSON.")
+SEMANTIC_TIMEOUT_S = 4.0
+SAID_LIMIT = 6                      # recent candidate answers shown to the check
+ASKED_LIMIT = 14
+
+
+async def _ask_llm(llm, system: str, prompt: str):
+    """Call the LLM with the short timeout used for helper checks; plain two-argument callables (tests) work too."""
+    try:
+        return await llm(system, prompt, timeout=SEMANTIC_TIMEOUT_S)
+    except TypeError:
+        return await llm(system, prompt)
+
+
+async def covered_questions(inp: NextQuestionInput, llm, questions: list[str]) -> set[int]:
+    """Indexes of `questions` that repeat an earlier question in other words or that the candidate has already answered.
+    Fails open: if the LLM is slow, down or unclear, nothing is reported as covered (the word checks still apply)."""
+    said = [t for s_, t in inp.history if s_ == "candidate"][-SAID_LIMIT:]
+    asked = asked_in_test(inp)[-ASKED_LIMIT:]
+    if not questions or not (said or asked):
+        return set()
+    prompt = ("Questions already asked in this test:\n" + ("\n".join(f"- {a}" for a in asked) or "- (none)") +
+              "\n\nWhat the candidate has said so far (speech recognition, may contain errors):\n" +
+              ("\n".join(f"- {t[:300]}" for t in said) or "- (nothing yet)") +
+              "\n\nProposed next questions:\n" + "\n".join(f"{i + 1}. {q}" for i, q in enumerate(questions)) +
+              '\n\nReply as JSON: {"covered": [<numbers of the proposed questions that are COVERED>]}')
+    js = await _ask_llm(llm, SEMANTIC_SYSTEM, prompt)
+    nums = js.get("covered") if isinstance(js, dict) else None
+    if not isinstance(nums, list):
+        return set()
+    return {n - 1 for n in nums if isinstance(n, int) and 1 <= n <= len(questions)}
+
+
+def _relevance(question: str, answer: str) -> int:
+    """How many of the question's key words the candidate's last answer touches: a question on what they just talked about is more natural."""
+    return len(set(content_words(question)) & set(content_words(answer)))
+
+
+async def pick_fallback(inp: NextQuestionInput, llm) -> str:
+    """The bank question to ask when the LLM's question was rejected: not asked before, not already answered, not the same thing
+    in other words, and, among those, the one closest to what the candidate has just said. "" means nothing suitable is left."""
+    previous = [question_part(p) for p in list(inp.asked) + [t for s_, t in inp.history if s_ == "examiner"]]
+    said = " ".join(t for s_, t in inp.history if s_ == "candidate")
+    pool = [q for q in inp.frames if not any(similarity(question_part(q), p) >= 0.6 for p in previous) and not already_answered(q, said)]
+    if inp.fallback and inp.fallback not in pool and inp.fallback not in inp.frames \
+            and not any(similarity(question_part(inp.fallback), p) >= 0.6 for p in previous):
+        pool.append(inp.fallback)                  # e.g. one of the generic Part 3 follow-ups
+    if not pool:
+        return ""
+    last = last_answer(inp)
+    ranked = sorted(pool, key=lambda q: -_relevance(q, last))        # stable: bank order among equals
+    head = ranked[:5]
+    covered = await covered_questions(inp, llm, head)
+    fresh = [q for i, q in enumerate(head) if i not in covered] + ranked[5:]
+    return fresh[0] if fresh else ""
+
+
 MARKS_ANSWER = re.compile(r"\b(you said|you mentioned|your answer|that is (?:good|interesting)|that's (?:good|interesting))\b", re.I)
 
 
@@ -411,8 +478,10 @@ async def next_question(inp: NextQuestionInput, llm: JsonLLM, test_id: str = "")
     if (not rejected and not repeat and inp.part == 1 and origin_of(say, inp.frames) == "bank"
             and already_answered(question_part(say), " ".join(t for sp, t in inp.history if sp == "candidate"))):
         rejected = "already answered by the candidate"      # a bank question they have in effect answered before
+    if not rejected and not repeat and 0 in await covered_questions(inp, llm, [question_part(say)]):
+        rejected = "already asked or answered (meaning check)"
     if rejected:
-        return NextQuestion(fallback_question(inp), "script", "fallback", facts=facts, why=f"LLM question rejected: {rejected}")
+        return NextQuestion(await pick_fallback(inp, llm), "script", "fallback", facts=facts, why=f"LLM question rejected: {rejected}")
     return NextQuestion(say, "ai", "repeat" if repeat else origin_of(say, inp.frames),
                         "repeat" if repeat else "answer", facts)
 

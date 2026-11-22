@@ -20,6 +20,8 @@ from pipecat.frames.frames import ErrorFrame, Frame, TranscriptionFrame
 from pipecat.services.whisper.stt import WhisperSTTService
 from pipecat.utils.time import time_now_iso8601
 
+from worker.examiner.speech import has_foreign_script
+
 # ieltsup/services/examCoreAPI/experimental/deepgram/lib/speaking/transcript/keyterms.ts
 FIXED = [
     "cue card", "IELTS", "Bangladesh", "Bangladeshi", "Dhaka", "Puran Dhaka", "Chattogram", "Sylhet", "Rajshahi",
@@ -54,6 +56,13 @@ def initial_prompt(question: str | None) -> str:
     return ", ".join(keyterms_for(question)) + "."
 
 
+def language_code(language) -> str:
+    """The plain code faster-whisper needs ("en"). Pipecat's Language is an enum: formatted into Whisper's language token it can
+    become "<|Language.EN|>" on some Python versions, the token is then not found and the decoder runs without a language."""
+    code = getattr(language, "value", language) or "en"
+    return str(code).split("-")[0].lower()
+
+
 def level_up(audio: np.ndarray, target: float = 0.08, max_gain: float = 6.0) -> np.ndarray:
     """Quiet microphones (speech rms 0.02-0.03) make Whisper guess; bring the speech up to a normal level.
     The gain comes from the speaking frames only (not the silence between words) and never lowers the volume."""
@@ -85,7 +94,7 @@ class ExamWhisperSTTService(WhisperSTTService):
     def _decode(self, audio_float: np.ndarray) -> list[tuple[str, float, float]]:
         segments, _ = self._model.transcribe(
             level_up(audio_float),
-            language=self._settings.language,
+            language=language_code(self._settings.language),
             initial_prompt=initial_prompt(self.question_hint),
             condition_on_previous_text=False,
             beam_size=5,
@@ -108,7 +117,7 @@ class ExamWhisperSTTService(WhisperSTTService):
         prompt = initial_prompt(self.question_hint)
         text = " ".join(t for t, no_speech, logprob in parts
                         if t and no_speech < self._settings.no_speech_prob and logprob > self.MIN_AVG_LOGPROB
-                        and not echoes_prompt(t, prompt))
+                        and not echoes_prompt(t, prompt) and not has_foreign_script(t))
         await self.stop_processing_metrics()
         if text:
             await self._handle_transcription(text, True, self._settings.language)

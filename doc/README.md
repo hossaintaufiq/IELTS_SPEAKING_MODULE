@@ -50,7 +50,7 @@ Worst case: 30 + 340 + 235 + 340 + 10 s, which fits the cap.
 
 ## 2. What the examiner says: the fixed script
 
-The examiner is **Alex Morgan**, speaking British English. These lines are never written by the LLM (source: `SCRIPT` in `rules.py`, from the company's `brief.ts`, plus the lines added for pacing and endings).
+The examiner is **Alex Morgan**, speaking British English. These lines are never written by the LLM (source: `SCRIPT` in `rules.py`, from the company's `brief.ts`, plus the lines written for pacing and endings).
 
 | Key | Line |
 |---|---|
@@ -293,7 +293,7 @@ Write a NEW discussion question about the theme from this angle: compare the pas
 ```
 Part 2 has just ended. The candidate talked about: "Describe a time you lost something important.".
 What they said (speech recognition, may contain errors): I want to talk about the day I lost my phone on a crowded bus. It had all my photos and I was very worried, so I went back to the bus stop.
-Ask ONE short rounding-off question, like a real IELTS examiner (under 12 words, ending with a question mark), about the thing they described. It must be easy to answer in a sentence, for example "Do you still have it?", "Do many people go there?", "Do you see him often?". Use only what they said; never add or assume any detail they did not mention, and never refer to the conversation, the talk, or what they "said" or "mentioned". Do not use a name or word they did not say. Reply as JSON: {"say": "<the question>"}
+Ask ONE short rounding-off question, as a real IELTS examiner does after Part 2 (under 12 words, ending with a question mark). It must be about the MAIN subject of the topic, not a small incidental detail they happened to mention (not a tea stall, a colour, a brand), be easy to answer in a sentence or two, and link to the candidate's own life, habits, feelings or plans, for example "Do you often get stuck in traffic like that?", "Do you still have it?", "Do you think you will go there again?", "Did you tell anyone about it?", "Do many people in your country do this?". Use only what they said; never add or assume any detail they did not mention, and never refer to the conversation, the talk, or what they "said" or "mentioned". Do not use a name or word they did not say. Reply as JSON: {"say": "<the question>"}
 ```
 
 The reply must be one clean question, under 15 words, with no sensitive subject, without "conversation / discussion / you said / you mentioned / talked about / topic", and built from words the candidate or the cue card actually used. Otherwise no question is asked: the examiner says "Thank you." and goes straight to Part 3.
@@ -316,9 +316,28 @@ A question from the LLM is spoken only if all of these pass. If not, the examine
 - Otherwise a question is treated as answered if it has at least 3 content words and at least 60% of them already appear in what the candidate said (simple stemming, common words ignored).
 - The check is cautious on purpose: wrongly skipping a question costs less than asking it twice.
 
-### Fallback when the LLM is not used
+### Meaning check (a second, short LLM call)
 
-The next unasked, unanswered bank question is used. If none is left, the examiner moves on (next topic, or the next part).
+Word overlap cannot see that "Why do traffic jams happen?" and "What are the main causes of congestion?" are one question, or that "Which events matter for being on time?" was just answered by "interviews or exams". After the word checks, every question the LLM writes or picks (not the follow-ups to the last answer, and not a requested repeat) goes through this check:
+
+- The LLM sees the last 14 questions asked, the last 6 answers, and the proposed question, and replies `{"covered": [numbers]}`.
+- Timeout 4 s. **It fails open**: if the LLM is slow, down or unclear, nothing is rejected on this check (the word checks still apply).
+- A question that is covered is replaced by a bank question (next section) and the run log says `already asked or answered (meaning check)`.
+
+System prompt of the meaning check:
+
+```
+You help an IELTS speaking examiner avoid asking something that has already been covered. A proposed question is COVERED only if (a) it asks for the same information as a question already asked, even in different words (for example "Why do traffic jams happen?" and "What are the main causes of congestion?"), or (b) it asks for a specific fact the candidate has already clearly stated (for example they said they get up at 6 a.m. and the question asks what time they get up, or they listed interviews and exams and the question asks which events matter). A question that asks the candidate to explain, give reasons or an example, or say more about something they mentioned is NOT covered. When unsure, it is NOT covered. Reply only with JSON.
+```
+
+### Choosing the replacement (`pick_fallback`)
+
+- The pool is the bank questions of the current topic (Part 3: the theme's questions, then the company's generic follow-ups).
+- Questions already asked (similarity of 0.6 or more) and questions the candidate has in effect answered (section below) are removed.
+- The rest are ranked by how many key words they share with the candidate's **last answer** (a question about what they just talked about is more natural); ties keep the bank order.
+- The five best go through the meaning check in one call; the first one that is not covered is asked.
+- If nothing suitable is left the examiner moves on: next topic in Part 1; in Part 3 the company's generic follow-ups, and when those are used the test closes. A question is never asked twice.
+- If the LLM is down, the word checks alone choose the question (the examiner never waits on a failed call).
 
 ## 7. Natural pace: waiting, follow-ups, lead-ins
 
@@ -451,6 +470,7 @@ Only questions of 14 words or fewer count. Patterns (case-insensitive):
 - "Thank you sir" / "thank you madam" on its own (politeness, not an answer). "Yes sir." is a real answer and is kept.
 - Repetition loops (four or more words with at most a third of them different, "you you you you").
 - The recogniser's own prompt words coming back as text (section 11).
+- **Sentences in another language.** On trailing silence or noise Whisper sometimes writes a stock phrase in another language, even with English forced (a real run produced the Turkish "thank you for watching" and a Turkish subtitle credit after a correct answer). The candidate speaks English in this test, so any sentence containing letters outside the Latin-1 range (Turkish, Bengali, Arabic, Chinese...) is removed; the rest of the answer is kept. Accented letters inside Latin-1 (cafe, resume) are not affected.
 - An ignored fragment while an answer is waiting **restarts the wait** (the candidate is still thinking).
 
 ### Unfinished sentences (the examiner waits longer)
@@ -471,6 +491,7 @@ Twelve words or fewer, matching: `\b(sorry|pardon|repeat|say (?:that|it) again|o
 - **Voice activity detection** (Silero): confidence 0.5, minimum volume 0.0, speech starts after 0.2 s, a turn ends after 0.6 s of silence.
 - **The recogniser prompt is deliberately short.** Measured on a real Bangladeshi test recording, a long list of local names made Whisper repeat the prompt ("IELTS speaking test.") and invent words. It now carries only these terms plus up to 4 content words of the question just asked: Bangladesh, Dhaka, Chattogram, Sylhet, Eid, Pohela Boishakh, rickshaw, biryani, fuchka, Bangla. Example: `Bangladesh, Dhaka, Chattogram, Sylhet, Eid, Pohela Boishakh, rickshaw, biryani, fuchka, Bangla, food, markets.`
 - Segments made only of the prompt's own words (three words or more) are dropped.
+- **The language is passed as the plain code `en`.** An enum member can be formatted as `Language.EN` on some Python versions, so Whisper's language token would not be found and the decoder would run with no language at all.
 - **Quiet microphones are levelled up** before recognition: speech frames are brought to an rms of 0.08 with a gain of at most x6; loud audio and silence are never changed.
 
 Decoding settings (`_decode` in `worker/stt.py`):
@@ -478,7 +499,7 @@ Decoding settings (`_decode` in `worker/stt.py`):
 ```
 self._model.transcribe(
             level_up(audio_float),
-            language=self._settings.language,
+            language=language_code(self._settings.language),
             initial_prompt=initial_prompt(self.question_hint),
             condition_on_previous_text=False,
             beam_size=5,

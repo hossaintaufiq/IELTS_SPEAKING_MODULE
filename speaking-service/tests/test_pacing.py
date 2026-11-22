@@ -5,6 +5,7 @@ import random
 import pytest
 
 import worker.session as sess
+from worker.examiner import rules
 from worker.examiner.naturalness import AckPicker
 from worker.examiner.pacing import wait_seconds
 from worker.examiner.speech import is_noise, is_repeat_request, looks_unfinished
@@ -107,6 +108,8 @@ def test_more_speech_during_the_llm_wait_takes_the_question_back_and_one_merged_
         gate = asyncio.Event()
 
         async def slow_llm(system, prompt):
+            if system == rules.SEMANTIC_SYSTEM:                # the meaning check is not a question-writing call
+                return {"covered": []}
             prompts.append(prompt)
             if len(prompts) == 1:
                 await gate.wait()                                   # first attempt: the LLM is still thinking
