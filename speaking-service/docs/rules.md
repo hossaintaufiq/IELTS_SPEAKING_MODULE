@@ -73,7 +73,7 @@ Part 1 plan (`choose_plan`): one opening topic, then one local and one non-local
 
 **Part 2 rounding-off question**: one question, under 12 words, about the **main subject** of the topic (not an incidental detail such as a tea stall, a colour or a brand), easy to answer in a sentence or two, linked to the candidate's own life, habits, feelings or plans. Rejected (no question is asked, the examiner just says "Thank you." and goes to Part 3) if it is not one clean question, is banned, mentions "the conversation / the talk / you said", or has no word from what they said or the card. If the talk was under **12 words**, no question is made up at all.
 
-**Acknowledgements**: a neutral "Okay." / "Right." / "Alright." (short answer), "Okay, thank you." / "Thank you." (long answer), chosen with 50% probability, never the same one twice running, always at a topic change. Never an opinion (`naturalness.py`).
+**Acknowledgements** (kept rare and neutral on purpose): only "Okay." or "Thank you." ("Okay, thank you." at a topic change). Never "Right.", "Alright" or "All right", never a comment on the answer. About 1 ordinary turn in 8 (`EXAMINER_ACK_PROB` 0.12), never twice within 3 turns (`EXAMINER_ACK_GAP`), and at a change of topic 1 time in 2. An LLM question that opens with "Okay, thank you." or "Right." has that opening removed (`naturalness.py`, `rules.strip_lead_in`).
 
 ## 6. Never repeat, never ask what is known
 
@@ -98,16 +98,18 @@ The examiner answers only after the candidate's natural pause, and merges turns 
 
 | Setting | Default | Env |
 |---|---|---|
-| Part 1 pause | 1.5 s | `ANSWER_PAUSE_S` |
-| Part 3 pause | 2.0 s | `PART3_PAUSE_S` |
-| Name, "do you understand?" | 1.2 s | `OTHER_PAUSE_S` |
-| Extra after an unfinished sentence ("...and", "...because", "I mean", "for example") | +1.2 s | `INCOMPLETE_EXTRA_S` |
-| Extra after a very short answer (5 words or fewer) | +1.0 s | `SHORT_ANSWER_EXTRA_S` |
-| Extra after "let me think" etc. (14 words or fewer) | +2.5 s | `THINKING_EXTRA_S` |
+| Part 1 pause | 2.2 s | `ANSWER_PAUSE_S` |
+| Part 3 pause | 3.0 s | `PART3_PAUSE_S` |
+| Name, "do you understand?" | 1.8 s | `OTHER_PAUSE_S` |
+| Extra after an unfinished sentence ("...and", "...because", "I mean", "for example") | +2.0 s | `INCOMPLETE_EXTRA_S` |
+| Extra after a very short answer (5 words or fewer) | +1.5 s | `SHORT_ANSWER_EXTRA_S` |
+| Extra after "let me think" etc. (14 words or fewer) | +4.0 s | `THINKING_EXTRA_S` |
 | Long, complete answer (25 words or more, ends with . ? !) | wait x 0.75 | |
-| Maximum wait | 6.0 s | `MAX_WAIT_S` |
+| Maximum wait | 10.0 s | `MAX_WAIT_S` |
 
+- **The candidate always gets to finish.** The examiner never asks a question, probe, reminder or re-ask while the previous answer is unfinished: after the wait it also keeps waiting until the candidate's voice has been quiet for 1.0 s (`QUIET_BEFORE_REPLY_S`), and if their voice returns while the next question is still being written, the question is thrown away and the whole answer is waited for.
 - While the voice detector says the candidate is still talking, the examiner keeps waiting (a missed "stopped" signal is ignored after 20 s).
+- **Late end of the previous answer.** If the candidate was still answering when the examiner asked the next question, a long turn that starts within 1.8 s of the question, says nothing about it and carries on from the previous answer is joined to that answer, and the new question is asked again once, after they are done. No extra question is written on top (`_is_late_continuation`).
 - If speech arrives while the next question is still being written, the question is taken back and the examiner waits for the whole answer.
 - Unfinished-sentence words are listed in `speech.py` (`UNFINISHED_LAST_WORDS`, `UNFINISHED_ENDINGS`); the wait rules are in `pacing.py`.
 
@@ -129,7 +131,7 @@ Quiet time is counted from the latest of: their last words, their voice last hea
 | | +6 s (`PART2_EARLY_GIVEUP_S`) | "Thank you." -> follow-up or Part 3 |
 
 - Fewer than **4 words** is not counted as "speaking" (a stray "okay"). Fewer than 3 words of a late fragment do not reset the silence clock.
-- At the 2-minute mark a candidate who is mid-sentence may finish it (up to 4 s extra), then "Thank you."
+- **Time is up (2 minutes).** The candidate is never cut off mid-sentence. If they are still talking, the examiner waits until they stop (up to 10 s extra, `P2_FINISH_SENTENCE_S`) and then until their last words are transcribed (2.5 s after their voice stops, `P2_TRANSCRIPT_WAIT_S`), and only then says "Thank you, your time is up." followed by the rounding-off question, or "Thank you, your time is up. Now let's move on." into Part 3 if there is no question. If they are still speaking when the extra 10 s are over: "I'm sorry to stop you, but your time is up. Thank you."
 - The examiner never asks "anything more?" and never prompts a candidate who is talking.
 - Part 3: if its time is up and the candidate stays silent for 25 s (`PART3_GRACE_S`), the test closes.
 

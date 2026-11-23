@@ -91,3 +91,9 @@ def test_part3_rejects_place_names_and_report_wording():
     assert check_question("What are the main causes of traffic in cities like Dhaka?", inp)
     assert check_question("Should schools teach students about sustainable transport?", inp)
     assert check_question("Why do you think traffic jams happen so often where you live?", inp) is None
+
+
+def test_llm_lead_in_acknowledgements_are_dropped_from_questions():
+    assert rules.strip_lead_in("Okay, thank you. What do you like most about your home town?") == "What do you like most about your home town?"
+    assert rules.strip_lead_in("Right. Do you often cook at home?") == "Do you often cook at home?"
+    assert rules.strip_lead_in("So, why do you think that is?") == "So, why do you think that is?"

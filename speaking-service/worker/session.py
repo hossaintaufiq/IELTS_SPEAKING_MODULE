@@ -23,6 +23,7 @@ from typing import Awaitable, Callable
 from worker.examiner import llm as llm_module
 from worker.examiner import rules
 from worker.examiner.llm import generate_json
+from worker.examiner.answered import content_words
 from worker.examiner.intents import finish_answer, is_done_talking, is_finish_request
 from worker.examiner.naturalness import AckPicker
 from worker.examiner.pacing import wait_seconds
@@ -67,8 +68,11 @@ PART3_FOLLOW_UPS = ["Why do you think that is?", "Can you give an example?"]
 P2_REAL_WORDS = 4          # fewer words than this in the long turn is not "speaking" (stray noise, a lone "okay")
 P2_ENOUGH_WORDS = 12       # fewer than this and no question is made up about it: straight on to Part 3
 DONE_TALKING_PAUSE_S = 1.5   # after "that's all" the examiner waits this long in case they go on, then thanks them
+LATE_VOICE_S = 1.8           # a long turn that starts this soon after the examiner's question may still be the end of the previous answer
+QUIET_BEFORE_REPLY_S = 1.0   # the examiner never starts speaking until the candidate's voice has been quiet this long
 VOICE_GRACE_S = 2.0        # after hearing the candidate, the Part 2 silence prompts wait at least this long
-P2_FINISH_SENTENCE_S = 4   # at the two-minute mark a candidate who is still speaking may finish the sentence
+P2_FINISH_SENTENCE_S = 10  # at the two-minute mark a candidate who is still speaking may finish what they are saying, for up to this long
+P2_TRANSCRIPT_WAIT_S = 2.5 # ...and the examiner waits this long after their voice stops, so the last words are transcribed and not lost
 PART3_GRACE_S = 25         # Part 3 time is up and the candidate is silent: close the test after this long
 META_TALK = re.compile(r"\b(conversation|discussion|you (?:say|said|mention\w*|told|talked?)|talk(?:ed|ing)? about|topic)\b", re.I)
 _QSTOP = {"what", "about", "would", "could", "your", "that", "this", "there", "their", "with", "have", "does", "tell",
@@ -149,15 +153,15 @@ class ExamSession:
         self.await_audio = False          # real server: wait for the examiner's last line to finish playing before ending
         # patience: seconds of quiet (after the turn-end detector) before the examiner answers
         # The clock starts when the transcript arrives (the VAD and recogniser have already used about a second).
-        self.pause_s = float(os.getenv("ANSWER_PAUSE_S", "1.5"))            # Part 1
-        self.p3_pause_s = float(os.getenv("PART3_PAUSE_S", "2.0"))          # Part 3: longer, more thinking
-        self.other_pause_s = float(os.getenv("OTHER_PAUSE_S", "1.2"))       # name, "do you understand?"
-        self.extra_s = float(os.getenv("INCOMPLETE_EXTRA_S", "1.2"))        # more patience after "...and", "...because"
-        self.short_extra_s = float(os.getenv("SHORT_ANSWER_EXTRA_S", "1.0"))  # "Yes." usually goes on to an explanation
-        self.think_extra_s = float(os.getenv("THINKING_EXTRA_S", "2.5"))    # "let me think", "how can I say"
-        self.max_wait_s = float(os.getenv("MAX_WAIT_S", "6.0"))
+        self.pause_s = float(os.getenv("ANSWER_PAUSE_S", "2.2"))            # Part 1
+        self.p3_pause_s = float(os.getenv("PART3_PAUSE_S", "3.0"))          # Part 3: longer, more thinking
+        self.other_pause_s = float(os.getenv("OTHER_PAUSE_S", "1.8"))       # name, "do you understand?"
+        self.extra_s = float(os.getenv("INCOMPLETE_EXTRA_S", "2.0"))        # more patience after "...and", "...because"
+        self.short_extra_s = float(os.getenv("SHORT_ANSWER_EXTRA_S", "1.5"))  # "Yes." usually goes on to an explanation
+        self.think_extra_s = float(os.getenv("THINKING_EXTRA_S", "4.0"))    # "let me think", "how can I say"
+        self.max_wait_s = float(os.getenv("MAX_WAIT_S", "10.0"))
         self.adaptive_wait = os.getenv("ADAPTIVE_WAIT", "1") == "1"
-        self.acks = AckPicker(rng, float(os.getenv("EXAMINER_ACK_PROB", "0.5")))
+        self.acks = AckPicker(rng, float(os.getenv("EXAMINER_ACK_PROB", "0.12")), int(os.getenv("EXAMINER_ACK_GAP", "3")))
         self._raw_llm = llm
         self.llm_error = ""
         self.llm = self._interruptible_llm
@@ -173,6 +177,7 @@ class ExamSession:
         self._pause_task: asyncio.Task | None = None
         self._responding = False
         self._user_active, self._user_active_since = False, 0.0
+        self._late_continuation = False             # the next turn is the end of the PREVIOUS answer, not an answer to the question just asked
         self._last_voice_at = -1e9                  # when the voice detector last heard the candidate
 
     # ---- events to the browser + the run log -----------------------------------------------------
@@ -256,6 +261,11 @@ class ExamSession:
     def vad_started(self) -> None:
         self._user_active, self._user_active_since = True, self.clock()
         self._last_voice_at = self.clock()
+        if self._responding and self._interruptible and self._pause_task:
+            # They started talking again while the next question was being written: their answer was not finished.
+            # Take the question back (the answer is restored) and wait for the whole answer.
+            self._pause_task.cancel()
+            self._pause_task = asyncio.create_task(self._answer_after_pause())
 
     def vad_stopped(self) -> None:
         self._user_active = False
@@ -287,6 +297,9 @@ class ExamSession:
             if done_talking:
                 self._end_task = asyncio.create_task(self._end_talk_soon())
             return
+        if self._is_late_continuation(text):
+            self._late_continuation = True
+            await self.emit({"type": "note", "text": "the candidate was still finishing the previous answer: it is added to that answer, not taken as the reply to the new question"})
         self._pending.append(text)
         if self._responding:
             if self._interruptible and self._pause_task:
@@ -296,6 +309,19 @@ class ExamSession:
                 self._pause_task = asyncio.create_task(self._answer_after_pause())
             return
         self._restart_wait()
+
+    def _is_late_continuation(self, text: str) -> bool:
+        """The candidate was still answering the PREVIOUS question when the examiner asked the next one. Their words start right
+        after the new question, say nothing about it, and carry on from what they said before. They must not be taken as the answer
+        to the new question (which would make the examiner ask a third one on top)."""
+        if self.phase not in (PART1, PART3) or not self.last_question or self._pending or not self._bot_stopped_at:
+            return False
+        if len(text.split()) < 10 or not 0 <= self._user_active_since - self._bot_stopped_at < LATE_VOICE_S:
+            return False
+        prev = next((t for who, t in reversed(self.history) if who == "candidate"), "")
+        asked = {w for w in content_words(self.last_question)}
+        said = set(content_words(text))
+        return bool(prev) and not (said & asked) and bool(said & set(content_words(prev)))
 
     def _restart_wait(self) -> None:
         if self._pause_task and not self._responding:
@@ -339,8 +365,10 @@ class ExamSession:
     async def _answer_after_pause(self) -> None:
         try:
             await asyncio.sleep(self._wait_for(" ".join(self._pending)))
-            while self._speaking_now():             # they started talking again: wait for them to finish
-                await asyncio.sleep(0.4)
+            # They may only be breathing or searching for a word: the examiner speaks only after their voice has been quiet for
+            # QUIET_BEFORE_REPLY_S, and keeps waiting for as long as they are talking.
+            while self._speaking_now() or self.clock() - self._last_voice_at < QUIET_BEFORE_REPLY_S:
+                await asyncio.sleep(0.2)
         except asyncio.CancelledError:
             return
         text, self._pending = " ".join(self._pending).strip(), []
@@ -403,6 +431,15 @@ class ExamSession:
             await self.say(f"{SCRIPT['offTopic']} {self.last_question}".strip())
 
     async def _respond(self, text: str) -> None:
+        if self._late_continuation:
+            # The end of the previous answer: join it to that answer, then, once they are really done, ask the new question again
+            # (they were talking over it and may not have heard it). No new question is made up.
+            self._late_continuation = False
+            i = max((k for k, (who, _t) in enumerate(self.history) if who == "candidate"), default=None)
+            if i is not None:
+                self.history[i] = ("candidate", f"{self.history[i][1]} {text}")
+            await self.say(self.last_question, origin="repeat")
+            return
         self.history.append(("candidate", text))
         p = self.phase
         gave_name = p in (INTRO, NAME) and bool(extract_call_name(text) or (p == NAME and extract_name(text)))
@@ -573,15 +610,21 @@ class ExamSession:
         """True once the candidate has really said something in the long turn (not just a stray word or two)."""
         return sum(len(t.split()) for t in self.long_turn) >= P2_REAL_WORDS
 
-    async def end_long_turn(self, gave_up: bool = False) -> None:
-        """Time is up (or they finished or stayed silent): 'Thank you.' and one short question about what they said.
+    async def end_long_turn(self, gave_up: bool = False, time_up: bool = False, cut: bool = False) -> None:
+        """The talk is over. 'Thank you.' and one short question about what they said.
 
+        time_up: the two minutes ran out, so the examiner says so ("Thank you, your time is up."); cut: they were still speaking
+        when even the extra time ran out ("I'm sorry to stop you, but your time is up.").
         If they said little or nothing, no question is made up about it: the examiner moves straight on to Part 3."""
         talk = " ".join(self.long_turn).strip()
         if talk:
             self.history.append(("candidate", talk))
+        stop = SCRIPT["part2TimeUpCut"] if cut else SCRIPT["part2TimeUp"] if time_up else SCRIPT["part2Stop"]
         if len(talk.split()) < P2_ENOUGH_WORDS:
-            await self.start_part3(lead=SCRIPT["part2Skip"] if gave_up or not talk else SCRIPT["part2Stop"])
+            if gave_up or not talk:
+                await self.start_part3(lead=SCRIPT["part2Skip"])
+            else:
+                await self.start_part3(lead=f"{stop} {SCRIPT['part2MoveOn']}" if time_up else stop)
             return
         await self.set_phase(PART2_FOLLOWUP)
         card = self.plan["cueCard"]["prompt"]
@@ -604,10 +647,10 @@ class ExamSession:
                 or META_TALK.search(q) or not _grounded(q, talk, card)):
             why = "the LLM wrote nothing usable" if not q else "rejected: not a clean question or not about what was said"
             await self.emit({"type": "note", "text": f"no rounding-off question ({why}): thank them and go to Part 3"})
-            await self.start_part3(lead=SCRIPT["part2Stop"])      # an invented or odd question is worse than none
+            await self.start_part3(lead=f"{stop} {SCRIPT['part2MoveOn']}" if time_up else stop)      # an invented or odd question is worse than none
             return
         self.last_question = q                       # so "continue" or an irrelevant question re-asks THIS question
-        await self.say(f"{SCRIPT['part2Stop']} {q}", origin=follow_origin, why=follow_why)
+        await self.say(f"{stop} {q}", origin=follow_origin, why=follow_why)
 
     # ---- Part 3 ----------------------------------------------------------------------------------
     async def start_part3(self, lead: str = "") -> None:
@@ -731,9 +774,11 @@ class ExamSession:
             await self.start_long_turn()
         elif self.phase == PART2_SPEAK:
             if self.elapsed() >= limit:
-                if self._speaking_now() and self.elapsed() < limit + P2_FINISH_SENTENCE_S:
-                    return                            # still mid-sentence: let them finish, then "Thank you."
-                await self.end_long_turn()
+                over = self.elapsed() - limit
+                talking = self._speaking_now()
+                if (talking or self.clock() - self._last_voice_at < P2_TRANSCRIPT_WAIT_S) and over < P2_FINISH_SENTENCE_S:
+                    return                            # still talking (or their last words are being transcribed): let them finish
+                await self.end_long_turn(time_up=True, cut=talking)       # "Thank you, your time is up."
             else:
                 await self._part2_silence_check()
         elif self.phase == PART3 and self.elapsed() >= (limit or 0) + PART3_GRACE_S:
