@@ -31,6 +31,59 @@ MOCK = os.getenv("MOCK") == "1"
 
 app = FastAPI(title="Speaking test bench")
 
+
+# ---- access code ---------------------------------------------------------------------------------------------
+# A public link (Cloudflare Tunnel) must not be usable by whoever finds it: every test uses the shared GPU. Set ACCESS_CODE and open
+# the page once as /?key=<code>; the browser then keeps a cookie, which the page, the logs and the microphone connection all carry.
+# Not set (the default, and on a private SSH tunnel): no check at all.
+ACCESS = {"code": os.getenv("ACCESS_CODE", "")}
+COOKIE = "access"
+
+
+def _code_from(scope) -> tuple[bool, bool]:
+    """(allowed, came_from_the_link): the code in ?key= or in the cookie."""
+    from urllib.parse import parse_qs
+    import hmac
+
+    want = ACCESS["code"]
+    key = (parse_qs(scope.get("query_string", b"").decode("latin-1")).get("key") or [""])[0]
+    if key and hmac.compare_digest(key, want):
+        return True, True
+    headers = dict(scope.get("headers") or [])
+    for part in headers.get(b"cookie", b"").decode("latin-1").split(";"):
+        name, _, value = part.strip().partition("=")
+        if name == COOKIE and value and hmac.compare_digest(value, want):
+            return True, False
+    return False, False
+
+
+class AccessCodeMiddleware:
+    def __init__(self, inner):
+        self.inner = inner
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] not in ("http", "websocket") or not ACCESS["code"] or scope.get("path") == "/health":
+            return await self.inner(scope, receive, send)
+        ok, from_link = _code_from(scope)
+        if not ok:
+            if scope["type"] == "websocket":
+                await receive()                                  # the connect message
+                return await send({"type": "websocket.close", "code": 1008, "reason": "Access code needed"})
+            body = b"Access code needed. Open the link you were given (it ends in ?key=...)."
+            await send({"type": "http.response.start", "status": 401, "headers": [(b"content-type", b"text/plain"), (b"content-length", str(len(body)).encode())]})
+            return await send({"type": "http.response.body", "body": body})
+        if scope["type"] == "http" and from_link:
+            async def with_cookie(message):
+                if message["type"] == "http.response.start":
+                    message = {**message, "headers": [*message.get("headers", []),
+                                                      (b"set-cookie", f"{COOKIE}={ACCESS['code']}; Path=/; HttpOnly; SameSite=Lax; Max-Age=86400".encode())]}
+                await send(message)
+            return await self.inner(scope, receive, with_cookie)
+        return await self.inner(scope, receive, send)
+
+
+app.add_middleware(AccessCodeMiddleware)
+
 if not MOCK:
     from worker import warm
 
@@ -60,7 +113,9 @@ def index():
     return FileResponse(WEB / "index.html")
 
 
-LIVE: dict = {"session": None}           # the test in progress, or the last one (the logs window reads it)
+LIVE: dict = {"session": None}           # the newest test (in progress or the last one): what the logs window shows by default
+SESSIONS: dict[str, ExamSession] = {}    # every connected test, by id: several devices can take a test at the same time
+MAX_SESSIONS = int(os.getenv("MAX_SESSIONS", "6"))   # one GPU serves only so many tests at once; the next device is told to wait
 
 
 @app.get("/logs")
@@ -69,22 +124,34 @@ def logs_page():
 
 
 @app.get("/api/live")
-def live_run():
-    """Events of the current test (or the last one), for the logs window's live view."""
-    s = LIVE["session"]
+def live_run(id: str = ""):
+    """Events of one test (default: the newest), for the logs window's live view, and the list of all connected tests."""
+    listing = [{"id": k, "device": v.device, "phase": v.phase, "started": v.started, "active": v.started and v.phase != "done"}
+               for k, v in SESSIONS.items()]
+    if id == "all":                                   # every connected device in one timeline, oldest first
+        merged = [{**e, "dev": v.device or k[:4]} for k, v in SESSIONS.items() for e in v.log]
+        merged.sort(key=lambda e: e.get("at", 0))
+        return {"active": any(x["active"] for x in listing), "started": bool(listing), "phase": "", "events": merged, "sessions": listing}
+    s = SESSIONS.get(id) if id else LIVE["session"]
     if s is None:
-        return {"active": False, "started": False, "events": []}
-    return {"active": s.started and s.phase != "done", "started": s.started, "phase": s.phase, "events": list(s.log)}
+        return {"active": False, "started": False, "events": [], "sessions": listing}
+    return {"active": s.started and s.phase != "done", "started": s.started, "phase": s.phase, "device": s.device,
+            "events": list(s.log), "sessions": listing}
 
 
-RUN_NAME = re.compile(r"^run_\d{8}_\d{6}$")
+RUN_NAME = re.compile(r"^run_\d{8}_\d{6}(?:_\d{1,8})?$")
 
 
 @app.get("/api/runs")
 def list_runs():
     """Saved test runs, newest first (the page's Run log can open any of them)."""
     files = sorted(sess.RUNS.glob("run_*.json"), reverse=True)[:40] if sess.RUNS.exists() else []
-    return [{"name": f.stem, "kb": round(f.stat().st_size / 1024), "saved": f.stat().st_mtime} for f in files]
+    def device(f: Path) -> str:
+        try:
+            return json.loads(f.read_text(encoding="utf-8")).get("device", "")
+        except Exception:
+            return ""
+    return [{"name": f.stem, "kb": round(f.stat().st_size / 1024), "saved": f.stat().st_mtime, "device": device(f)} for f in files]
 
 
 @app.get("/api/runs/{name}")
@@ -124,14 +191,21 @@ def server_log(name: str, lines: int = 300, q: str = "", hide_debug: bool = True
 
 @app.get("/health")
 def health():
-    return {"ok": True, "mock": MOCK}
+    return {"ok": True, "mock": MOCK, "tests_running": sum(1 for v in SESSIONS.values() if v.phase != "done"), "max_tests": MAX_SESSIONS}
 
 
 @app.websocket("/ws")
 async def ws_endpoint(websocket: WebSocket):
     await websocket.accept()
+    running = sum(1 for v in SESSIONS.values() if v.phase != "done")
+    if running >= MAX_SESSIONS:
+        # the GPU is shared: a test that cannot get its share would stutter for everyone, so it waits instead
+        await websocket.close(code=1013, reason=f"Server is full ({running} tests running). Please try again in a minute.")
+        return
     session = ExamSession(send=websocket.send_json)
+    session.device = (websocket.query_params.get("device") or "")[:40]     # optional label: open the page with ?device=Laptop
     LIVE["session"] = session
+    SESSIONS[session.test_id] = session
     try:
         if MOCK:
             await run_mock(websocket, session)
@@ -140,6 +214,7 @@ async def ws_endpoint(websocket: WebSocket):
     except WebSocketDisconnect:
         pass
     finally:
+        SESSIONS.pop(session.test_id, None)
         path = session.abort() if session.started else None
         if path:
             log.info("saved run log %s", path)
