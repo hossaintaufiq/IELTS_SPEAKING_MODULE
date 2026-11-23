@@ -27,6 +27,18 @@
     {
      "text": "Do you usually work or study better in the morning or at night?",
      "ifNegative": null
+    },
+    {
+     "text": "Do you like your job or your subject?",
+     "ifNegative": null
+    },
+    {
+     "text": "Would you like to change your work or studies in the future?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you prefer working or studying alone or in a group?",
+     "ifNegative": null
     }
    ]
   },
@@ -56,6 +68,14 @@
     {
      "text": "Would you like to live somewhere else in the future?",
      "ifNegative": null
+    },
+    {
+     "text": "Is it easy to travel from your home to other parts of the city?",
+     "ifNegative": null
+    },
+    {
+     "text": "What would you change about the area where you live?",
+     "ifNegative": null
     }
    ]
   },
@@ -84,6 +104,10 @@
     },
     {
      "text": "Would you like to live in your hometown when you are older?",
+     "ifNegative": null
+    },
+    {
+     "text": "Would you like to live in your hometown in the future?",
      "ifNegative": null
     }
    ]
@@ -832,6 +856,10 @@
     {
      "text": "How have weddings in your country changed in recent years?",
      "ifNegative": null
+    },
+    {
+     "text": "Have you been to a wedding recently?",
+     "ifNegative": null
     }
    ]
   },
@@ -898,6 +926,10 @@
     {
      "text": "Is music an important part of celebrations in your country?",
      "ifNegative": null
+    },
+    {
+     "text": "Did you learn to play a musical instrument when you were young?",
+     "ifNegative": "Would you like to learn an instrument?"
     }
    ]
   },
@@ -930,6 +962,10 @@
     },
     {
      "text": "Would you like to act in a film one day?",
+     "ifNegative": null
+    },
+    {
+     "text": "What kind of films do you not enjoy?",
      "ifNegative": null
     }
    ]
@@ -964,6 +1000,14 @@
     {
      "text": "Is there a new sport or activity you would like to try?",
      "ifNegative": null
+    },
+    {
+     "text": "Do you think people in your country get enough exercise?",
+     "ifNegative": null
+    },
+    {
+     "text": "Did you do much sport at school?",
+     "ifNegative": null
     }
    ]
   },
@@ -996,6 +1040,14 @@
     },
     {
      "text": "Is it easy to make new friends as you get older?",
+     "ifNegative": null
+    },
+    {
+     "text": "How often do you see your friends?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you prefer to have a few close friends or many friends?",
      "ifNegative": null
     }
    ]
@@ -1063,6 +1115,14 @@
     {
      "text": "Could you live without the internet for a week?",
      "ifNegative": null
+    },
+    {
+     "text": "What do you mainly use the internet for?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you think children spend too much time online?",
+     "ifNegative": null
     }
    ]
   },
@@ -1095,6 +1155,14 @@
     },
     {
      "text": "Do you ever turn off your phone to take a break from it?",
+     "ifNegative": null
+    },
+    {
+     "text": "How often do you use your phone to take photos?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you think people use their phones too much?",
      "ifNegative": null
     }
    ]
@@ -1162,6 +1230,14 @@
     {
      "text": "What do you usually do before you go to sleep?",
      "ifNegative": null
+    },
+    {
+     "text": "Do you ever take a nap during the day?",
+     "ifNegative": "Why don't you nap during the day?"
+    },
+    {
+     "text": "Do you find it easy to get up in the morning?",
+     "ifNegative": null
     }
    ]
   },
@@ -1195,6 +1271,14 @@
     {
      "text": "Is there a new hobby you would like to try?",
      "ifNegative": null
+    },
+    {
+     "text": "Do you prefer to stay at home or go out in your free time?",
+     "ifNegative": null
+    },
+    {
+     "text": "What do you like to do at the weekend?",
+     "ifNegative": null
     }
    ]
   },
@@ -1227,6 +1311,14 @@
     },
     {
      "text": "Is there a dish you would like to learn to cook?",
+     "ifNegative": null
+    },
+    {
+     "text": "Who usually cooks in your home?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you think it is important for young people to learn to cook?",
      "ifNegative": null
     }
    ]
@@ -1393,6 +1485,18 @@
     {
      "text": "Is being on time more important for some events than others?",
      "ifNegative": null
+    },
+    {
+     "text": "Do you plan your time carefully each day?",
+     "ifNegative": null
+    },
+    {
+     "text": "What do you do if you are going to be late?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you think people today are as careful about time as in the past?",
+     "ifNegative": null
     }
    ]
   },
@@ -1491,6 +1595,751 @@
     },
     {
      "text": "Would you like to live somewhere quieter in the future?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "The weather",
+   "theme": "weather-nature",
+   "opening": false,
+   "local": true,
+   "season": "",
+   "questions": [
+    {
+     "text": "What is the weather like in your hometown at this time of year?",
+     "ifNegative": null
+    },
+    {
+     "text": "What kind of weather do you like best?",
+     "ifNegative": "What kind of weather do you dislike?"
+    },
+    {
+     "text": "Does the weather change the way you feel?",
+     "ifNegative": null
+    },
+    {
+     "text": "Is the weather very different between seasons where you live?",
+     "ifNegative": null
+    },
+    {
+     "text": "What do you usually do on a very hot day?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Colours",
+   "theme": "media-arts",
+   "opening": false,
+   "local": false,
+   "season": "",
+   "questions": [
+    {
+     "text": "What is your favourite colour?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you often wear that colour?",
+     "ifNegative": null
+    },
+    {
+     "text": "Are there colours you do not like?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do colours affect your mood?",
+     "ifNegative": null
+    },
+    {
+     "text": "Did you have a different favourite colour when you were a child?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Sports",
+   "theme": "sport-leisure",
+   "opening": false,
+   "local": false,
+   "season": "",
+   "questions": [
+    {
+     "text": "Do you like playing sports?",
+     "ifNegative": "Why don't you play sports?"
+    },
+    {
+     "text": "What sports are popular in your country?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you prefer playing a sport or watching it?",
+     "ifNegative": null
+    },
+    {
+     "text": "Would you like to try a new sport?",
+     "ifNegative": null
+    },
+    {
+     "text": "Did you enjoy sport lessons at school?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Shopping",
+   "theme": "shopping-money",
+   "opening": false,
+   "local": false,
+   "season": "",
+   "questions": [
+    {
+     "text": "Do you like shopping?",
+     "ifNegative": "Why don't you enjoy shopping?"
+    },
+    {
+     "text": "How often do you go shopping?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you prefer to shop alone or with other people?",
+     "ifNegative": null
+    },
+    {
+     "text": "What was the last thing you bought for yourself?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you compare prices before you buy something?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Walking",
+   "theme": "health",
+   "opening": false,
+   "local": false,
+   "season": "",
+   "questions": [
+    {
+     "text": "Do you like walking?",
+     "ifNegative": "Why don't you like walking?"
+    },
+    {
+     "text": "How often do you walk to places?",
+     "ifNegative": null
+    },
+    {
+     "text": "Is it easy to walk around in the area where you live?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you prefer to walk alone or with someone?",
+     "ifNegative": null
+    },
+    {
+     "text": "Would you like to walk more than you do now?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Bicycles",
+   "theme": "transport",
+   "opening": false,
+   "local": false,
+   "season": "",
+   "questions": [
+    {
+     "text": "Do you have a bicycle?",
+     "ifNegative": "Why don't you have a bicycle?"
+    },
+    {
+     "text": "Did you learn to ride a bicycle when you were young?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do many people in your country ride bicycles?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you think bicycles are a good way to travel in cities?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Public transport",
+   "theme": "transport",
+   "opening": false,
+   "local": true,
+   "season": "",
+   "questions": [
+    {
+     "text": "What kind of public transport do you use most?",
+     "ifNegative": null
+    },
+    {
+     "text": "How often do you take public transport?",
+     "ifNegative": null
+    },
+    {
+     "text": "What do you do while you are travelling?",
+     "ifNegative": null
+    },
+    {
+     "text": "Would you like to see any changes to public transport where you live?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Newspapers and magazines",
+   "theme": "media-arts",
+   "opening": false,
+   "local": false,
+   "season": "",
+   "questions": [
+    {
+     "text": "Do you read newspapers or magazines?",
+     "ifNegative": "Why don't you read newspapers or magazines?"
+    },
+    {
+     "text": "Do you prefer to read the news online or on paper?",
+     "ifNegative": null
+    },
+    {
+     "text": "Did you read newspapers or magazines when you were younger?",
+     "ifNegative": null
+    },
+    {
+     "text": "What kind of news are you most interested in?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Handwriting and pens",
+   "theme": "education",
+   "opening": false,
+   "local": false,
+   "season": "",
+   "questions": [
+    {
+     "text": "Do you often write by hand?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you think your handwriting is good?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you prefer typing or writing by hand?",
+     "ifNegative": null
+    },
+    {
+     "text": "Did you practise handwriting at school?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Bags",
+   "theme": "shopping-money",
+   "opening": false,
+   "local": false,
+   "season": "",
+   "questions": [
+    {
+     "text": "What kind of bag do you usually carry?",
+     "ifNegative": null
+    },
+    {
+     "text": "What do you usually keep in your bag?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you prefer a small bag or a big bag?",
+     "ifNegative": null
+    },
+    {
+     "text": "Have you ever lost a bag?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Jewellery",
+   "theme": "shopping-money",
+   "opening": false,
+   "local": true,
+   "season": "",
+   "questions": [
+    {
+     "text": "Do you wear any jewellery?",
+     "ifNegative": "Why don't you wear jewellery?"
+    },
+    {
+     "text": "Is jewellery popular in your country?",
+     "ifNegative": null
+    },
+    {
+     "text": "Have you ever received jewellery as a gift?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you think people spend too much money on jewellery?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Breakfast",
+   "theme": "food",
+   "opening": false,
+   "local": true,
+   "season": "",
+   "questions": [
+    {
+     "text": "What do you usually have for breakfast?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you always eat breakfast?",
+     "ifNegative": "Why don't you eat breakfast?"
+    },
+    {
+     "text": "Is breakfast different at the weekend?",
+     "ifNegative": null
+    },
+    {
+     "text": "What did you eat for breakfast when you were a child?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Flowers",
+   "theme": "weather-nature",
+   "opening": false,
+   "local": false,
+   "season": "",
+   "questions": [
+    {
+     "text": "Do you like flowers?",
+     "ifNegative": "Why don't you like flowers?"
+    },
+    {
+     "text": "Do people in your country give flowers as gifts?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you have any flowers at home?",
+     "ifNegative": null
+    },
+    {
+     "text": "On what occasions do people buy flowers?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Trees",
+   "theme": "environment",
+   "opening": false,
+   "local": false,
+   "season": "",
+   "questions": [
+    {
+     "text": "Are there many trees where you live?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you like spending time near trees?",
+     "ifNegative": null
+    },
+    {
+     "text": "Have you ever planted a tree?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you think people should plant more trees?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Text messages and chat apps",
+   "theme": "technology",
+   "opening": false,
+   "local": false,
+   "season": "",
+   "questions": [
+    {
+     "text": "Do you send many text messages?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you prefer to send a message or make a phone call?",
+     "ifNegative": null
+    },
+    {
+     "text": "Who do you message most often?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you think messages can replace talking face to face?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Social media",
+   "theme": "technology",
+   "opening": false,
+   "local": false,
+   "season": "",
+   "questions": [
+    {
+     "text": "Do you use social media?",
+     "ifNegative": "Why don't you use social media?"
+    },
+    {
+     "text": "How much time do you spend on it each day?",
+     "ifNegative": null
+    },
+    {
+     "text": "What do you mainly use it for?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you think it is good for young people?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Teachers",
+   "theme": "education",
+   "opening": false,
+   "local": true,
+   "season": "",
+   "questions": [
+    {
+     "text": "Was there a teacher you liked when you were at school?",
+     "ifNegative": null
+    },
+    {
+     "text": "What makes a good teacher?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you think teachers are respected in your country?",
+     "ifNegative": null
+    },
+    {
+     "text": "Would you like to be a teacher?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Public holidays",
+   "theme": "festivals-culture",
+   "opening": false,
+   "local": true,
+   "season": "",
+   "questions": [
+    {
+     "text": "What do you usually do on public holidays?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you prefer holidays at home or away from home?",
+     "ifNegative": null
+    },
+    {
+     "text": "What is your favourite public holiday?",
+     "ifNegative": null
+    },
+    {
+     "text": "Are there enough public holidays in your country?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Crowded places",
+   "theme": "community",
+   "opening": false,
+   "local": true,
+   "season": "",
+   "questions": [
+    {
+     "text": "Do you like crowded places?",
+     "ifNegative": "Why do you avoid crowded places?"
+    },
+    {
+     "text": "Where do you often see crowds?",
+     "ifNegative": null
+    },
+    {
+     "text": "How do you feel in a place with a lot of people?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you think cities are too crowded?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Museums",
+   "theme": "education",
+   "opening": false,
+   "local": false,
+   "season": "",
+   "questions": [
+    {
+     "text": "Do you like visiting museums?",
+     "ifNegative": "Why don't you like visiting museums?"
+    },
+    {
+     "text": "When did you last visit a museum?",
+     "ifNegative": null
+    },
+    {
+     "text": "Did you go to museums with your school when you were young?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you think museums are interesting for children?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Science",
+   "theme": "education",
+   "opening": false,
+   "local": false,
+   "season": "",
+   "questions": [
+    {
+     "text": "Did you like science at school?",
+     "ifNegative": "Why didn't you like science at school?"
+    },
+    {
+     "text": "Do you think science is important for everyone to learn?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you read or watch anything about science?",
+     "ifNegative": null
+    },
+    {
+     "text": "Which science subject do you find most interesting?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Evenings",
+   "theme": "personal-growth",
+   "opening": false,
+   "local": false,
+   "season": "",
+   "questions": [
+    {
+     "text": "What do you usually do in the evening?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you prefer to stay at home or go out in the evening?",
+     "ifNegative": null
+    },
+    {
+     "text": "Is your evening routine different at the weekend?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you like evenings more than mornings?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Dreams",
+   "theme": "personal-growth",
+   "opening": false,
+   "local": false,
+   "season": "",
+   "questions": [
+    {
+     "text": "Do you often remember your dreams?",
+     "ifNegative": "Why do you think you rarely remember your dreams?"
+    },
+    {
+     "text": "Do you ever dream about things from your daily life?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you think dreams have a meaning?",
+     "ifNegative": null
+    },
+    {
+     "text": "Have you ever had a dream that you remember very clearly?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Borrowing and lending",
+   "theme": "personal-growth",
+   "opening": false,
+   "local": false,
+   "season": "",
+   "questions": [
+    {
+     "text": "Do you often borrow things from other people?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you lend things to your friends?",
+     "ifNegative": null
+    },
+    {
+     "text": "What things do you not like to lend?",
+     "ifNegative": null
+    },
+    {
+     "text": "Have you ever lent something and not got it back?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Advertisements",
+   "theme": "media-arts",
+   "opening": false,
+   "local": false,
+   "season": "",
+   "questions": [
+    {
+     "text": "Do you pay attention to advertisements?",
+     "ifNegative": "Why do you ignore advertisements?"
+    },
+    {
+     "text": "Where do you see advertisements most often?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do advertisements make you want to buy things?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you think there are too many advertisements?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Housework",
+   "theme": "home",
+   "opening": false,
+   "local": true,
+   "season": "",
+   "questions": [
+    {
+     "text": "Do you do any housework?",
+     "ifNegative": "Why don't you do any housework?"
+    },
+    {
+     "text": "Which housework do you dislike most?",
+     "ifNegative": null
+    },
+    {
+     "text": "Who does the housework in your home?",
+     "ifNegative": null
+    },
+    {
+     "text": "Did you help with housework when you were a child?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Singing and dancing",
+   "theme": "sport-leisure",
+   "opening": false,
+   "local": true,
+   "season": "",
+   "questions": [
+    {
+     "text": "Do you like singing?",
+     "ifNegative": "Why don't you like singing?"
+    },
+    {
+     "text": "Do you like dancing?",
+     "ifNegative": "Why don't you like dancing?"
+    },
+    {
+     "text": "Do people in your country sing or dance at celebrations?",
+     "ifNegative": null
+    },
+    {
+     "text": "Did you sing or dance at school?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Helping others",
+   "theme": "community",
+   "opening": false,
+   "local": true,
+   "season": "",
+   "questions": [
+    {
+     "text": "Do you often help other people?",
+     "ifNegative": null
+    },
+    {
+     "text": "Who helps you most in your daily life?",
+     "ifNegative": null
+    },
+    {
+     "text": "Have you ever done any volunteer work?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you think young people should help in their community?",
+     "ifNegative": null
+    }
+   ]
+  },
+  {
+   "topic": "Chatting with people",
+   "theme": "family-people",
+   "opening": false,
+   "local": false,
+   "season": "",
+   "questions": [
+    {
+     "text": "Do you like chatting with other people?",
+     "ifNegative": "Why don't you like chatting with other people?"
+    },
+    {
+     "text": "Who do you chat with most often?",
+     "ifNegative": null
+    },
+    {
+     "text": "What do you usually talk about?",
+     "ifNegative": null
+    },
+    {
+     "text": "Do you prefer to talk in a group or one to one?",
      "ifNegative": null
     }
    ]
@@ -2645,6 +3494,328 @@
     "Should children be rewarded for their achievements?",
     "Why do some successful people become role models for young people?",
     "Is it possible to be successful without earning a lot of money?"
+   ]
+  },
+  {
+   "id": "51",
+   "topic": "a person who helped you",
+   "prompt": "Describe a person who helped you when you needed help.",
+   "bullets": [
+    "who the person is",
+    "how they helped you",
+    "why you needed help"
+   ],
+   "closing": "and explain how you felt about it.",
+   "theme": "family-people",
+   "local": false,
+   "season": "",
+   "discussionTopic": "Helping others",
+   "part3": [
+    "Why do some people like to help others?",
+    "Who should help people most: family, friends or the government?",
+    "Do people help each other as much as they did in the past?",
+    "Is it good for children to be taught to help others?",
+    "What kinds of volunteer work are common in your country?",
+    "Do you think people are more willing to help strangers or friends?"
+   ]
+  },
+  {
+   "id": "52",
+   "topic": "a book you enjoyed reading",
+   "prompt": "Describe a book you enjoyed reading.",
+   "bullets": [
+    "what the book is",
+    "what it is about",
+    "why you decided to read it"
+   ],
+   "closing": "and explain why you enjoyed it.",
+   "theme": "media-arts",
+   "local": false,
+   "season": "",
+   "discussionTopic": "Books and reading",
+   "part3": [
+    "Why do some people prefer reading books to watching films?",
+    "Do you think children read fewer books than in the past?",
+    "Are e-books better than paper books?",
+    "What can people learn from reading?",
+    "Should schools make children read more?",
+    "Will printed books disappear in the future?"
+   ]
+  },
+  {
+   "id": "53",
+   "topic": "a place you visited on holiday",
+   "prompt": "Describe a place you visited on holiday that you liked.",
+   "bullets": [
+    "where it is",
+    "when you went there",
+    "what you did there"
+   ],
+   "closing": "and explain why you liked it.",
+   "theme": "travel-places",
+   "local": false,
+   "season": "",
+   "discussionTopic": "Travel and tourism",
+   "part3": [
+    "Why do people like to travel?",
+    "What are the good and bad points of tourism for a place?",
+    "Do you prefer to travel alone or in a group?",
+    "How has travelling changed in recent years?",
+    "Why do some people prefer holidays at home?",
+    "Do you think tourists should learn about local customs?"
+   ]
+  },
+  {
+   "id": "54",
+   "topic": "a piece of clothing you like",
+   "prompt": "Describe a piece of clothing you like to wear.",
+   "bullets": [
+    "what it looks like",
+    "when you got it",
+    "when you wear it"
+   ],
+   "closing": "and explain why you like it.",
+   "theme": "shopping-money",
+   "local": true,
+   "season": "",
+   "discussionTopic": "Clothes and fashion",
+   "part3": [
+    "Why do people care about what they wear?",
+    "Do young people follow fashion more than older people?",
+    "Do you think school uniforms are a good idea?",
+    "How has the way people dress changed in your country?",
+    "Do clothes show what kind of person someone is?",
+    "Is it better to buy expensive clothes that last or cheap clothes more often?"
+   ]
+  },
+  {
+   "id": "55",
+   "topic": "a time you were late",
+   "prompt": "Describe a time when you were late for something important.",
+   "bullets": [
+    "what you were going to",
+    "why you were late",
+    "what happened"
+   ],
+   "closing": "and explain how you felt about it.",
+   "theme": "personal-growth",
+   "local": false,
+   "season": "",
+   "discussionTopic": "Time and punctuality",
+   "part3": [
+    "Why are some people always late?",
+    "Is it more important to be on time at work or with friends?",
+    "Do you think people today are busier than in the past?",
+    "How can people manage their time better?",
+    "Do different cultures see being late in different ways?",
+    "What problems can being late cause?"
+   ]
+  },
+  {
+   "id": "56",
+   "topic": "a gift you gave",
+   "prompt": "Describe a gift you gave to someone.",
+   "bullets": [
+    "what the gift was",
+    "who you gave it to",
+    "why you chose it"
+   ],
+   "closing": "and explain how the person felt about it.",
+   "theme": "festivals-culture",
+   "local": false,
+   "season": "",
+   "discussionTopic": "Gifts",
+   "part3": [
+    "Why do people give gifts?",
+    "Is it better to give money or a gift?",
+    "Do people spend too much money on gifts?",
+    "What are the most popular gifts in your country?",
+    "Is a handmade gift better than a bought one?",
+    "Have gifts changed in the way people give them?"
+   ]
+  },
+  {
+   "id": "57",
+   "topic": "a skill you learned",
+   "prompt": "Describe a skill you learned that was not easy.",
+   "bullets": [
+    "what the skill is",
+    "how you learned it",
+    "why it was difficult"
+   ],
+   "closing": "and explain how you feel about it now.",
+   "theme": "education",
+   "local": false,
+   "season": "",
+   "discussionTopic": "Learning skills",
+   "part3": [
+    "What skills are important for young people today?",
+    "Is it better to learn a skill from a teacher or by yourself?",
+    "Why do some people give up learning something new?",
+    "Should schools teach more practical skills?",
+    "Do you think older people can learn new skills as well as young people?",
+    "How has technology changed the way people learn?"
+   ]
+  },
+  {
+   "id": "58",
+   "topic": "a website you often use",
+   "prompt": "Describe a website you often use.",
+   "bullets": [
+    "what the website is",
+    "what you use it for",
+    "how often you use it"
+   ],
+   "closing": "and explain why you like it.",
+   "theme": "technology",
+   "local": false,
+   "season": "",
+   "discussionTopic": "The internet",
+   "part3": [
+    "Why do so many people spend a lot of time online?",
+    "What are the dangers of the internet for children?",
+    "Has the internet changed the way people shop?",
+    "Do you think people trust information on the internet too much?",
+    "How will the internet change in the future?",
+    "Should parents control what children do online?"
+   ]
+  },
+  {
+   "id": "59",
+   "topic": "a teacher who influenced you",
+   "prompt": "Describe a teacher who influenced you.",
+   "bullets": [
+    "who the teacher was",
+    "what subject they taught",
+    "what they were like"
+   ],
+   "closing": "and explain how they influenced you.",
+   "theme": "education",
+   "local": true,
+   "season": "",
+   "discussionTopic": "Teachers and education",
+   "part3": [
+    "What makes a good teacher?",
+    "Are teachers as respected now as in the past?",
+    "Is it better to learn in a class or on your own?",
+    "How can teachers keep students interested?",
+    "Will teachers be replaced by technology one day?",
+    "What is the role of parents in a child's education?"
+   ]
+  },
+  {
+   "id": "60",
+   "topic": "a time you waited for something",
+   "prompt": "Describe a time when you had to wait for something.",
+   "bullets": [
+    "what you were waiting for",
+    "how long you waited",
+    "what you did while you waited"
+   ],
+   "closing": "and explain how you felt about it.",
+   "theme": "personal-growth",
+   "local": false,
+   "season": "",
+   "discussionTopic": "Waiting and patience",
+   "part3": [
+    "Are people today less patient than in the past?",
+    "What things do people hate waiting for?",
+    "Why do some people find it hard to wait?",
+    "How can technology reduce waiting times?",
+    "Is patience more important at work or in daily life?",
+    "Do you think children should be taught to be patient?"
+   ]
+  },
+  {
+   "id": "61",
+   "topic": "a quiet place you like",
+   "prompt": "Describe a quiet place you like to spend time in.",
+   "bullets": [
+    "where it is",
+    "how often you go there",
+    "what you do there"
+   ],
+   "closing": "and explain why you like it.",
+   "theme": "community",
+   "local": true,
+   "season": "",
+   "discussionTopic": "Noise and quiet places",
+   "part3": [
+    "Why do some people need quiet places?",
+    "Is it harder to find quiet places than in the past?",
+    "Do you think noise is a problem in cities?",
+    "What can be done to reduce noise?",
+    "Do young people and old people like different kinds of places?",
+    "Should cities have more quiet public spaces?"
+   ]
+  },
+  {
+   "id": "62",
+   "topic": "an interesting building",
+   "prompt": "Describe a building you find interesting.",
+   "bullets": [
+    "where it is",
+    "what it looks like",
+    "what it is used for"
+   ],
+   "closing": "and explain why you find it interesting.",
+   "theme": "travel-places",
+   "local": false,
+   "season": "",
+   "discussionTopic": "Buildings and architecture",
+   "part3": [
+    "Why do some cities keep old buildings?",
+    "Do you prefer old buildings or modern ones?",
+    "How have buildings in your country changed over time?",
+    "Is it important for a city to have famous buildings?",
+    "Who should pay to look after old buildings?",
+    "Do you think people will live in different kinds of homes in the future?"
+   ]
+  },
+  {
+   "id": "63",
+   "topic": "a time you helped a friend",
+   "prompt": "Describe a time when you helped a friend.",
+   "bullets": [
+    "who the friend is",
+    "how you helped",
+    "why they needed help"
+   ],
+   "closing": "and explain how you felt about it.",
+   "theme": "family-people",
+   "local": false,
+   "season": "",
+   "discussionTopic": "Friendship",
+   "part3": [
+    "What is a good friend?",
+    "Is it easier to make friends as a child or an adult?",
+    "Do you think social media has changed friendship?",
+    "Do old friends matter more than new friends?",
+    "Should friends always tell each other the truth?",
+    "How do people keep in touch with friends who live far away?"
+   ]
+  },
+  {
+   "id": "64",
+   "topic": "an activity you would like to try",
+   "prompt": "Describe an activity you would like to try in the future.",
+   "bullets": [
+    "what the activity is",
+    "where you would do it",
+    "who you would do it with"
+   ],
+   "closing": "and explain why you would like to try it.",
+   "theme": "sport-leisure",
+   "local": false,
+   "season": "",
+   "discussionTopic": "Sport and activities",
+   "part3": [
+    "Why do some people enjoy risky activities?",
+    "Should schools make sport compulsory?",
+    "Do you think people have enough time for hobbies?",
+    "How has the way people spend their free time changed?",
+    "Are team sports better than individual sports?",
+    "Why do some people prefer to watch sport rather than play it?"
    ]
   }
  ]

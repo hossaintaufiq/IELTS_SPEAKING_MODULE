@@ -17,7 +17,7 @@ def inp(**kw):
 
 def test_bank_loaded_and_plan_shape():
     bank = rules.load_bank()
-    assert len(bank["part1"]) == 46 and len(bank["cueCards"]) == 50
+    assert len(bank["part1"]) == 75 and len(bank["cueCards"]) == 64
     plan = rules.choose_plan(bank, random.Random(1))
     assert 3 <= len(plan["part1"]) <= 3 + rules.RESERVE_TOPICS and plan["cueCard"]["bullets"] and len(plan["part3"]["questions"]) >= 4
     assert plan["part1"][0]["questions"][0]["ifNegative"] is None
@@ -82,3 +82,12 @@ def test_script_lines_match_company_wording():
         "Good morning. My name is Alex Morgan and I'm your examiner today. Can you tell me your full name, please?")
     assert rules.time_of_day(9) == "morning" and rules.time_of_day(14) == "afternoon" and rules.time_of_day(20) == "evening"
     assert rules.TIMING["part2"] == {"prepare": 60, "speak": 120}
+
+
+def test_part3_rejects_place_names_and_report_wording():
+    from worker.examiner.rules import NextQuestionInput, check_question
+    inp = NextQuestionInput(part=3, topic="traffic", frames=["What can the government do?"], asked=[], question_number=2,
+                            questions_on_topic=6, history=[], fallback="")
+    assert check_question("What are the main causes of traffic in cities like Dhaka?", inp)
+    assert check_question("Should schools teach students about sustainable transport?", inp)
+    assert check_question("Why do you think traffic jams happen so often where you live?", inp) is None

@@ -39,7 +39,7 @@ def inp(**kw):
     return NextQuestionInput(**base)
 
 
-def llm_for(covered_words=(), question="What are the main causes of traffic congestion in big cities like Dhaka?"):
+def llm_for(covered_words=(), question="What are the main causes of traffic congestion in big cities?"):
     """One fake LLM: writes `question`; the meaning check calls a proposed question covered if it contains one of `covered_words`."""
     async def llm(system, prompt):
         if system == rules.SEMANTIC_SYSTEM:
@@ -295,3 +295,17 @@ def test_a_whole_test_follows_the_ielts_format_and_fits_the_time_budget():
     assert 11 * 60 <= total <= s.cfg["total_max"]               # 11-14 minutes in the standard, never over the 16 minute cap
     assert any(l.startswith("Thank you. We've been talking about") or "We've been talking about" in l for l in spoken(s))
     assert spoken(s)[-1] == "Thank you. That is the end of the speaking test."
+
+
+def test_part1_question_that_restates_the_one_just_answered_is_replaced():
+    """The live case: 'Is being on time more important for some events?' -> 'Which events are important to be on time for?'"""
+    frames = ["Are you usually on time?", "Is being on time more important for some events than others?",
+              "Were you often late for school as a child?", "Do you use alarms or reminders to help you be on time?"]
+    history = [("examiner", "Is being on time more important for some events than others?"),
+               ("candidate", "Yes, like interviews or exams, definitely. Being on time matters more.")]
+    i = inp(part=1, topic="being on time", frames=frames, asked=[frames[1]], history=history, question_number=3, fallback=frames[2])
+    q = "So, which events are particularly important for you to be on time for?"
+    assert rules.restates_last_question(q, i)
+    nq = asyncio.run(rules.next_question(i, llm_for(question=q)))
+    assert nq.origin == "fallback" and "restates" in nq.why
+    assert nq.say in (frames[0], frames[2], frames[3]) and "events" not in nq.say
