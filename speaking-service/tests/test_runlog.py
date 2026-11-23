@@ -175,3 +175,9 @@ def test_the_link_with_the_code_opens_the_page_and_the_cookie_keeps_it_open(monk
 def test_no_access_code_set_means_no_check(monkeypatch):
     monkeypatch.setitem(server.ACCESS, "code", "")
     assert TestClient(server.app).get("/api/runs").status_code == 200
+
+
+def test_logs_page_has_a_split_view_with_one_panel_per_device():
+    html = TestClient(server.app).get("/logs").text
+    js = TestClient(server.app).get("/static/logs.js").text
+    assert 'id="split"' in html and "each device in its own panel" in js and "pollSplit" in js

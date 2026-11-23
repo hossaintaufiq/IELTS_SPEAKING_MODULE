@@ -34,7 +34,7 @@ function row(e) {
   return "";
 }
 
-function summary(events) {
+function summaryHtml(events) {
   const c = {}; let noise = 0, notes = 0; const lat = [];
   events.forEach((e) => {
     if (e.type === "transcript" && e.role === "examiner") { const k = (ORIGIN[e.origin || "script"] || [e.origin])[0]; c[k] = (c[k] || 0) + 1; }
@@ -45,12 +45,15 @@ function summary(events) {
   const parts = Object.entries(c).map(([k, n]) => `${esc(k)} <b>${n}</b>`).join(" &middot; ");
   const avg = lat.length ? (lat.reduce((a, b) => a + b, 0) / lat.length).toFixed(2) : "-";
   const ai = (c["LLM wrote"] || 0) + (c["LLM reworded"] || 0) + (c["LLM picked bank"] || 0);
-  $("runlog-sum").innerHTML = `Examiner lines: ${parts || "none yet"}<br>` +
+  return `Examiner lines: ${parts || "none yet"}<br>` +
     `LLM involved in <b>${ai}</b> questions &middot; ignored noise <b>${noise}</b> &middot; control events <b>${notes}</b> &middot; ` +
     `reply delay avg <b>${avg}</b> s over ${lat.length} turns`;
 }
 
+function summary(events) { $("runlog-sum").innerHTML = summaryHtml(events); }
+
 function render() {
+  if (run.source === "split") return renderSplit();
   const events = isLive() ? run.live.events || [] : run.events;
   summary(events);
   const box = $("runlog");
@@ -60,7 +63,59 @@ function render() {
   if (isLive() ? $("rl-follow").checked && atEnd || box.scrollTop === 0 : false) box.scrollTop = box.scrollHeight;
 }
 
+// ---- split view: every connected device in its own panel -------------------------------------------
+const cards = {};     // session id -> { device, phase, active, events, gone, el }
+function cardFor(id) {
+  if (cards[id]) return cards[id];
+  const el = document.createElement("div");
+  el.className = "card";
+  el.innerHTML = '<div class="card-head"><b class="dev"></b><span class="ph muted"></span><button class="srv" title="Show this device in the server log">server log</button></div>' +
+                 '<div class="sum"></div><div class="rows"></div>';
+  $("split").appendChild(el);
+  cards[id] = { el, events: [], device: "", phase: "", active: true, gone: false };
+  el.querySelector(".srv").onclick = () => {
+    $("sl-filter").value = "[" + (cards[id].device || id.slice(0, 4)) + "]";
+    loadServerLog();
+  };
+  return cards[id];
+}
+
+function renderSplit() {
+  const ids = Object.keys(cards);
+  $("rl-count").textContent = ids.length + (ids.length === 1 ? " device" : " devices");
+  $("split-empty").hidden = ids.length > 0;
+  ids.forEach((id) => {
+    const c = cards[id], box = c.el.querySelector(".rows");
+    const atEnd = box.scrollTop + box.clientHeight >= box.scrollHeight - 40;
+    c.el.querySelector(".dev").textContent = c.device || "device " + id.slice(0, 4);
+    c.el.querySelector(".ph").textContent = c.gone ? "disconnected (the run is saved in the list)" : (PHASES[c.phase] || c.phase || "");
+    c.el.classList.toggle("gone", c.gone);
+    c.el.querySelector(".sum").innerHTML = summaryHtml(c.events);
+    box.innerHTML = c.events.map(row).join("");
+    if ($("rl-follow").checked && (atEnd || box.scrollTop === 0)) box.scrollTop = box.scrollHeight;
+  });
+}
+
+async function pollSplit() {
+  try {
+    const list = (await (await fetch("/api/live")).json()).sessions || [];
+    const seen = new Set(list.map((v) => v.id));
+    Object.keys(cards).forEach((id) => { if (!seen.has(id)) cards[id].gone = true; });
+    await Promise.all(list.map(async (v) => {
+      const d = await (await fetch("/api/live?id=" + encodeURIComponent(v.id))).json();
+      const c = cardFor(v.id);
+      Object.assign(c, { device: d.device || v.device, phase: d.phase, active: d.active, events: d.events || [], gone: false });
+    }));
+    const n = list.filter((v) => v.active).length;
+    const pill = $("live-pill");
+    pill.textContent = n ? n + (n === 1 ? " test running" : " tests running") : list.length ? "devices connected" : "no test yet";
+    pill.className = "pill " + (n ? "on" : "off");
+    render();
+  } catch (_) { $("live-pill").textContent = "server not reachable"; }
+}
+
 async function pollLive() {
+  if (run.source === "split") return pollSplit();
   if (!isLive()) return;
   try {
     const id = run.source.slice(5);                 // "live" = the newest test, "live:ID" = one device's test
@@ -80,7 +135,7 @@ async function loadList() {
     const sel = $("runs"), keep = sel.value;
     let live = [];
     try { live = (await (await fetch("/api/live")).json()).sessions || []; } catch (_) { /* optional */ }
-    sel.innerHTML = '<option value="live">Live: newest test</option>' + (live.length > 1 ? '<option value="live:all">Live: ALL devices together</option>' : "") +
+    sel.innerHTML = '<option value="live">Live: newest test</option><option value="split">Live: each device in its own panel</option>' + (live.length > 1 ? '<option value="live:all">Live: ALL devices in one timeline</option>' : "") +
       live.map((v) => `<option value="live:${v.id}">Live: ${v.device || "device " + v.id.slice(0, 4)} (${PHASES[v.phase] || v.phase})</option>`).join("") +
       list.map((r) => {
       const n = r.name;
@@ -88,11 +143,16 @@ async function loadList() {
       return `<option value="${n}">${label}${r.device ? " " + esc(r.device) : ""} (${r.kb} KB)</option>`;
     }).join("");
     if ([...sel.options].some((o) => o.value === keep)) sel.value = keep;
+    if (!run.userPicked && live.filter((v) => v.active).length >= 2 && sel.value !== "split") { sel.value = "split"; pick(); }   // two or more devices: show them apart
   } catch (_) { /* the list is a convenience */ }
 }
 
 async function pick() {
   run.source = $("runs").value;
+  const split = run.source === "split";
+  $("split").hidden = !split;
+  $("runlog").hidden = $("runlog-sum").hidden = split;
+  if (split) { render(); return pollSplit(); }
   if (!isLive()) {
     try { run.events = (await (await fetch("/api/runs/" + run.source)).json()).events || []; }
     catch (err) { run.events = []; $("runlog-sum").textContent = "Could not load that run: " + err; return; }
@@ -101,7 +161,7 @@ async function pick() {
   if (!isLive()) $("runlog").scrollTop = 0;
 }
 
-$("runs").onchange = pick;
+$("runs").onchange = () => { run.userPicked = true; pick(); };
 $("runs-refresh").onclick = loadList;
 $("rl-noise").onchange = $("rl-lat").onchange = render;
 
