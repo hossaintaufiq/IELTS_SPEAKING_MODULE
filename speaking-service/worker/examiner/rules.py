@@ -110,7 +110,7 @@ Reply as JSON: {"say": "<the simpler question>"}"""
 
 HISTORY_LIMIT = 8
 MAX_LINE_LENGTH = 300
-MAX_WORDS = {1: 30, 3: 40}
+MAX_WORDS = {1: 30, 3: 30}
 EARLIER_ANSWERS = 4
 MAX_FACTS = 40
 AI_NEW_QUESTION_SHARE = float(os.getenv("AI_NEW_QUESTION_SHARE", "0.7"))   # share of Part 1 turns where the LLM writes its own follow-up
@@ -131,6 +131,9 @@ BANNED = re.compile(
     r"\b(politic\w*|election\w*|vote|voting|awami|bnp|jamaat|religio\w*|allah|god|prayers?|praying|salary|salaries|income|"
     r"how much (?:money|do you earn)|boyfriend|girlfriend|dating|divorce\w*|sex\w*|illness\w*|disease\w*|depress\w*|suicid\w*|"
     r"death|die|died|dying|abuse\w*|weight)\b", re.I)
+PART3_BAD = re.compile(
+    r"\b(dhaka|bangladesh\w*|chittagong|chattogram|sylhet|khulna|sustainab\w*|infrastructure|initiatives?|implement\w*|"
+    r"stakeholders?|policymakers?|cities like|overall quality of life|socio\w*)\b", re.I)
 PRAISE = re.compile(
     r"^(great|good|excellent|wonderful|nice|interesting|perfect|i see|that's (?:great|interesting|nice|good|wonderful)|"
     r"that sounds|well done|fantastic)\b", re.I)
@@ -308,7 +311,12 @@ def build_prompt(inp: NextQuestionInput, mode: str, test_id: str = "") -> str:
             "- It must be about people and society in general, not the candidate's personal life, and invite an opinion with reasons.\n"
             "- If the candidate's last answer was very short (one sentence), you may instead ask a short follow-up that pushes them to develop it, "
             'e.g. "Why do you think that is?" or "Can you give an example?".\n'
-            "- Keep it clear and natural, under 30 words, and different from everything already asked.")
+            "- Use plain, spoken, everyday English, the way a real examiner talks. Short sentences, common words. No jargon or report words "
+            '(not "sustainable", "infrastructure", "initiatives", "implement", "overall quality of life"). Good: "Why do you think that happens?", '
+            '"Do you think that will change in the future?", "Is it the same for older people?".\n'
+            "- Never name Dhaka, Bangladesh or any city or country. Say \"in your country\" or \"where you live\".\n"
+            "- Do not suggest what the answer should be (no leading questions such as \"Do you think schools should teach...\"); ask openly.\n"
+            "- Keep it clear and natural, under 22 words, and different from everything already asked.")
 
 
 def spoken_line(js: dict, inp: NextQuestionInput) -> str:
@@ -335,7 +343,11 @@ def check_question(say: str, inp: NextQuestionInput, repeat: bool = False) -> st
         return "comments on the answer"
     if BANNED.search(say) and not BANNED.search(" ".join(inp.frames)):
         return "sensitive subject"
+    if inp.part == 3 and PART3_BAD.search(say) and not PART3_BAD.search(" ".join(inp.frames)):
+        return "names a place or uses report-style wording"
     q = question_part(say)
+    if not repeat and restates_last_question(say, inp):
+        return "restates the question just asked"
     previous = list(inp.asked) + [t for s, t in inp.history if s == "examiner"]
     if not repeat and any(similarity(q, question_part(p)) >= 0.7 for p in previous):
         return "repeats an earlier question"
@@ -416,6 +428,8 @@ async def pick_fallback(inp: NextQuestionInput, llm) -> str:
     if inp.fallback and inp.fallback not in pool and inp.fallback not in inp.frames \
             and not any(similarity(question_part(inp.fallback), p) >= 0.6 for p in previous):
         pool.append(inp.fallback)                  # e.g. one of the generic Part 3 follow-ups
+    different = [q for q in pool if not restates_last_question(q, inp)]
+    pool = different or pool                       # a bank question that re-asks what was just answered is the last resort
     if not pool:
         return ""
     last = last_answer(inp)
@@ -434,6 +448,18 @@ def last_examiner_question(inp: NextQuestionInput) -> str:
         if speaker == "examiner" and "?" in text:
             return question_part(text)
     return ""
+
+
+def restates_last_question(question: str, inp: NextQuestionInput) -> bool:
+    """True if `question` mostly re-uses the key words of the question the candidate has just answered
+    ("Is being on time more important for some events?" -> "Which events are important for you to be on time for?").
+    That is the same question again, not a follow-up."""
+    last = last_examiner_question(inp)
+    if inp.part != 1 or not last or not last_answer(inp):      # Part 3 questions legitimately stay on one theme
+        return False
+    new, old = content_words(question_part(question)), set(content_words(last))
+    shared = sum(1 for w in new if w in old)
+    return len(new) >= 3 and shared >= 2 and shared / len(new) >= 0.5
 
 
 def origin_of(say: str, frames: list[str]) -> str:
