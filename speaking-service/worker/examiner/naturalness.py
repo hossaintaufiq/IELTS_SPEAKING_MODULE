@@ -9,25 +9,33 @@ from __future__ import annotations
 
 import random
 
-# neutral, British, no judgement of the answer
-SHORT = ["Okay.", "Right.", "Alright."]
-MEDIUM = ["Okay.", "Right.", "All right.", "Okay, thank you."]
-LONG = ["Okay, thank you.", "Thank you.", "All right, thank you.", "Right, thank you."]
-NEW_TOPIC = ["Thank you.", "Okay, thank you.", "All right, thank you."]
+# Neutral and sparing: a real examiner mostly just asks the next question. Only "Okay." and "Thank you.", never "Right.",
+# "Alright" or "All right" (those sounded like a verdict on the answer), and never a comment on the answer.
+SHORT = ["Okay.", "Thank you."]
+MEDIUM = ["Okay.", "Thank you."]
+LONG = ["Thank you.", "Okay."]
+NEW_TOPIC = ["Thank you.", "Okay, thank you."]
+TOPIC_PROBABILITY = 0.5      # at a change of topic an acknowledgement is natural, but still not every time
 
 
 class AckPicker:
-    def __init__(self, rng: random.Random, probability: float = 0.65):
-        self.rng, self.probability, self._last = rng, probability, ""
+    def __init__(self, rng: random.Random, probability: float = 0.12, min_gap: int = 0):
+        """probability: chance of an acknowledgement on an ordinary turn. min_gap: at least this many turns without one
+        between two acknowledgements (so they never come in a run)."""
+        self.rng, self.probability, self.min_gap, self._last = rng, probability, min_gap, ""
+        self._since = 10 ** 6          # turns since the last acknowledgement
 
     def pick(self, answer: str, topic_change: bool = False) -> str:
-        """An acknowledgement to put before the next question, or '' (not every turn gets one)."""
+        """An acknowledgement to put before the next question, or '' (most turns get none)."""
         if self.probability <= 0:
             return ""
-        if not topic_change and self.rng.random() >= self.probability:
+        self._since += 1
+        chance = max(self.probability, TOPIC_PROBABILITY) if topic_change else self.probability
+        if self._since <= self.min_gap or self.rng.random() >= chance:
             return ""
         words = len(answer.split())
         pool = NEW_TOPIC if topic_change else SHORT if words <= 5 else LONG if words >= 25 else MEDIUM
         choices = [p for p in pool if p != self._last] or pool
         self._last = self.rng.choice(choices)
+        self._since = 0
         return self._last

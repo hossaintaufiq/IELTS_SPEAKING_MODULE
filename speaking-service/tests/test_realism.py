@@ -54,7 +54,7 @@ def test_at_two_minutes_a_silent_candidate_is_thanked_straight_away():
         return s
 
     s = asyncio.run(go())
-    assert s.phase == "part2_followup" and spoken(s)[-1].startswith("Thank you.")
+    assert s.phase == "part2_followup" and spoken(s)[-1].startswith("Thank you, your time is up.")
 
 
 @pytest.mark.parametrize("bad", ["What was important about this conversation?", "Why did you mention the topic of the bus?",
@@ -95,7 +95,7 @@ def test_default_waits_are_short_enough_to_feel_like_a_conversation():
         pass
 
     s = sess.ExamSession(send, seed=1, hour=9)
-    assert s.pause_s <= 1.6 and s.p3_pause_s <= 2.1 and s.max_wait_s <= 6.0
+    assert s.pause_s <= 2.5 and s.p3_pause_s <= 3.5 and s.max_wait_s <= 10.0   # patient on purpose: candidates must be able to finish
     assert s.p2_silence_s <= 6 and s.p2_early_s <= 4 and s.p2_early_giveup_s <= 6
 
 
@@ -117,3 +117,59 @@ def test_the_prompt_stays_short_and_its_own_words_are_never_taken_as_speech():
     assert echoes_prompt("Bangladesh Dhaka Sylhet", prompt)
     assert not echoes_prompt("I live in Dhaka", prompt)
     assert not echoes_prompt("Dhaka", prompt)                              # a one-word answer can be a real answer
+
+
+# ---- the two minutes are over while the candidate is still talking ------------------------------------------------
+def test_time_up_is_said_politely_and_the_last_words_are_not_lost():
+    async def go():
+        s, t = make_timed(grounded)
+        await into_long_turn(s)
+        limit = s._limit(s.phase)
+        await s.on_candidate_turn(TALK)
+        t["now"] = limit + 1
+        s.vad_started()                                              # speaking at the two-minute mark: no interruption
+        await s._on_tick(limit)
+        assert s.phase == "part2_speak"
+        t["now"] = limit + 5
+        s.vad_stopped()                                              # they finish their sentence; the transcript is still on its way
+        await s._on_tick(limit)
+        assert s.phase == "part2_speak"
+        await s.on_candidate_turn("and that was the end of the story.")   # the last words arrive and are kept
+        t["now"] = limit + 5 + sess.P2_TRANSCRIPT_WAIT_S + 0.5
+        await s._on_tick(limit)
+        return s
+
+    s = asyncio.run(go())
+    assert s.phase == "part2_followup" and spoken(s)[-1].startswith("Thank you, your time is up.")
+    assert any("end of the story" in t for who, t in s.history if who == "candidate")
+
+
+def test_a_candidate_who_will_not_stop_is_cut_off_politely_after_the_extra_time():
+    async def go():
+        s, t = make_timed(grounded)
+        await into_long_turn(s)
+        limit = s._limit(s.phase)
+        await s.on_candidate_turn(TALK)
+        t["now"] = limit + sess.P2_FINISH_SENTENCE_S + 1
+        s.vad_started()
+        await s._on_tick(limit)
+        return s
+
+    line = spoken(asyncio.run(go()))[-1]
+    assert line.startswith("I'm sorry to stop you, but your time is up. Thank you.")
+
+
+def test_time_up_without_a_follow_up_question_moves_on_to_part_3_politely():
+    async def go():
+        async def no_llm(system, prompt, **kw):
+            return None
+        s, t = make_timed(no_llm)
+        await into_long_turn(s)
+        limit = s._limit(s.phase)
+        await s.on_candidate_turn(TALK)
+        t["now"] = limit
+        await s._on_tick(limit)
+        return s
+
+    s = asyncio.run(go())
+    assert s.phase == "part3" and spoken(s)[-1].startswith("Thank you, your time is up. Now let's move on.")

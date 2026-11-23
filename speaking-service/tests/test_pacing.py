@@ -155,3 +155,107 @@ def test_a_filler_while_waiting_keeps_the_examiner_waiting():
 
     early, answered = asyncio.run(go())
     assert early and answered
+
+
+# ---- the candidate must always be allowed to finish -------------------------------------------------------
+def test_the_examiner_waits_for_quiet_and_takes_a_question_back_when_the_voice_returns(monkeypatch):
+    monkeypatch.setattr(sess, "QUIET_BEFORE_REPLY_S", 0.2)
+    prompts = []
+
+    async def go():
+        async def send(e):
+            pass
+        gate = asyncio.Event()
+
+        async def slow_llm(system, prompt):
+            if system == rules.SEMANTIC_SYSTEM:
+                return {"covered": []}
+            prompts.append(prompt)
+            if len(prompts) == 1:
+                await gate.wait()
+            return {"reply": "answer", "pick": None, "say": "What do you like most about your home town?", "facts": []}
+
+        s = ExamSession(send, seed=3, llm=slow_llm, hour=9)
+        s.test_mode()
+        s.task = FakeTask()
+        await to_part1(s)
+        n = len(spoken(s))
+        await s.on_candidate_turn("I live in a small town near the river")
+        await asyncio.sleep(0.05)
+        assert s._responding and s._interruptible                  # the next question is being written...
+        s.vad_started()                                            # ...and the candidate starts talking again (no transcript yet)
+        await asyncio.sleep(0.1)
+        assert len(spoken(s)) == n                                 # nothing was said over them
+        s.vad_stopped()
+        await s.on_candidate_turn("and my family has lived there for many years.")
+        await s.settle()
+        return s, n
+
+    s, n = asyncio.run(go())
+    assert len(spoken(s)) == n + 1
+    assert len(prompts) == 2 and "my family has lived there for many years" in prompts[1]
+
+
+def test_the_examiner_does_not_speak_until_the_candidates_voice_has_been_quiet(monkeypatch):
+    monkeypatch.setattr(sess, "QUIET_BEFORE_REPLY_S", 0.4)
+
+    async def go():
+        async def send(e):
+            pass
+        s = ExamSession(send, seed=3, llm=llm_q("What do you like most about your home town?"), hour=9)
+        s.test_mode()
+        s.task = FakeTask()
+        await to_part1(s)
+        n = len(spoken(s))
+        s.vad_started(); s.vad_stopped()                           # voice heard just now
+        await s.on_candidate_turn("I live in a small town")
+        await asyncio.sleep(0.2)
+        early = len(spoken(s)) == n                                # transcript is in, but their voice stopped only 0.2 s ago
+        await s.settle()
+        return early, len(spoken(s)) == n + 1
+
+    early, answered = asyncio.run(go())
+    assert early and answered
+
+
+def test_acknowledgements_are_rare_never_in_a_run_and_never_say_right_or_alright():
+    p = AckPicker(random.Random(7), probability=0.12, min_gap=3)
+    out = [p.pick("I live in a small town near the river and I like it.") for _ in range(400)]
+    got = [i for i, a in enumerate(out) if a]
+    assert 0.03 < len(got) / 400 < 0.16                                     # about one turn in ten, not one in two
+    assert all(b - a > 3 for a, b in zip(got, got[1:]))                     # at least three turns without one in between
+    said = {a.lower() for a in out if a} | {AckPicker(random.Random(i), 1.0).pick("x " * 30, True).lower() for i in range(20)}
+    assert said <= {"okay.", "thank you.", "okay, thank you."}              # no "Right.", "Alright.", "All right."
+
+
+def test_the_end_of_the_previous_answer_is_not_taken_as_the_answer_to_the_new_question():
+    calls = []
+
+    async def llm(system, prompt):
+        if system == rules.SEMANTIC_SYSTEM:
+            return {"covered": []}
+        calls.append(prompt)
+        return {"reply": "answer", "pick": None, "say": "What do you like most about your home town?", "facts": []}
+
+    async def go():
+        async def send(e):
+            pass
+        s = ExamSession(send, seed=3, llm=llm, hour=9)
+        s.test_mode()
+        s.task = FakeTask()
+        await to_part1(s)
+        await s.on_candidate_turn("I live near the big river in Savar with my parents")
+        await s.settle()
+        n = len(spoken(s))
+        asked = s.last_question
+        s.bot_stopped()                                             # the examiner finished its question...
+        s.vad_started()                                             # ...and the candidate, still on the first answer, talks straight on
+        await s.on_candidate_turn("and my parents have a shop near the river where my father sells fish every morning")
+        await s.settle()
+        return s, n, asked
+
+    s, n, asked = asyncio.run(go())
+    assert len(calls) == 1                                          # no third question was written
+    assert spoken(s)[-1].endswith(asked) and len(spoken(s)) == n + 1   # the same question again, once they had finished
+    cands = [t for who, t in s.history if who == "candidate"]
+    assert len(cands) >= 1 and any("sells fish" in c and "Savar" in c for c in cands)   # one joined answer
