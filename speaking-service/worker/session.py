@@ -57,7 +57,7 @@ def timings() -> dict:
 
 
 CORE_TOPICS = 3            # Part 1 plans three topics, the rest of the plan is reserve for when the answers are short and time is left
-MIN_Q_PER_TOPIC = 2        # a topic always gets at least this many real questions (follow-ups do not count)
+MIN_Q_PER_TOPIC = 3        # a topic always gets at least this many real questions (follow-ups do not count); more if the time fits
 MIN_TOPIC_SLICE_S = 60
 RESERVE_SLICE_S = 50
 
@@ -72,6 +72,7 @@ LATE_BEFORE_S = 6.0          # ...or began up to this long before the question e
 LATE_CUE_VOICE_S = 4.5       # a turn that opens with "so / and / also / because" is allowed more time: it is plainly a continuation
 CONTINUATION_CUE = re.compile(r"^(?:so|and|also|because|but|then|plus|moreover|besides)\b", re.I)
 LATE_VOICE_S = 1.8           # a long turn that starts this soon after the examiner's question may still be the end of the previous answer
+ANSWER_CAP_QUIET_S = 2.0     # an over-long answer is only cut while the candidate is still talking (voice heard in the last 2 s)
 QUIET_BEFORE_REPLY_S = 1.0   # the examiner never starts speaking until the candidate's voice has been quiet this long
 VOICE_GRACE_S = 2.0        # after hearing the candidate, the Part 2 silence prompts wait at least this long
 P2_FINISH_SENTENCE_S = 10  # at the two-minute mark a candidate who is still speaking may finish what they are saying, for up to this long
@@ -181,6 +182,11 @@ class ExamSession:
         self._pause_task: asyncio.Task | None = None
         self._responding = False
         self._user_active, self._user_active_since = False, 0.0
+        # One answer must not run on for ever: past this many seconds of talking the examiner ends it politely and moves on.
+        # Generous on purpose (the candidate must be able to finish), and only while they are still talking.
+        self.answer_cap = {PART1: float(os.getenv("PART1_MAX_ANSWER_S", "60")), PART3: float(os.getenv("PART3_MAX_ANSWER_S", "90"))}
+        self._answer_since: float | None = None      # when the candidate began the answer in progress (first voice after the examiner spoke)
+        self._cut_next = False                       # the next examiner line is the polite "let's move on" after an over-long answer
         self._late_continuation = False             # the next turn is the end of the PREVIOUS answer, not an answer to the question just asked
         self._last_voice_at = -1e9                  # when the voice detector last heard the candidate
 
@@ -198,6 +204,7 @@ class ExamSession:
 
     def bot_stopped(self, tail: float = 0.7) -> None:
         self.bot_speaking = False
+        self._answer_since = None
         self._bot_stopped_at = self.clock()
         self.quiet_until = self.clock() + tail
 
@@ -226,6 +233,7 @@ class ExamSession:
         from pipecat.frames.frames import TTSSpeakFrame
 
         self.history.append(("examiner", text))
+        self._answer_since = None
         if self.stt is not None:
             self.stt.question_hint = text
         await self.emit({"type": "transcript", "role": "examiner", "text": text, "origin": origin, **({"why": why} if why else {})})
@@ -270,6 +278,8 @@ class ExamSession:
     def vad_started(self) -> None:
         self._user_active, self._user_active_since = True, self.clock()
         self._last_voice_at = self.clock()
+        if self._answer_since is None and self.phase in (PART1, PART3) and not self.bot_speaking and not self.muted:
+            self._answer_since = self.clock()
         if self._responding and self._interruptible and self._pause_task:
             # They started talking again while the next question was being written: their answer was not finished.
             # Take the question back (the answer is restored) and wait for the whole answer.
@@ -583,7 +593,7 @@ class ExamSession:
         self.q_in_topic += 1
         self.asked.append(rules.question_part(nq.say))
         self.last_question = rules.question_part(nq.say)
-        await self.say(self.ack(answer) + nq.say, origin=nq_origin(nq), why=self._why(nq))
+        await self.say(self._lead(answer) + nq.say, origin=nq_origin(nq), why=self._why(nq))
 
     def unasked(self, frames: list[str]) -> list[str]:
         """Bank questions that have not been asked yet (or anything very similar)."""
@@ -597,7 +607,7 @@ class ExamSession:
             await self.start_part2_intro()
             return
         self.topic_idx = nxt
-        await self.ask_bank_question(first_topic=False, lead=self.ack(answer, topic_change=True))
+        await self.ask_bank_question(first_topic=False, lead=self._lead(answer, topic_change=True))
 
     # ---- Part 2 ----------------------------------------------------------------------------------
     async def start_part2_intro(self) -> None:
@@ -714,7 +724,7 @@ class ExamSession:
         self.part3_q += 1
         self.asked.append(rules.question_part(say))
         self.last_question = rules.question_part(say)
-        await self.say(self.ack(answer) + say, origin=nq_origin(nq) if nq.say else "script:fallback", why=self._why(nq))
+        await self.say(self._lead(answer) + say, origin=nq_origin(nq) if nq.say else "script:fallback", why=self._why(nq))
 
     async def close(self, line: str = "") -> None:
         """Closing words ("Thank you. That is the end of the speaking test."), then the test is over.
@@ -781,7 +791,38 @@ class ExamSession:
         except asyncio.CancelledError:
             pass
 
+    def _lead(self, answer: str, topic_change: bool = False) -> str:
+        """What comes before the next question: the polite "let's move on" after an over-long answer, otherwise a (rare) acknowledgement."""
+        if self._cut_next:
+            self._cut_next = False
+            return "Okay, thank you. " if topic_change else SCRIPT["moveOn"] + " "
+        return self.ack(answer, topic_change)
+
+    async def _check_answer_cap(self) -> bool:
+        """An answer that goes on far too long, while the candidate is still talking: end it politely and ask the next question.
+        Called with the session lock held (by the timer)."""
+        cap = self.answer_cap.get(self.phase)
+        if not cap or self._answer_since is None or self.confirm_end or self._responding or self.listening_blocked():
+            return False
+        if self.clock() - self._answer_since < cap:
+            return False
+        if not (self._speaking_now() or self.clock() - self._last_voice_at < ANSWER_CAP_QUIET_S):
+            return False                              # they have stopped: the examiner answers in the normal way
+        await self.emit({"type": "note", "text": f"the answer has gone on for {self.clock() - self._answer_since:.0f} s (limit {cap:.0f} s): "
+                                                 "the examiner ends it politely and moves on"})
+        if self._pause_task:
+            self._pause_task.cancel()
+        text, self._pending = " ".join(self._pending).strip(), []
+        self._answer_since, self._cut_next, self._responding = None, True, True
+        try:
+            await self._respond(text or "(a very long answer)")
+        finally:
+            self._cut_next, self._responding = False, False
+        return True
+
     async def _on_tick(self, limit) -> None:
+        if self.phase in (PART1, PART3) and await self._check_answer_cap():
+            return
         if self.phase == PART2_PREP and self.elapsed() >= limit:
             await self.start_long_turn()
         elif self.phase == PART2_SPEAK:

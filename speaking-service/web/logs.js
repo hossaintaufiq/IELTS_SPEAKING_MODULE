@@ -108,7 +108,7 @@ async function pollSplit() {
     }));
     const n = list.filter((v) => v.active).length;
     const pill = $("live-pill");
-    pill.textContent = n ? n + (n === 1 ? " test running" : " tests running") : list.length ? "devices connected" : "no test yet";
+    pill.textContent = n ? n + (n === 1 ? " test running" : " tests running") + " / " + list.length + " connected" : list.length ? list.length + " connected, not started" : "no device connected";
     pill.className = "pill " + (n ? "on" : "off");
     render();
   } catch (_) { $("live-pill").textContent = "server not reachable"; }
@@ -143,7 +143,7 @@ async function loadList() {
       return `<option value="${n}">${label}${r.device ? " " + esc(r.device) : ""} (${r.kb} KB)</option>`;
     }).join("");
     if ([...sel.options].some((o) => o.value === keep)) sel.value = keep;
-    if (!run.userPicked && live.filter((v) => v.active).length >= 2 && sel.value !== "split") { sel.value = "split"; pick(); }   // two or more devices: show them apart
+    if (!run.userPicked && live.length >= 1 && sel.value !== "split") { sel.value = "split"; pick(); }   // as soon as a device is connected: show every device in its own panel
   } catch (_) { /* the list is a convenience */ }
 }
 
