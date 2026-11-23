@@ -21,7 +21,7 @@ async def generate_json(system: str, prompt: str, timeout: float = 10.0) -> dict
     body = {
         "model": MODEL,
         "temperature": 0.6,
-        "max_tokens": 220,
+        "max_tokens": int(os.getenv("LLM_MAX_TOKENS", "130")),
         "response_format": {"type": "json_object"},
         "messages": [{"role": "system", "content": system}, {"role": "user", "content": prompt}],
     }
