@@ -1,6 +1,8 @@
 import asyncio
 import random
 
+import pytest
+
 from worker.examiner import rules
 from worker.examiner.rules import NextQuestionInput
 
@@ -124,3 +126,29 @@ def test_the_part2_follow_up_does_not_repeat_a_misheard_word():
     talk = "I went to Koxbazar with my family last year and the sea was beautiful and we stayed there for three days"
     assert unverified_echoes("Did you enjoy Koxbazar?", [talk]) == ["koxbazar"]
     assert unverified_echoes("Would you like to go there again?", [talk]) == []
+
+
+# ---- follow-ups are rare, varied, and never after a negative answer ---------------------------------------------------
+@pytest.mark.parametrize("answer", ["There is no furniture.", "No.", "Um, not really.", "I don't like it.", "Never.", "I have nothing.",
+                                    "Of course I don't like them."])
+def test_a_negative_answer_gets_no_follow_up(answer):
+    assert not rules.wants_probe(answer, 1, True) and not rules.wants_probe(answer, 3, True)
+
+
+def test_only_a_really_short_positive_answer_gets_a_follow_up_in_part_1():
+    assert rules.wants_probe("Yes, I do.", 1, True) and rules.wants_probe("Mostly football.", 1, True)
+    assert not rules.wants_probe("I live near the river with my parents.", 1, True)         # a real answer: next question
+    assert not rules.wants_probe("Yes, I do.", 1, False)
+
+
+@pytest.mark.parametrize("bad", ["What do you mean by 'who say square box'?", "Why did you say yes?", "What do you mean?",
+                                 "You said it is a square box, why?"])
+def test_a_follow_up_that_quotes_the_candidate_or_asks_what_a_word_means_is_refused(bad):
+    assert rules.PROBE_BAD.search(bad)
+    assert not rules.PROBE_BAD.search("Could you give me an example?") and not rules.PROBE_BAD.search("Why is that?")
+
+
+def test_the_safe_follow_up_does_not_start_with_why_twice():
+    i = inp()
+    i.history = [("examiner", "Why is that?"), ("candidate", "Yes.")]
+    assert not rules.fallback_probe(i).lower().startswith("why")

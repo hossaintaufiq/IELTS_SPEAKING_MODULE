@@ -79,6 +79,7 @@ VOICE_GRACE_S = 2.0        # after hearing the candidate, the Part 2 silence pro
 P2_FINISH_SENTENCE_S = 10  # at the two-minute mark a candidate who is still speaking may finish what they are saying, for up to this long
 P2_TRANSCRIPT_WAIT_S = 2.5 # ...and the examiner waits this long after their voice stops, so the last words are transcribed and not lost
 PART3_GRACE_S = 25         # Part 3 time is up and the candidate is silent: close the test after this long
+NAME_GIVEN = re.compile(r"\b(?:my (?:full )?name is|i am|i'm|this is|it is|it's)\s+[A-Za-z]{2,}", re.I)
 META_TALK = re.compile(r"\b(conversation|discussion|you (?:say|said|mention\w*|told|talked?)|talk(?:ed|ing)? about|topic)\b", re.I)
 _QSTOP = {"what", "about", "would", "could", "your", "that", "this", "there", "their", "with", "have", "does", "tell",
           "much", "more", "also", "other", "think", "like", "when", "which", "from", "been", "were", "them", "they",
@@ -175,6 +176,9 @@ class ExamSession:
         self._tick_errors = 0
         self.topic_t0, self.topic_slice = 0.0, 90.0   # when the current Part 1 topic began, and how long it may take
         self._last_was_probe = False       # the previous examiner turn was a follow-up ("Why is that?"): never two in a row
+        self._probes_in_topic = 0          # follow-ups asked on the current Part 1 topic: at most one
+        self._since_probe = 99             # questions asked since the last follow-up: at least two between follow-ups
+        self._p1_probes = 0                # follow-ups in the whole of Part 1: at most three
         self.confirm_end = False           # the examiner asked "finish or continue?" and is waiting for the answer
         self.finish_unclear = 0
         self.off_topic_count = 0           # irrelevant questions so far: 1st reminder, 2nd warning, 3rd ends the test
@@ -465,7 +469,8 @@ class ExamSession:
             return
         self.history.append(("candidate", text))
         p = self.phase
-        gave_name = p in (INTRO, NAME) and bool(extract_call_name(text) or (p == NAME and extract_name(text)))
+        gave_name = p in (INTRO, NAME) and bool(extract_call_name(text) or (p == NAME and extract_name(text))
+                                                or (p == INTRO and NAME_GIVEN.search(text)))         # "I'm Rahim Ahmed, what's your name?" is not a strike
         if self.confirm_end:
             await self._answer_finish_question(text)
         elif is_finish_request(text) and p not in (DONE, PART2_PREP):
@@ -527,6 +532,8 @@ class ExamSession:
         self.topic_t0 = self.elapsed()
         self.topic_slice = self._slice_for_topic()
         self._last_was_probe = False
+        self._probes_in_topic = 0
+        self._since_probe += 1
         await self.emit({"type": "note", "text": f"Part 1 topic {self.topic_idx + 1} ({t['topic']}): about {self.topic_slice:.0f} s"
                                                  f" of {self.cfg['p1_max']} s, {self.elapsed():.0f} s used"})
         opener = (SCRIPT["topicFirst"] if first_topic else SCRIPT["topicNext"]) + f" {rules.lower_first(t['topic'])}."
@@ -554,9 +561,19 @@ class ExamSession:
         said = [t for who, t in self.history if who == "candidate"][-2:]
         return self.q_in_topic >= 3 and len(said) == 2 and all(len(t.split()) <= 3 for t in said)
 
+    def _probe_ok(self, part: int) -> bool:
+        """Follow-ups ("Could you give me an example?") are an occasional touch, not a habit: never two in a row, at least two
+        questions between them, at most one per Part 1 topic and three in the whole of Part 1."""
+        if self._last_was_probe or self._since_probe < 2:
+            return False
+        return part == 3 or (self._probes_in_topic < 1 and self._p1_probes < 3)
+
     async def _ask_probe(self, nq) -> None:
         """A natural follow-up to a very short answer ("Why is that?"): no lead-in, and it does not count as a topic question."""
         self._last_was_probe = True
+        self._probes_in_topic += 1
+        self._p1_probes += 1 if self.phase == PART1 else 0
+        self._since_probe = 0
         self.last_question = nq.say
         await self.say(nq.say, origin=nq_origin(nq), why=self._why(nq))
 
@@ -565,7 +582,7 @@ class ExamSession:
         if el >= c["p1_max"] or (el >= self._p1_target() and self.q_in_topic >= MIN_Q_PER_TOPIC):
             await self.start_part2_intro()
             return
-        probe = rules.wants_probe(answer, 1, not self._last_was_probe)
+        probe = rules.wants_probe(answer, 1, self._probe_ok(1))
         if not probe and self._topic_done():
             await self.next_topic_or_part2(answer)
             return
@@ -578,7 +595,7 @@ class ExamSession:
         inp = NextQuestionInput(
             part=1, topic=t["topic"], frames=frames, asked=list(self.asked),
             question_number=self.q_in_topic + 1, questions_on_topic=self.q_target, history=list(self.history),
-            fallback=left[0] if left else "", known=list(self.known), probe_ok=not self._last_was_probe)
+            fallback=left[0] if left else "", known=list(self.known), probe_ok=self._probe_ok(1))
         nq = await rules.next_question(inp, self.llm, self.test_id)
         if nq.origin == "probe":
             await self._ask_probe(nq)
@@ -590,6 +607,7 @@ class ExamSession:
             await self._handle_off_topic()
             return
         self._last_was_probe = False
+        self._since_probe += 1
         self.known.extend(f for f in nq.facts if f not in self.known)
         self.q_in_topic += 1
         self.asked.append(rules.question_part(nq.say))
@@ -696,7 +714,7 @@ class ExamSession:
             await self.close()
             return
         qs = self.plan["part3"]["questions"]
-        probe = rules.wants_probe(answer, 3, not self._last_was_probe)
+        probe = rules.wants_probe(answer, 3, self._probe_ok(3))
         # bank first; then the company's generic follow-ups; when nothing fresh is left, close the test
         left = self.unasked(qs) or self.unasked(PART3_FOLLOW_UPS)
         if not left and not probe:
@@ -705,7 +723,7 @@ class ExamSession:
         inp = NextQuestionInput(
             part=3, topic=self.plan["part3"]["topic"], frames=qs, asked=list(self.asked), question_number=self.part3_q + 1,
             questions_on_topic=8, history=list(self.history), cue_card=self.plan["cueCard"]["prompt"],
-            fallback=left[0] if left else "", known=list(self.known), probe_ok=not self._last_was_probe)
+            fallback=left[0] if left else "", known=list(self.known), probe_ok=self._probe_ok(3))
         nq = await rules.next_question(inp, self.llm, self.test_id)
         if nq.origin == "probe":
             await self._ask_probe(nq)
@@ -721,6 +739,7 @@ class ExamSession:
             await self.close()
             return
         self._last_was_probe = False
+        self._since_probe += 1
         self.known.extend(f for f in nq.facts if f not in self.known)
         self.part3_q += 1
         self.asked.append(rules.question_part(say))
