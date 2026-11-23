@@ -68,6 +68,9 @@ PART3_FOLLOW_UPS = ["Why do you think that is?", "Can you give an example?"]
 P2_REAL_WORDS = 4          # fewer words than this in the long turn is not "speaking" (stray noise, a lone "okay")
 P2_ENOUGH_WORDS = 12       # fewer than this and no question is made up about it: straight on to Part 3
 DONE_TALKING_PAUSE_S = 1.5   # after "that's all" the examiner waits this long in case they go on, then thanks them
+LATE_BEFORE_S = 6.0          # ...or began up to this long before the question ended (they talked over it)
+LATE_CUE_VOICE_S = 4.5       # a turn that opens with "so / and / also / because" is allowed more time: it is plainly a continuation
+CONTINUATION_CUE = re.compile(r"^(?:so|and|also|because|but|then|plus|moreover|besides)\b", re.I)
 LATE_VOICE_S = 1.8           # a long turn that starts this soon after the examiner's question may still be the end of the previous answer
 QUIET_BEFORE_REPLY_S = 1.0   # the examiner never starts speaking until the candidate's voice has been quiet this long
 VOICE_GRACE_S = 2.0        # after hearing the candidate, the Part 2 silence prompts wait at least this long
@@ -316,7 +319,10 @@ class ExamSession:
         to the new question (which would make the examiner ask a third one on top)."""
         if self.phase not in (PART1, PART3) or not self.last_question or self._pending or not self._bot_stopped_at:
             return False
-        if len(text.split()) < 10 or not 0 <= self._user_active_since - self._bot_stopped_at < LATE_VOICE_S:
+        words = text.split()
+        gap = self._user_active_since - self._bot_stopped_at         # negative: they were already talking when the question ended
+        cue = bool(CONTINUATION_CUE.match(text.strip()))             # "So rickshaws feel more practical.", "And also..."
+        if len(words) < (3 if cue else 10) or not -LATE_BEFORE_S <= gap < (LATE_CUE_VOICE_S if cue else LATE_VOICE_S):
             return False
         prev = next((t for who, t in reversed(self.history) if who == "candidate"), "")
         asked = {w for w in content_words(self.last_question)}

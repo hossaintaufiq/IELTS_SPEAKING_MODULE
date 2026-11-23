@@ -259,3 +259,36 @@ def test_the_end_of_the_previous_answer_is_not_taken_as_the_answer_to_the_new_qu
     assert spoken(s)[-1].endswith(asked) and len(spoken(s)) == n + 1   # the same question again, once they had finished
     cands = [t for who, t in s.history if who == "candidate"]
     assert len(cands) >= 1 and any("sells fish" in c and "Savar" in c for c in cands)   # one joined answer
+
+
+def test_the_leftover_of_the_old_topic_after_a_new_topic_question_gets_no_follow_up():
+    """The live case: 'Do you usually celebrate your birthday?' ... 'So rickshaws feel more practical.' -> 'Could you give me an example?'"""
+    calls = []
+
+    async def llm(system, prompt):
+        if system == rules.SEMANTIC_SYSTEM:
+            return {"covered": []}
+        calls.append(prompt)
+        return {"reply": "answer", "pick": None, "say": "Could you give me an example?", "facts": []}
+
+    async def go():
+        async def send(e):
+            pass
+        s = ExamSession(send, seed=3, llm=llm, hour=9)
+        s.test_mode()
+        s.task = FakeTask()
+        await to_part1(s)
+        await s.on_candidate_turn("I usually take a rickshaw or a bus because it is cheap and close to my house")
+        await s.settle()
+        calls.clear()
+        s.last_question = "Do you usually celebrate your birthday?"   # a new topic's bank question has just been asked
+        s.bot_stopped()
+        s.vad_started()
+        n = len(spoken(s))
+        await s.on_candidate_turn("So rickshaws feel more practical.")
+        await s.settle()
+        return s, n
+
+    s, n = asyncio.run(go())
+    assert not calls                                                  # no "Could you give me an example?" was written
+    assert spoken(s)[-1] == "Do you usually celebrate your birthday?" and len(spoken(s)) == n + 1
