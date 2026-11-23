@@ -343,3 +343,46 @@ def test_a_long_answer_is_left_alone_when_the_candidate_has_already_stopped():
         return await s._check_answer_cap()
 
     assert asyncio.run(go()) is False
+
+
+def test_follow_ups_are_rare_at_most_one_per_topic_and_never_close_together():
+    async def go():
+        async def send(e):
+            pass
+        s = ExamSession(send, seed=3, llm=llm_q("Do you often cook at home?"), hour=9)
+        s.test_mode()
+        s.task = FakeTask()
+        await to_part1(s)
+        ok = []
+        for _ in range(6):
+            ok.append(s._probe_ok(1))
+            s._since_probe += 1
+            s._probes_in_topic += 0
+        s._since_probe, s._last_was_probe = 5, False
+        first = s._probe_ok(1)
+        s._probes_in_topic = 1
+        second = s._probe_ok(1)                                  # already one on this topic
+        s._probes_in_topic, s._since_probe = 0, 1
+        third = s._probe_ok(1)                                   # too soon after the last one
+        s._since_probe, s._p1_probes = 5, 3
+        fourth = s._probe_ok(1)                                  # three in Part 1 already
+        return first, second, third, fourth
+
+    assert asyncio.run(go()) == (True, False, False, False)
+
+
+def test_a_candidate_who_gives_their_name_and_asks_ours_is_not_given_a_strike():
+    async def go():
+        async def send(e):
+            pass
+        s = ExamSession(send, seed=3, llm=llm_q("Do you often cook at home?"), hour=9)
+        s.test_mode()
+        s.task = FakeTask()
+        await s.handle_control({"action": "start"})
+        s._ticker.cancel()
+        await s.on_candidate_turn("I'm Hussain Ahmed, what's your name?")
+        await s.settle()
+        return s
+
+    s = asyncio.run(go())
+    assert s.off_topic_count == 0 and spoken(s)[-1].startswith("Thank you. And what can I call you?")

@@ -224,16 +224,24 @@ def last_answer(inp: NextQuestionInput) -> str:
 
 
 RESERVE_TOPICS = 2
-PROBE_MAX_WORDS = {1: 5, 3: 8}      # an answer this short or shorter gets a natural follow-up before the next question
+PROBE_MAX_WORDS = {1: 3, 3: 8}      # an answer this short or shorter may get a natural follow-up before the next question (Part 1: "Yes, I do.")
+# An answer that says no / not / never / nothing / "I don't..." is not followed up: "Why not?" or "Tell me more" after "There is no furniture."
+# is awkward, and the next question is the better move.
+_NEGATIVE = re.compile(r"\b(?:no|not|never|nothing|none|nobody|nowhere|without|neither|nor|cannot)\b|n't\b|\bno idea\b", re.I)
 _NO_ANSWER = re.compile(r"\b(?:don'?t|do not|didn'?t|can'?t|cannot) (?:know|remember|think)\b|\bno idea\b|\bnot sure\b|\bno\b$", re.I)
-PROBES = ["Why is that?", "Could you give me an example?", "Why do you say that?", "Can you explain that a little?"]
+# Different kinds of follow-up, so that it is not "Why...?" every time
+PROBES = ["Could you give me an example?", "Can you tell me a little more about that?", "Why is that?", "What makes you say that?"]
+# A follow-up that quotes the candidate, asks what a word means, or asks "why did you say yes" is not natural (and may repeat a recognition error)
+PROBE_BAD = re.compile(r"""["'‘’“”]\w|\bwhat do you mean\b|\bdid you say\b|\bwhy did you say\b|\bwhat does\b.{0,30}\bmean\b|\byou said\b""", re.I)
 
 
 def wants_probe(answer: str, part: int, probe_ok: bool) -> bool:
-    """A very short, real answer ("Yes, I do.", "Mostly football.") is followed up like a real examiner would ("Why is that?")
-    before moving to the next question. Not after "I don't know", and never two probes in a row."""
+    """A very short, real answer ("Yes, I do.", "Mostly football.") may be followed up like a real examiner would ("Why is that?")
+    before moving to the next question. Not after a negative answer or "I don't know", and the session decides when one is allowed
+    at all (`probe_ok`): follow-ups are rare, never two in a row."""
     words = len(answer.split())
-    return probe_ok and 1 <= words <= PROBE_MAX_WORDS.get(part, 5) and not _NO_ANSWER.search(answer.strip(" ."))
+    text = answer.strip(" .")
+    return (probe_ok and 1 <= words <= PROBE_MAX_WORDS.get(part, 3) and not _NO_ANSWER.search(text) and not _NEGATIVE.search(text))
 
 
 def choose_mode(inp: NextQuestionInput, test_id: str = "") -> str:
@@ -282,10 +290,12 @@ def build_prompt(inp: NextQuestionInput, mode: str, test_id: str = "") -> str:
     if mode == "probe":
         return (f'This is Part {inp.part} of the IELTS Speaking test. Topic: "{inp.topic}". The candidate has just given a very short answer.\n'
                 f"Conversation so far:\n{history}\n\n"
-                "Listen to what they said, then ask ONE short, natural follow-up that invites them to explain or give an example, "
-                'like a real examiner (for example "Why is that?", "Why do you like it?", "Could you give me an example?", '
-                '"How often do you do that?"). It must fit their LAST answer and use only what they actually said. '
-                "Do not comment on the answer, do not praise it, do not repeat an earlier question. Under 12 words, exactly one question mark.\n"
+                "Ask ONE short, natural follow-up that invites them to say a little more, like a real examiner. Vary the kind: sometimes an example "
+                '("Could you give me an example?"), sometimes a little more detail ("Can you tell me a little more about that?"), '
+                'only sometimes a reason ("Why is that?"). If a recent question already started with "Why", do not start with "Why" again. '
+                "It must fit their LAST answer and use only what they actually said. Never ask what a word means, never quote their words, never ask "
+                '"why did you say yes/no". Do not comment on the answer, do not praise it, do not repeat an earlier question. '
+                "Under 12 words, exactly one question mark.\n"
                 'Reply as JSON: {"reply": "answer", "pick": null, "say": "<the follow-up>", "facts": []}')
 
     if inp.part == 1:
@@ -496,9 +506,12 @@ def origin_of(say: str, frames: list[str]) -> str:
 
 
 def fallback_probe(inp: NextQuestionInput) -> str:
-    """A safe follow-up that does not repeat the one just used."""
+    """A safe follow-up that does not repeat one just used, and does not start with "Why" if a recent question did."""
     recent = [question_part(t) for s, t in inp.history if s == "examiner"][-4:]
-    return next((p for p in PROBES if p not in recent), PROBES[0])
+    pool = [p for p in PROBES if p not in recent] or PROBES
+    if any(r.lower().startswith("why") for r in recent):
+        pool = [p for p in pool if not p.lower().startswith("why")] or pool
+    return pool[0]
 
 
 async def next_question(inp: NextQuestionInput, llm: JsonLLM, test_id: str = "") -> NextQuestion:
@@ -507,7 +520,7 @@ async def next_question(inp: NextQuestionInput, llm: JsonLLM, test_id: str = "")
     if mode == "probe":
         say = clean(js["say"]) if js and isinstance(js.get("say"), str) else ""
         ok = (say.endswith("?") and say.count("?") == 1 and 2 <= len(say.split()) <= 14 and not BANNED.search(say)
-              and not PRAISE.search(say) and not MARKS_ANSWER.search(say)
+              and not PRAISE.search(say) and not MARKS_ANSWER.search(say) and not PROBE_BAD.search(say)
               and not unverified_echoes(say, [t for sp, t in inp.history if sp == "candidate"][-3:]))
         if ok:
             return NextQuestion(say, "ai", "probe")
