@@ -40,6 +40,7 @@ Sources: the company's TypeScript examiner (`ieltsup/services/examCoreAPI/experi
 - not the same as an earlier question (word overlap 0.7 or more)
 - Part 1 only: does not restate the question the candidate has just answered (2 or more shared key words and half of the new question's key words)
 - a bank question that the candidate has in effect already answered (60% of its key words already said) is rejected
+- **general unless the word is safe:** the question may repeat a specific word from what the candidate just said (last 3 answers) only if it is an ordinary English word (`question_bank/common_words.txt`, about 13,000 words from the open `wordfreq` list), a word the question bank itself uses, or a known local name (rickshaw, biryani, Savar...; `worker/examiner/vocab.py`). A question echoing any other word of 4+ letters (a speech-recognition error such as "Savoy" for Savar, or a rare word) is rejected, and a general bank question is asked instead. The same check applies to probes and to the Part 2 rounding-off question. The prompt says the same to the LLM (general by default)
 - a meaning check by the LLM (4 s timeout, **fails open**) rejects a question that asks the same thing in other words or asks for a fact already stated
 
 Probe questions ("Why is that?") must be 2 to 14 words, one question mark, no praise, no "you said/you mentioned".
@@ -57,14 +58,16 @@ A test may take up to **16 minutes** (`TEST_MAX_S` 960). Time drives the number 
 | Part 3 | Target about 4.5 min (`PART3_MIN_S` 270), cap 5 min 40 s (`PART3_MAX_S` 340), at least 3 questions before time can end it |
 | Close | "Thank you. That is the end of the speaking test." The page is told `done` only after the audio has finished |
 
-Part 1 topic time: the time left is shared between the main topics still to come (at least 60 s each); a reserve topic gets 50 s and is only started if about 40 s or more of the Part 1 target remain. A topic gets **at least 2 real questions** (follow-ups do not count). A topic also ends early after 3 questions if the last two answers were 3 words or fewer. If the bank for a topic is used up, the examiner moves on and never repeats.
+Part 1 topic time: the time left is shared between the main topics still to come (at least 60 s each); a reserve topic gets 50 s and is only started if about 40 s or more of the Part 1 target remain. A topic gets **at least 3 real questions** (follow-ups do not count), and more when its time share allows.  A topic also ends early after 3 questions if the last two answers were 3 words or fewer. If the bank for a topic is used up, the examiner moves on and never repeats.
 
 Part 1 plan (`choose_plan`): one opening topic, then one local and one non-local topic of a different theme from the cue card and from each other, then 2 reserves. Bank size: 75 topics, 417 questions, 64 cue cards.
+
+**Over-long answers.** A candidate must be able to finish, so the limit is generous: an answer that has gone on for **60 s in Part 1** (`PART1_MAX_ANSWER_S`) or **90 s in Part 3** (`PART3_MAX_ANSWER_S`), counted from their first words, and only while they are still talking (voice heard in the last 2 s), is ended politely: "Okay, thank you. Let's move on to the next question." followed by the next question (at a change of topic: "Okay, thank you." and the new topic). If they have already stopped, the normal wait applies and nothing is cut.
 
 ## 5. Question sources and how the next question is chosen
 
 **Part 1** (`choose_mode`):
-1. A very short answer (1 to 5 words, not "I don't know", and the previous turn was not a probe) -> a **probe** ("Why is that?", "Could you give me an example?", "Why do you say that?", "Can you explain that a little?"). Never two probes in a row.
+1. A very short, positive answer (Part 1: 3 words or fewer, e.g. "Yes, I do."; Part 3: 8 words or fewer) may get a **follow-up**, but follow-ups are an occasional touch, not a habit: **never after a negative answer** (no / not / never / nothing / "I don't..." / "I don't know"), never two in a row, at least two questions between them, **at most one per Part 1 topic and three in the whole of Part 1**. The kinds are varied: "Could you give me an example?", "Can you tell me a little more about that?", "Why is that?", "What makes you say that?"; it does not start with "Why" if a recent question did. A follow-up that quotes the candidate, asks what a word means ("What do you mean by...?") or asks "why did you say yes" is refused (`PROBE_BAD`).
 2. First question of a topic, or an answer shorter than 6 words (`PERSONAL_MIN_WORDS`), or a short negative answer -> **bank** question (asked word for word, never reworded).
 3. Otherwise 70% (`AI_NEW_QUESTION_SHARE`) the LLM writes its **own follow-up** about one specific detail the candidate gave; 30% bank.
 4. If the LLM fails, is rejected or times out (10 s, one retry for quick failures, none for timeouts) -> **fallback**: an unasked, unanswered bank question closest to the last answer; questions that restate the one just answered are used last. Nothing suitable left -> move on to the next topic or part.

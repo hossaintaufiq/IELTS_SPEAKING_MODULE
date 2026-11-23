@@ -152,7 +152,8 @@ async function start() {
     state.stream = stream;
 
     const proto = location.protocol === "https:" ? "wss" : "ws";
-    state.ws = new WebSocket(`${proto}://${location.host}/ws`);
+    const device = new URLSearchParams(location.search).get("device");      // open the page with ?device=Laptop to label this device in the logs
+    state.ws = new WebSocket(`${proto}://${location.host}/ws` + (device ? "?device=" + encodeURIComponent(device) : ""));
     state.ws.binaryType = "arraybuffer";
     state.ws.onopen = () => {
       $("conn").textContent = "Connected"; $("conn").className = "pill on";

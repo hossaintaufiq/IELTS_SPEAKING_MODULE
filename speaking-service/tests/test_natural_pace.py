@@ -118,7 +118,8 @@ def test_a_failed_llm_still_gives_a_safe_follow_up_and_does_not_repeat_the_last_
         return first, spoken(s)[-1]
 
     first, last = asyncio.run(go())
-    assert first in rules.PROBES and last in rules.PROBES and last != first
+    assert first in rules.PROBES                                   # the first short answer gets a safe follow-up...
+    assert last not in rules.PROBES                                # ...but not every one: at most one per topic
 
 
 # ---- time decides, not a question count ---------------------------------------------------------------------------

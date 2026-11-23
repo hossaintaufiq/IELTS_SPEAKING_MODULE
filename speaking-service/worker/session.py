@@ -28,6 +28,7 @@ from worker.examiner.intents import finish_answer, is_done_talking, is_finish_re
 from worker.examiner.naturalness import AckPicker
 from worker.examiner.pacing import wait_seconds
 from worker.examiner.rules import SCRIPT, NextQuestionInput
+from worker.examiner.vocab import unverified_echoes
 from worker.examiner.speech import (extract_call_name, is_noise, is_off_topic_question, is_repeat_request,
                                     looks_unfinished, strip_foreign)
 
@@ -57,7 +58,7 @@ def timings() -> dict:
 
 
 CORE_TOPICS = 3            # Part 1 plans three topics, the rest of the plan is reserve for when the answers are short and time is left
-MIN_Q_PER_TOPIC = 2        # a topic always gets at least this many real questions (follow-ups do not count)
+MIN_Q_PER_TOPIC = 3        # a topic always gets at least this many real questions (follow-ups do not count); more if the time fits
 MIN_TOPIC_SLICE_S = 60
 RESERVE_SLICE_S = 50
 
@@ -72,11 +73,13 @@ LATE_BEFORE_S = 6.0          # ...or began up to this long before the question e
 LATE_CUE_VOICE_S = 4.5       # a turn that opens with "so / and / also / because" is allowed more time: it is plainly a continuation
 CONTINUATION_CUE = re.compile(r"^(?:so|and|also|because|but|then|plus|moreover|besides)\b", re.I)
 LATE_VOICE_S = 1.8           # a long turn that starts this soon after the examiner's question may still be the end of the previous answer
+ANSWER_CAP_QUIET_S = 2.0     # an over-long answer is only cut while the candidate is still talking (voice heard in the last 2 s)
 QUIET_BEFORE_REPLY_S = 1.0   # the examiner never starts speaking until the candidate's voice has been quiet this long
 VOICE_GRACE_S = 2.0        # after hearing the candidate, the Part 2 silence prompts wait at least this long
 P2_FINISH_SENTENCE_S = 10  # at the two-minute mark a candidate who is still speaking may finish what they are saying, for up to this long
 P2_TRANSCRIPT_WAIT_S = 2.5 # ...and the examiner waits this long after their voice stops, so the last words are transcribed and not lost
 PART3_GRACE_S = 25         # Part 3 time is up and the candidate is silent: close the test after this long
+NAME_GIVEN = re.compile(r"\b(?:my (?:full )?name is|i am|i'm|this is|it is|it's)\s+[A-Za-z]{2,}", re.I)
 META_TALK = re.compile(r"\b(conversation|discussion|you (?:say|said|mention\w*|told|talked?)|talk(?:ed|ing)? about|topic)\b", re.I)
 _QSTOP = {"what", "about", "would", "could", "your", "that", "this", "there", "their", "with", "have", "does", "tell",
           "much", "more", "also", "other", "think", "like", "when", "which", "from", "been", "were", "them", "they",
@@ -112,6 +115,7 @@ class ExamSession:
         self.plan = plan or rules.choose_plan(rng=rng)
         self.hour = time.localtime().tm_hour if hour is None else hour
         self.test_id = str(rng.random())[2:10]
+        self.device = ""              # a label for the device taking this test (several can run at once)
         self.phase = INTRO
         self.muted = True             # mic ignored before start and during Part 2 preparation
         self.bot_speaking = False     # examiner audio is playing: ignore the mic (no talking over the examiner)
@@ -172,6 +176,9 @@ class ExamSession:
         self._tick_errors = 0
         self.topic_t0, self.topic_slice = 0.0, 90.0   # when the current Part 1 topic began, and how long it may take
         self._last_was_probe = False       # the previous examiner turn was a follow-up ("Why is that?"): never two in a row
+        self._probes_in_topic = 0          # follow-ups asked on the current Part 1 topic: at most one
+        self._since_probe = 99             # questions asked since the last follow-up: at least two between follow-ups
+        self._p1_probes = 0                # follow-ups in the whole of Part 1: at most three
         self.confirm_end = False           # the examiner asked "finish or continue?" and is waiting for the answer
         self.finish_unclear = 0
         self.off_topic_count = 0           # irrelevant questions so far: 1st reminder, 2nd warning, 3rd ends the test
@@ -180,6 +187,11 @@ class ExamSession:
         self._pause_task: asyncio.Task | None = None
         self._responding = False
         self._user_active, self._user_active_since = False, 0.0
+        # One answer must not run on for ever: past this many seconds of talking the examiner ends it politely and moves on.
+        # Generous on purpose (the candidate must be able to finish), and only while they are still talking.
+        self.answer_cap = {PART1: float(os.getenv("PART1_MAX_ANSWER_S", "60")), PART3: float(os.getenv("PART3_MAX_ANSWER_S", "90"))}
+        self._answer_since: float | None = None      # when the candidate began the answer in progress (first voice after the examiner spoke)
+        self._cut_next = False                       # the next examiner line is the polite "let's move on" after an over-long answer
         self._late_continuation = False             # the next turn is the end of the PREVIOUS answer, not an answer to the question just asked
         self._last_voice_at = -1e9                  # when the voice detector last heard the candidate
 
@@ -197,6 +209,7 @@ class ExamSession:
 
     def bot_stopped(self, tail: float = 0.7) -> None:
         self.bot_speaking = False
+        self._answer_since = None
         self._bot_stopped_at = self.clock()
         self.quiet_until = self.clock() + tail
 
@@ -210,8 +223,13 @@ class ExamSession:
             self.mic_rms = max((sum(x * x for x in a) / len(a)) ** 0.5 / 32768, self.mic_rms * 0.85)
 
     async def emit(self, event: dict) -> None:
-        event = {**event, "t": round(self.clock() - self.t0, 2)}
+        event = {**event, "t": round(self.clock() - self.t0, 2), "at": round(time.time(), 2)}   # "at" (wall clock) lines up several devices
         self.log.append(event)
+        if event.get("type") in ("transcript", "note", "ignored", "phase", "done"):
+            # one line per event in the server log, tagged with the device, so every device can be followed (and filtered) there too
+            what = event.get("role") or event.get("type")
+            text = event.get("text") or event.get("phase") or ""
+            log.info("[%s] %s %s: %s", self.device or self.test_id[:4], event.get("phase") or "-", what, str(text)[:200])
         await self.send(event)
 
     async def say(self, text: str, origin: str = "script", why: str = "") -> None:
@@ -220,6 +238,7 @@ class ExamSession:
         from pipecat.frames.frames import TTSSpeakFrame
 
         self.history.append(("examiner", text))
+        self._answer_since = None
         if self.stt is not None:
             self.stt.question_hint = text
         await self.emit({"type": "transcript", "role": "examiner", "text": text, "origin": origin, **({"why": why} if why else {})})
@@ -264,6 +283,8 @@ class ExamSession:
     def vad_started(self) -> None:
         self._user_active, self._user_active_since = True, self.clock()
         self._last_voice_at = self.clock()
+        if self._answer_since is None and self.phase in (PART1, PART3) and not self.bot_speaking and not self.muted:
+            self._answer_since = self.clock()
         if self._responding and self._interruptible and self._pause_task:
             # They started talking again while the next question was being written: their answer was not finished.
             # Take the question back (the answer is restored) and wait for the whole answer.
@@ -448,7 +469,8 @@ class ExamSession:
             return
         self.history.append(("candidate", text))
         p = self.phase
-        gave_name = p in (INTRO, NAME) and bool(extract_call_name(text) or (p == NAME and extract_name(text)))
+        gave_name = p in (INTRO, NAME) and bool(extract_call_name(text) or (p == NAME and extract_name(text))
+                                                or (p == INTRO and NAME_GIVEN.search(text)))         # "I'm Rahim Ahmed, what's your name?" is not a strike
         if self.confirm_end:
             await self._answer_finish_question(text)
         elif is_finish_request(text) and p not in (DONE, PART2_PREP):
@@ -510,6 +532,8 @@ class ExamSession:
         self.topic_t0 = self.elapsed()
         self.topic_slice = self._slice_for_topic()
         self._last_was_probe = False
+        self._probes_in_topic = 0
+        self._since_probe += 1
         await self.emit({"type": "note", "text": f"Part 1 topic {self.topic_idx + 1} ({t['topic']}): about {self.topic_slice:.0f} s"
                                                  f" of {self.cfg['p1_max']} s, {self.elapsed():.0f} s used"})
         opener = (SCRIPT["topicFirst"] if first_topic else SCRIPT["topicNext"]) + f" {rules.lower_first(t['topic'])}."
@@ -537,9 +561,19 @@ class ExamSession:
         said = [t for who, t in self.history if who == "candidate"][-2:]
         return self.q_in_topic >= 3 and len(said) == 2 and all(len(t.split()) <= 3 for t in said)
 
+    def _probe_ok(self, part: int) -> bool:
+        """Follow-ups ("Could you give me an example?") are an occasional touch, not a habit: never two in a row, at least two
+        questions between them, at most one per Part 1 topic and three in the whole of Part 1."""
+        if self._last_was_probe or self._since_probe < 2:
+            return False
+        return part == 3 or (self._probes_in_topic < 1 and self._p1_probes < 3)
+
     async def _ask_probe(self, nq) -> None:
         """A natural follow-up to a very short answer ("Why is that?"): no lead-in, and it does not count as a topic question."""
         self._last_was_probe = True
+        self._probes_in_topic += 1
+        self._p1_probes += 1 if self.phase == PART1 else 0
+        self._since_probe = 0
         self.last_question = nq.say
         await self.say(nq.say, origin=nq_origin(nq), why=self._why(nq))
 
@@ -548,7 +582,7 @@ class ExamSession:
         if el >= c["p1_max"] or (el >= self._p1_target() and self.q_in_topic >= MIN_Q_PER_TOPIC):
             await self.start_part2_intro()
             return
-        probe = rules.wants_probe(answer, 1, not self._last_was_probe)
+        probe = rules.wants_probe(answer, 1, self._probe_ok(1))
         if not probe and self._topic_done():
             await self.next_topic_or_part2(answer)
             return
@@ -561,7 +595,7 @@ class ExamSession:
         inp = NextQuestionInput(
             part=1, topic=t["topic"], frames=frames, asked=list(self.asked),
             question_number=self.q_in_topic + 1, questions_on_topic=self.q_target, history=list(self.history),
-            fallback=left[0] if left else "", known=list(self.known), probe_ok=not self._last_was_probe)
+            fallback=left[0] if left else "", known=list(self.known), probe_ok=self._probe_ok(1))
         nq = await rules.next_question(inp, self.llm, self.test_id)
         if nq.origin == "probe":
             await self._ask_probe(nq)
@@ -573,11 +607,12 @@ class ExamSession:
             await self._handle_off_topic()
             return
         self._last_was_probe = False
+        self._since_probe += 1
         self.known.extend(f for f in nq.facts if f not in self.known)
         self.q_in_topic += 1
         self.asked.append(rules.question_part(nq.say))
         self.last_question = rules.question_part(nq.say)
-        await self.say(self.ack(answer) + nq.say, origin=nq_origin(nq), why=self._why(nq))
+        await self.say(self._lead(answer) + nq.say, origin=nq_origin(nq), why=self._why(nq))
 
     def unasked(self, frames: list[str]) -> list[str]:
         """Bank questions that have not been asked yet (or anything very similar)."""
@@ -591,7 +626,7 @@ class ExamSession:
             await self.start_part2_intro()
             return
         self.topic_idx = nxt
-        await self.ask_bank_question(first_topic=False, lead=self.ack(answer, topic_change=True))
+        await self.ask_bank_question(first_topic=False, lead=self._lead(answer, topic_change=True))
 
     # ---- Part 2 ----------------------------------------------------------------------------------
     async def start_part2_intro(self) -> None:
@@ -650,7 +685,7 @@ class ExamSession:
         q = rules.clean(js["say"]) if js and isinstance(js.get("say"), str) else ""
         follow_origin, follow_why = "ai:new", ""
         if (not q.endswith("?") or rules.BANNED.search(q) or q.count("?") != 1 or len(q.split()) > 14
-                or META_TALK.search(q) or not _grounded(q, talk, card)):
+                or META_TALK.search(q) or not _grounded(q, talk, card) or unverified_echoes(q, [talk])):
             why = "the LLM wrote nothing usable" if not q else "rejected: not a clean question or not about what was said"
             await self.emit({"type": "note", "text": f"no rounding-off question ({why}): thank them and go to Part 3"})
             await self.start_part3(lead=f"{stop} {SCRIPT['part2MoveOn']}" if time_up else stop)      # an invented or odd question is worse than none
@@ -679,7 +714,7 @@ class ExamSession:
             await self.close()
             return
         qs = self.plan["part3"]["questions"]
-        probe = rules.wants_probe(answer, 3, not self._last_was_probe)
+        probe = rules.wants_probe(answer, 3, self._probe_ok(3))
         # bank first; then the company's generic follow-ups; when nothing fresh is left, close the test
         left = self.unasked(qs) or self.unasked(PART3_FOLLOW_UPS)
         if not left and not probe:
@@ -688,7 +723,7 @@ class ExamSession:
         inp = NextQuestionInput(
             part=3, topic=self.plan["part3"]["topic"], frames=qs, asked=list(self.asked), question_number=self.part3_q + 1,
             questions_on_topic=8, history=list(self.history), cue_card=self.plan["cueCard"]["prompt"],
-            fallback=left[0] if left else "", known=list(self.known), probe_ok=not self._last_was_probe)
+            fallback=left[0] if left else "", known=list(self.known), probe_ok=self._probe_ok(3))
         nq = await rules.next_question(inp, self.llm, self.test_id)
         if nq.origin == "probe":
             await self._ask_probe(nq)
@@ -704,11 +739,12 @@ class ExamSession:
             await self.close()
             return
         self._last_was_probe = False
+        self._since_probe += 1
         self.known.extend(f for f in nq.facts if f not in self.known)
         self.part3_q += 1
         self.asked.append(rules.question_part(say))
         self.last_question = rules.question_part(say)
-        await self.say(self.ack(answer) + say, origin=nq_origin(nq) if nq.say else "script:fallback", why=self._why(nq))
+        await self.say(self._lead(answer) + say, origin=nq_origin(nq) if nq.say else "script:fallback", why=self._why(nq))
 
     async def close(self, line: str = "") -> None:
         """Closing words ("Thank you. That is the end of the speaking test."), then the test is over.
@@ -775,7 +811,38 @@ class ExamSession:
         except asyncio.CancelledError:
             pass
 
+    def _lead(self, answer: str, topic_change: bool = False) -> str:
+        """What comes before the next question: the polite "let's move on" after an over-long answer, otherwise a (rare) acknowledgement."""
+        if self._cut_next:
+            self._cut_next = False
+            return "Okay, thank you. " if topic_change else SCRIPT["moveOn"] + " "
+        return self.ack(answer, topic_change)
+
+    async def _check_answer_cap(self) -> bool:
+        """An answer that goes on far too long, while the candidate is still talking: end it politely and ask the next question.
+        Called with the session lock held (by the timer)."""
+        cap = self.answer_cap.get(self.phase)
+        if not cap or self._answer_since is None or self.confirm_end or self._responding or self.listening_blocked():
+            return False
+        if self.clock() - self._answer_since < cap:
+            return False
+        if not (self._speaking_now() or self.clock() - self._last_voice_at < ANSWER_CAP_QUIET_S):
+            return False                              # they have stopped: the examiner answers in the normal way
+        await self.emit({"type": "note", "text": f"the answer has gone on for {self.clock() - self._answer_since:.0f} s (limit {cap:.0f} s): "
+                                                 "the examiner ends it politely and moves on"})
+        if self._pause_task:
+            self._pause_task.cancel()
+        text, self._pending = " ".join(self._pending).strip(), []
+        self._answer_since, self._cut_next, self._responding = None, True, True
+        try:
+            await self._respond(text or "(a very long answer)")
+        finally:
+            self._cut_next, self._responding = False, False
+        return True
+
     async def _on_tick(self, limit) -> None:
+        if self.phase in (PART1, PART3) and await self._check_answer_cap():
+            return
         if self.phase == PART2_PREP and self.elapsed() >= limit:
             await self.start_long_turn()
         elif self.phase == PART2_SPEAK:
@@ -869,7 +936,7 @@ class ExamSession:
         if not self.log:
             return None
         RUNS.mkdir(exist_ok=True)
-        path = RUNS / f"run_{time.strftime('%Y%m%d_%H%M%S')}.json"
+        path = RUNS / f"run_{time.strftime('%Y%m%d_%H%M%S')}_{self.test_id[:6]}.json"       # the id keeps two tests that end in the same second apart
         lat = [e["seconds"] for e in self.log if e["type"] == "latency"]
         mic = {}
         if self._mic_pcm:
@@ -881,6 +948,6 @@ class ExamSession:
                 w.setnchannels(1); w.setsampwidth(2); w.setframerate(16000); w.writeframes(bytes(self._mic_pcm))
         path.write_text(json.dumps({**mic, 
             "topics": [t["topic"] for t in self.plan["part1"]], "card": self.plan["cueCard"]["prompt"],
-            "name": self.name, "known_facts": self.known, "mic_chunks_received": self.mic_chunks,
+            "name": self.name, "device": self.device, "known_facts": self.known, "mic_chunks_received": self.mic_chunks,
             "latencies_s": lat, "events": self.log}, indent=2), encoding="utf-8")
         return path

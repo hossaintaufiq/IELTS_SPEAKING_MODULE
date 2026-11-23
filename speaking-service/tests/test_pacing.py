@@ -292,3 +292,97 @@ def test_the_leftover_of_the_old_topic_after_a_new_topic_question_gets_no_follow
     s, n = asyncio.run(go())
     assert not calls                                                  # no "Could you give me an example?" was written
     assert spoken(s)[-1] == "Do you usually celebrate your birthday?" and len(spoken(s)) == n + 1
+
+
+# ---- min 3 questions per topic; an over-long answer is ended politely ---------------------------------------------
+def test_a_topic_has_at_least_three_questions():
+    assert sess.MIN_Q_PER_TOPIC == 3
+
+
+def test_an_answer_that_runs_far_too_long_is_ended_politely_while_the_candidate_is_still_talking():
+    t = {"now": 1000.0}
+
+    async def go():
+        async def send(e):
+            pass
+        s = ExamSession(send, seed=3, llm=llm_q("Do you often cook at home?"), hour=9, clock=lambda: t["now"])
+        s.test_mode()
+        s.task = FakeTask()
+        await to_part1(s)
+        n = len(spoken(s))
+        s.vad_started()                                              # the answer begins...
+        s._pending = ["I live near the river and I have lived there all my life because my family is there"]
+        t["now"] += 30
+        s.vad_started()
+        assert not await s._check_answer_cap()                       # 30 s: still well inside the limit
+        t["now"] += 31                                               # 61 s of talking, and they are still going
+        s.vad_started()
+        assert await s._check_answer_cap()
+        return s, n
+
+    s, n = asyncio.run(go())
+    assert len(spoken(s)) == n + 1
+    assert spoken(s)[-1] == "Okay, thank you. Let's move on to the next question. Do you often cook at home?"
+    assert s._cut_next is False
+
+
+def test_a_long_answer_is_left_alone_when_the_candidate_has_already_stopped():
+    t = {"now": 1000.0}
+
+    async def go():
+        async def send(e):
+            pass
+        s = ExamSession(send, seed=3, llm=llm_q("Do you often cook at home?"), hour=9, clock=lambda: t["now"])
+        s.test_mode()
+        s.task = FakeTask()
+        await to_part1(s)
+        s.vad_started()
+        t["now"] += 70
+        s.vad_stopped()
+        t["now"] += 5                                                # quiet for 5 s: the normal pause logic takes over, no interruption
+        return await s._check_answer_cap()
+
+    assert asyncio.run(go()) is False
+
+
+def test_follow_ups_are_rare_at_most_one_per_topic_and_never_close_together():
+    async def go():
+        async def send(e):
+            pass
+        s = ExamSession(send, seed=3, llm=llm_q("Do you often cook at home?"), hour=9)
+        s.test_mode()
+        s.task = FakeTask()
+        await to_part1(s)
+        ok = []
+        for _ in range(6):
+            ok.append(s._probe_ok(1))
+            s._since_probe += 1
+            s._probes_in_topic += 0
+        s._since_probe, s._last_was_probe = 5, False
+        first = s._probe_ok(1)
+        s._probes_in_topic = 1
+        second = s._probe_ok(1)                                  # already one on this topic
+        s._probes_in_topic, s._since_probe = 0, 1
+        third = s._probe_ok(1)                                   # too soon after the last one
+        s._since_probe, s._p1_probes = 5, 3
+        fourth = s._probe_ok(1)                                  # three in Part 1 already
+        return first, second, third, fourth
+
+    assert asyncio.run(go()) == (True, False, False, False)
+
+
+def test_a_candidate_who_gives_their_name_and_asks_ours_is_not_given_a_strike():
+    async def go():
+        async def send(e):
+            pass
+        s = ExamSession(send, seed=3, llm=llm_q("Do you often cook at home?"), hour=9)
+        s.test_mode()
+        s.task = FakeTask()
+        await s.handle_control({"action": "start"})
+        s._ticker.cancel()
+        await s.on_candidate_turn("I'm Hussain Ahmed, what's your name?")
+        await s.settle()
+        return s
+
+    s = asyncio.run(go())
+    assert s.off_topic_count == 0 and spoken(s)[-1].startswith("Thank you. And what can I call you?")
