@@ -31,6 +31,59 @@ MOCK = os.getenv("MOCK") == "1"
 
 app = FastAPI(title="Speaking test bench")
 
+
+# ---- access code ---------------------------------------------------------------------------------------------
+# A public link (Cloudflare Tunnel) must not be usable by whoever finds it: every test uses the shared GPU. Set ACCESS_CODE and open
+# the page once as /?key=<code>; the browser then keeps a cookie, which the page, the logs and the microphone connection all carry.
+# Not set (the default, and on a private SSH tunnel): no check at all.
+ACCESS = {"code": os.getenv("ACCESS_CODE", "")}
+COOKIE = "access"
+
+
+def _code_from(scope) -> tuple[bool, bool]:
+    """(allowed, came_from_the_link): the code in ?key= or in the cookie."""
+    from urllib.parse import parse_qs
+    import hmac
+
+    want = ACCESS["code"]
+    key = (parse_qs(scope.get("query_string", b"").decode("latin-1")).get("key") or [""])[0]
+    if key and hmac.compare_digest(key, want):
+        return True, True
+    headers = dict(scope.get("headers") or [])
+    for part in headers.get(b"cookie", b"").decode("latin-1").split(";"):
+        name, _, value = part.strip().partition("=")
+        if name == COOKIE and value and hmac.compare_digest(value, want):
+            return True, False
+    return False, False
+
+
+class AccessCodeMiddleware:
+    def __init__(self, inner):
+        self.inner = inner
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] not in ("http", "websocket") or not ACCESS["code"] or scope.get("path") == "/health":
+            return await self.inner(scope, receive, send)
+        ok, from_link = _code_from(scope)
+        if not ok:
+            if scope["type"] == "websocket":
+                await receive()                                  # the connect message
+                return await send({"type": "websocket.close", "code": 1008, "reason": "Access code needed"})
+            body = b"Access code needed. Open the link you were given (it ends in ?key=...)."
+            await send({"type": "http.response.start", "status": 401, "headers": [(b"content-type", b"text/plain"), (b"content-length", str(len(body)).encode())]})
+            return await send({"type": "http.response.body", "body": body})
+        if scope["type"] == "http" and from_link:
+            async def with_cookie(message):
+                if message["type"] == "http.response.start":
+                    message = {**message, "headers": [*message.get("headers", []),
+                                                      (b"set-cookie", f"{COOKIE}={ACCESS['code']}; Path=/; HttpOnly; SameSite=Lax; Max-Age=86400".encode())]}
+                await send(message)
+            return await self.inner(scope, receive, with_cookie)
+        return await self.inner(scope, receive, send)
+
+
+app.add_middleware(AccessCodeMiddleware)
+
 if not MOCK:
     from worker import warm
 

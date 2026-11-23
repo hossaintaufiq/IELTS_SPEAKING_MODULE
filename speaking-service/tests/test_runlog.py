@@ -147,3 +147,31 @@ def test_the_server_turns_away_a_test_when_it_is_full(monkeypatch):
     with TestClient(server.app).websocket_connect("/ws?device=Tablet") as ws:
         with pytest.raises(Exception):
             ws.receive_text()                                     # closed at once with "Server is full"
+
+
+# ---- access code for a public link -------------------------------------------------------------------------
+def test_without_the_access_code_nothing_but_health_is_served(monkeypatch):
+    monkeypatch.setitem(server.ACCESS, "code", "s3cret")
+    c = TestClient(server.app)
+    assert c.get("/").status_code == 401 and c.get("/api/runs").status_code == 401 and c.get("/logs").status_code == 401
+    assert c.get("/?key=wrong").status_code == 401
+    assert c.get("/health").status_code == 200
+    with pytest.raises(Exception):
+        with c.websocket_connect("/ws") as ws:
+            ws.receive_text()
+
+
+def test_the_link_with_the_code_opens_the_page_and_the_cookie_keeps_it_open(monkeypatch):
+    monkeypatch.setitem(server.ACCESS, "code", "s3cret")
+    c = TestClient(server.app)
+    r = c.get("/?key=s3cret")
+    assert r.status_code == 200 and "access=s3cret" in r.headers["set-cookie"]
+    assert c.get("/api/runs").status_code == 200 and c.get("/logs").status_code == 200       # the cookie is now sent along
+    monkeypatch.setattr(server, "MOCK", True)
+    with c.websocket_connect("/ws?device=Laptop") as ws:                                      # and so is the microphone connection
+        ws.send_text(json.dumps({"action": "start"}))
+
+
+def test_no_access_code_set_means_no_check(monkeypatch):
+    monkeypatch.setitem(server.ACCESS, "code", "")
+    assert TestClient(server.app).get("/api/runs").status_code == 200
