@@ -60,7 +60,9 @@ def index():
     return FileResponse(WEB / "index.html")
 
 
-LIVE: dict = {"session": None}           # the test in progress, or the last one (the logs window reads it)
+LIVE: dict = {"session": None}           # the newest test (in progress or the last one): what the logs window shows by default
+SESSIONS: dict[str, ExamSession] = {}    # every connected test, by id: several devices can take a test at the same time
+MAX_SESSIONS = int(os.getenv("MAX_SESSIONS", "6"))   # one GPU serves only so many tests at once; the next device is told to wait
 
 
 @app.get("/logs")
@@ -69,22 +71,34 @@ def logs_page():
 
 
 @app.get("/api/live")
-def live_run():
-    """Events of the current test (or the last one), for the logs window's live view."""
-    s = LIVE["session"]
+def live_run(id: str = ""):
+    """Events of one test (default: the newest), for the logs window's live view, and the list of all connected tests."""
+    listing = [{"id": k, "device": v.device, "phase": v.phase, "started": v.started, "active": v.started and v.phase != "done"}
+               for k, v in SESSIONS.items()]
+    if id == "all":                                   # every connected device in one timeline, oldest first
+        merged = [{**e, "dev": v.device or k[:4]} for k, v in SESSIONS.items() for e in v.log]
+        merged.sort(key=lambda e: e.get("at", 0))
+        return {"active": any(x["active"] for x in listing), "started": bool(listing), "phase": "", "events": merged, "sessions": listing}
+    s = SESSIONS.get(id) if id else LIVE["session"]
     if s is None:
-        return {"active": False, "started": False, "events": []}
-    return {"active": s.started and s.phase != "done", "started": s.started, "phase": s.phase, "events": list(s.log)}
+        return {"active": False, "started": False, "events": [], "sessions": listing}
+    return {"active": s.started and s.phase != "done", "started": s.started, "phase": s.phase, "device": s.device,
+            "events": list(s.log), "sessions": listing}
 
 
-RUN_NAME = re.compile(r"^run_\d{8}_\d{6}$")
+RUN_NAME = re.compile(r"^run_\d{8}_\d{6}(?:_\d{1,8})?$")
 
 
 @app.get("/api/runs")
 def list_runs():
     """Saved test runs, newest first (the page's Run log can open any of them)."""
     files = sorted(sess.RUNS.glob("run_*.json"), reverse=True)[:40] if sess.RUNS.exists() else []
-    return [{"name": f.stem, "kb": round(f.stat().st_size / 1024), "saved": f.stat().st_mtime} for f in files]
+    def device(f: Path) -> str:
+        try:
+            return json.loads(f.read_text(encoding="utf-8")).get("device", "")
+        except Exception:
+            return ""
+    return [{"name": f.stem, "kb": round(f.stat().st_size / 1024), "saved": f.stat().st_mtime, "device": device(f)} for f in files]
 
 
 @app.get("/api/runs/{name}")
@@ -124,14 +138,21 @@ def server_log(name: str, lines: int = 300, q: str = "", hide_debug: bool = True
 
 @app.get("/health")
 def health():
-    return {"ok": True, "mock": MOCK}
+    return {"ok": True, "mock": MOCK, "tests_running": sum(1 for v in SESSIONS.values() if v.phase != "done"), "max_tests": MAX_SESSIONS}
 
 
 @app.websocket("/ws")
 async def ws_endpoint(websocket: WebSocket):
     await websocket.accept()
+    running = sum(1 for v in SESSIONS.values() if v.phase != "done")
+    if running >= MAX_SESSIONS:
+        # the GPU is shared: a test that cannot get its share would stutter for everyone, so it waits instead
+        await websocket.close(code=1013, reason=f"Server is full ({running} tests running). Please try again in a minute.")
+        return
     session = ExamSession(send=websocket.send_json)
+    session.device = (websocket.query_params.get("device") or "")[:40]     # optional label: open the page with ?device=Laptop
     LIVE["session"] = session
+    SESSIONS[session.test_id] = session
     try:
         if MOCK:
             await run_mock(websocket, session)
@@ -140,6 +161,7 @@ async def ws_endpoint(websocket: WebSocket):
     except WebSocketDisconnect:
         pass
     finally:
+        SESSIONS.pop(session.test_id, None)
         path = session.abort() if session.started else None
         if path:
             log.info("saved run log %s", path)

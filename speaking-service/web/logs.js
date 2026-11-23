@@ -13,10 +13,12 @@ const ORIGIN = {   // where an examiner line came from -> [label, badge colour]
 const fmt = (s) => String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(Math.floor(s % 60)).padStart(2, "0");
 const esc = (x) => String(x).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
 const run = { source: "live", events: [], live: { active: false, started: false } };
+const isLive = () => run.source === "live" || run.source.startsWith("live:");
 
 // ---- run log ---------------------------------------------------------------------------------
 function row(e) {
-  const t = `<span class="t">${fmt(e.t || 0)}</span>`;
+  const dev = e.dev ? `<span class="badge you" title="device">${esc(e.dev)}</span>` : "";    // only in the "all devices" view
+  const t = `<span class="t">${fmt(e.t || 0)}</span>${dev}`;
   if (e.type === "transcript" && e.role === "examiner") {
     const [label, cls] = ORIGIN[e.origin || "script"] || [e.origin, "sc"];
     return `<div class="rl">${t}<span class="badge ${cls}">${esc(label)}</span><span>${esc(e.text)}` +
@@ -49,19 +51,20 @@ function summary(events) {
 }
 
 function render() {
-  const events = run.source === "live" ? run.live.events || [] : run.events;
+  const events = isLive() ? run.live.events || [] : run.events;
   summary(events);
   const box = $("runlog");
   const atEnd = box.scrollTop + box.clientHeight >= box.scrollHeight - 40;
   box.innerHTML = events.map(row).join("");
   $("rl-count").textContent = events.length + " events";
-  if (run.source === "live" ? $("rl-follow").checked && atEnd || box.scrollTop === 0 : false) box.scrollTop = box.scrollHeight;
+  if (isLive() ? $("rl-follow").checked && atEnd || box.scrollTop === 0 : false) box.scrollTop = box.scrollHeight;
 }
 
 async function pollLive() {
-  if (run.source !== "live") return;
+  if (!isLive()) return;
   try {
-    const d = await (await fetch("/api/live")).json();
+    const id = run.source.slice(5);                 // "live" = the newest test, "live:ID" = one device's test
+    const d = await (await fetch("/api/live" + (id ? "?id=" + encodeURIComponent(id) : ""))).json();
     const grew = (d.events || []).length !== (run.live.events || []).length;
     run.live = d;
     const pill = $("live-pill");
@@ -75,10 +78,14 @@ async function loadList() {
   try {
     const list = await (await fetch("/api/runs")).json();
     const sel = $("runs"), keep = sel.value;
-    sel.innerHTML = '<option value="live">Live: this test</option>' + list.map((r) => {
+    let live = [];
+    try { live = (await (await fetch("/api/live")).json()).sessions || []; } catch (_) { /* optional */ }
+    sel.innerHTML = '<option value="live">Live: newest test</option>' + (live.length > 1 ? '<option value="live:all">Live: ALL devices together</option>' : "") +
+      live.map((v) => `<option value="live:${v.id}">Live: ${v.device || "device " + v.id.slice(0, 4)} (${PHASES[v.phase] || v.phase})</option>`).join("") +
+      list.map((r) => {
       const n = r.name;
       const label = n.slice(4, 8) + "-" + n.slice(8, 10) + "-" + n.slice(10, 12) + " " + n.slice(13, 15) + ":" + n.slice(15, 17) + ":" + n.slice(17, 19);
-      return `<option value="${n}">${label} (${r.kb} KB)</option>`;
+      return `<option value="${n}">${label}${r.device ? " " + esc(r.device) : ""} (${r.kb} KB)</option>`;
     }).join("");
     if ([...sel.options].some((o) => o.value === keep)) sel.value = keep;
   } catch (_) { /* the list is a convenience */ }
@@ -86,12 +93,12 @@ async function loadList() {
 
 async function pick() {
   run.source = $("runs").value;
-  if (run.source !== "live") {
+  if (!isLive()) {
     try { run.events = (await (await fetch("/api/runs/" + run.source)).json()).events || []; }
     catch (err) { run.events = []; $("runlog-sum").textContent = "Could not load that run: " + err; return; }
   }
   render();
-  if (run.source !== "live") $("runlog").scrollTop = 0;
+  if (!isLive()) $("runlog").scrollTop = 0;
 }
 
 $("runs").onchange = pick;
@@ -117,4 +124,5 @@ $("sl-filter").oninput = () => { clearTimeout(loadServerLog.t); loadServerLog.t 
 loadList().then(pollLive);
 loadServerLog();
 setInterval(pollLive, 1200);
+setInterval(loadList, 6000);
 setInterval(loadServerLog, 2500);

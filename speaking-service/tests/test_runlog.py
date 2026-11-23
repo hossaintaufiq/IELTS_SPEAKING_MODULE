@@ -82,7 +82,7 @@ def test_logs_page_is_served_and_the_main_page_links_to_it():
 def test_live_endpoint_shows_the_current_or_last_test(monkeypatch):
     monkeypatch.setattr(server, "LIVE", {"session": None})
     c = TestClient(server.app)
-    assert c.get("/api/live").json() == {"active": False, "started": False, "events": []}
+    assert c.get("/api/live").json() == {"active": False, "started": False, "events": [], "sessions": []}
 
     async def go():
         async def send(e):
@@ -98,3 +98,52 @@ def test_live_endpoint_shows_the_current_or_last_test(monkeypatch):
     d = c.get("/api/live").json()
     assert d["active"] is True and d["phase"] == "part1"
     assert any(e["type"] == "transcript" and e["role"] == "examiner" and "origin" in e for e in d["events"])
+
+
+# ---- several devices at the same time ---------------------------------------------------------------------
+def _started_session(device):
+    async def go():
+        async def send(e):
+            pass
+        s = ExamSession(send, seed=None, llm=llm_ok, hour=9)
+        s.test_mode()
+        s.task = FakeTask()
+        s.device = device
+        await to_part1(s)
+        return s
+    return asyncio.run(go())
+
+
+def test_every_connected_device_can_be_followed_alone_or_all_together(monkeypatch):
+    a, b = _started_session("Laptop"), _started_session("Phone")
+    monkeypatch.setattr(server, "SESSIONS", {a.test_id: a, b.test_id: b})
+    monkeypatch.setattr(server, "LIVE", {"session": b})
+    c = TestClient(server.app)
+    listing = c.get("/api/live").json()["sessions"]
+    assert {x["device"] for x in listing} == {"Laptop", "Phone"} and all(x["active"] for x in listing)
+    assert c.get(f"/api/live?id={a.test_id}").json()["device"] == "Laptop"
+    merged = c.get("/api/live?id=all").json()["events"]
+    assert {e["dev"] for e in merged} == {"Laptop", "Phone"}
+    assert [e["at"] for e in merged] == sorted(e["at"] for e in merged)          # one timeline, oldest first
+    assert c.get("/health").json()["tests_running"] == 2
+
+
+def test_two_tests_ending_in_the_same_second_do_not_overwrite_each_other(tmp_path, monkeypatch):
+    monkeypatch.setattr(sess, "RUNS", tmp_path)
+    a, b = _started_session("Laptop"), _started_session("Phone")
+    pa, pb = a.save(), b.save()
+    assert pa != pb and pa.exists() and pb.exists()
+    monkeypatch.setattr(server.sess, "RUNS", tmp_path)
+    names = [r["name"] for r in TestClient(server.app).get("/api/runs").json()]
+    assert len(names) == 2 and TestClient(server.app).get(f"/api/runs/{names[0]}").status_code == 200
+    assert {r["device"] for r in TestClient(server.app).get("/api/runs").json()} == {"Laptop", "Phone"}
+
+
+def test_the_server_turns_away_a_test_when_it_is_full(monkeypatch):
+    s = _started_session("Laptop")
+    monkeypatch.setattr(server, "SESSIONS", {s.test_id: s})
+    monkeypatch.setattr(server, "MAX_SESSIONS", 1)
+    monkeypatch.setattr(server, "MOCK", True)
+    with TestClient(server.app).websocket_connect("/ws?device=Tablet") as ws:
+        with pytest.raises(Exception):
+            ws.receive_text()                                     # closed at once with "Server is full"

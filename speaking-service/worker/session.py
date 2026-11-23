@@ -112,6 +112,7 @@ class ExamSession:
         self.plan = plan or rules.choose_plan(rng=rng)
         self.hour = time.localtime().tm_hour if hour is None else hour
         self.test_id = str(rng.random())[2:10]
+        self.device = ""              # a label for the device taking this test (several can run at once)
         self.phase = INTRO
         self.muted = True             # mic ignored before start and during Part 2 preparation
         self.bot_speaking = False     # examiner audio is playing: ignore the mic (no talking over the examiner)
@@ -210,8 +211,13 @@ class ExamSession:
             self.mic_rms = max((sum(x * x for x in a) / len(a)) ** 0.5 / 32768, self.mic_rms * 0.85)
 
     async def emit(self, event: dict) -> None:
-        event = {**event, "t": round(self.clock() - self.t0, 2)}
+        event = {**event, "t": round(self.clock() - self.t0, 2), "at": round(time.time(), 2)}   # "at" (wall clock) lines up several devices
         self.log.append(event)
+        if event.get("type") in ("transcript", "note", "ignored", "phase", "done"):
+            # one line per event in the server log, tagged with the device, so every device can be followed (and filtered) there too
+            what = event.get("role") or event.get("type")
+            text = event.get("text") or event.get("phase") or ""
+            log.info("[%s] %s %s: %s", self.device or self.test_id[:4], event.get("phase") or "-", what, str(text)[:200])
         await self.send(event)
 
     async def say(self, text: str, origin: str = "script", why: str = "") -> None:
@@ -869,7 +875,7 @@ class ExamSession:
         if not self.log:
             return None
         RUNS.mkdir(exist_ok=True)
-        path = RUNS / f"run_{time.strftime('%Y%m%d_%H%M%S')}.json"
+        path = RUNS / f"run_{time.strftime('%Y%m%d_%H%M%S')}_{self.test_id[:6]}.json"       # the id keeps two tests that end in the same second apart
         lat = [e["seconds"] for e in self.log if e["type"] == "latency"]
         mic = {}
         if self._mic_pcm:
@@ -881,6 +887,6 @@ class ExamSession:
                 w.setnchannels(1); w.setsampwidth(2); w.setframerate(16000); w.writeframes(bytes(self._mic_pcm))
         path.write_text(json.dumps({**mic, 
             "topics": [t["topic"] for t in self.plan["part1"]], "card": self.plan["cueCard"]["prompt"],
-            "name": self.name, "known_facts": self.known, "mic_chunks_received": self.mic_chunks,
+            "name": self.name, "device": self.device, "known_facts": self.known, "mic_chunks_received": self.mic_chunks,
             "latencies_s": lat, "events": self.log}, indent=2), encoding="utf-8")
         return path
