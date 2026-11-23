@@ -97,3 +97,30 @@ def test_llm_lead_in_acknowledgements_are_dropped_from_questions():
     assert rules.strip_lead_in("Okay, thank you. What do you like most about your home town?") == "What do you like most about your home town?"
     assert rules.strip_lead_in("Right. Do you often cook at home?") == "Do you often cook at home?"
     assert rules.strip_lead_in("So, why do you think that is?") == "So, why do you think that is?"
+
+
+# ---- follow-ups never repeat a word the recogniser may have got wrong -----------------------------------------------
+def test_a_possibly_misheard_word_is_not_repeated_back_but_ordinary_and_local_words_are():
+    from worker.examiner.vocab import is_known, unverified_echoes
+    said = ["I live in Savoy and we eat chicken mariadi with my neighbours, I like cricket and rickshaws too"]
+    assert unverified_echoes("What do you like about Savoy?", said) == ["savoy"]
+    assert unverified_echoes("Who cooks the chicken mariadi?", said) == ["mariadi"]
+    assert unverified_echoes("Do you play cricket with your neighbours?", said) == []         # ordinary words
+    assert unverified_echoes("Do you often take a rickshaw?", said) == []                      # local word, plural/singular
+    assert unverified_echoes("What do you like most about the place where you live?", said) == []   # general: nothing echoed
+    assert is_known("neighbors") and is_known("neighbours") and is_known("biryani") and not is_known("mariadi")
+
+
+def test_check_question_turns_a_misheard_word_into_a_general_question():
+    i = inp()
+    i.history = [("examiner", "Where do you live?"), ("candidate", "I live in Gosundara near the river and I like it a lot.")]
+    assert "misheard" in (rules.check_question("What do you like to do in Gosundara?", i) or "")
+    assert rules.check_question("What do you like most about living there?", i) is None
+    assert rules.check_question("Do you enjoy living near the river?", i) is None             # an ordinary word may be repeated
+
+
+def test_the_part2_follow_up_does_not_repeat_a_misheard_word():
+    from worker.examiner.vocab import unverified_echoes
+    talk = "I went to Koxbazar with my family last year and the sea was beautiful and we stayed there for three days"
+    assert unverified_echoes("Did you enjoy Koxbazar?", [talk]) == ["koxbazar"]
+    assert unverified_echoes("Would you like to go there again?", [talk]) == []

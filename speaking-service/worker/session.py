@@ -28,6 +28,7 @@ from worker.examiner.intents import finish_answer, is_done_talking, is_finish_re
 from worker.examiner.naturalness import AckPicker
 from worker.examiner.pacing import wait_seconds
 from worker.examiner.rules import SCRIPT, NextQuestionInput
+from worker.examiner.vocab import unverified_echoes
 from worker.examiner.speech import (extract_call_name, is_noise, is_off_topic_question, is_repeat_request,
                                     looks_unfinished, strip_foreign)
 
@@ -666,7 +667,7 @@ class ExamSession:
         q = rules.clean(js["say"]) if js and isinstance(js.get("say"), str) else ""
         follow_origin, follow_why = "ai:new", ""
         if (not q.endswith("?") or rules.BANNED.search(q) or q.count("?") != 1 or len(q.split()) > 14
-                or META_TALK.search(q) or not _grounded(q, talk, card)):
+                or META_TALK.search(q) or not _grounded(q, talk, card) or unverified_echoes(q, [talk])):
             why = "the LLM wrote nothing usable" if not q else "rejected: not a clean question or not about what was said"
             await self.emit({"type": "note", "text": f"no rounding-off question ({why}): thank them and go to Part 3"})
             await self.start_part3(lead=f"{stop} {SCRIPT['part2MoveOn']}" if time_up else stop)      # an invented or odd question is worse than none
