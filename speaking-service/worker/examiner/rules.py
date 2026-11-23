@@ -89,6 +89,9 @@ Rules:
 - The candidate's words come from live speech recognition and can contain misheard words (a dish, place or name
   turned into an odd or unknown word, e.g. "chicken mariadi" for "chicken biryani"). Never repeat an unusual or unclear
   word back to the candidate; refer to it in general terms instead ("that dish", "your favourite dish").
+- Speech recognition makes mistakes, so repeat a specific word from the candidate's answer ONLY if it is a clear, ordinary English word
+  (or a well-known local word) that obviously fits the topic. If a word looks strange, or you doubt it for any reason, do not use it:
+  ask a general question about the topic instead ("What do you like most about it?", "How often do you do that?", "Why is that?").
 - Ask exactly one question at a time, ending with a question mark.
 - Never give feedback, praise, corrections or opinions. Do not comment on answers (no "Great", "Interesting", "I see").
 - Never answer questions about the test or yourself; just continue.
@@ -171,6 +174,7 @@ class NextQuestion:
 
 
 from worker.examiner.answered import already_answered, content_words  # noqa: E402
+from worker.examiner.vocab import unverified_echoes  # noqa: E402
 from worker.examiner.speech import is_repeat_request  # noqa: E402
 
 JsonLLM = Callable[[str, str], Awaitable["dict | None"]]
@@ -293,6 +297,8 @@ def build_prompt(inp: NextQuestionInput, mode: str, test_id: str = "") -> str:
                     f'last answer (a place, activity, person or habit they mentioned) and ask about it, staying on the topic "{inp.topic}".\n'
                     "It must be a simple, everyday Part 1 question about the candidate's own life, habits, likes or experiences "
                     "(not an abstract or opinion-on-society question).\n"
+                    "Use a specific word from the answer only if it is a clear, ordinary word that obviously fits (speech recognition can mishear words); "
+                    "if any word looks odd, ask a general question about the topic instead.\n"
                     "Do not copy a bank question. If the last answer says no or gives nothing to build on, pick a bank question instead.")
         else:
             task = ("The question bank is a guide, not a script. First read the candidate's last answer.\n"
@@ -361,6 +367,11 @@ def check_question(say: str, inp: NextQuestionInput, repeat: bool = False) -> st
         return "sensitive subject"
     if inp.part == 3 and PART3_BAD.search(say) and not PART3_BAD.search(" ".join(inp.frames)):
         return "names a place or uses report-style wording"
+    if not repeat:
+        said = [t for sp, t in inp.history if sp == "candidate"][-3:]
+        odd = unverified_echoes(say, said)
+        if odd:
+            return f"repeats a word from the answer that may be misheard ({', '.join(odd[:3])})"
     q = question_part(say)
     if not repeat and restates_last_question(say, inp):
         return "restates the question just asked"
@@ -496,7 +507,8 @@ async def next_question(inp: NextQuestionInput, llm: JsonLLM, test_id: str = "")
     if mode == "probe":
         say = clean(js["say"]) if js and isinstance(js.get("say"), str) else ""
         ok = (say.endswith("?") and say.count("?") == 1 and 2 <= len(say.split()) <= 14 and not BANNED.search(say)
-              and not PRAISE.search(say) and not MARKS_ANSWER.search(say))
+              and not PRAISE.search(say) and not MARKS_ANSWER.search(say)
+              and not unverified_echoes(say, [t for sp, t in inp.history if sp == "candidate"][-3:]))
         if ok:
             return NextQuestion(say, "ai", "probe")
         why = "the LLM did not answer in time" if not js else "the follow-up was not a clean short question"
