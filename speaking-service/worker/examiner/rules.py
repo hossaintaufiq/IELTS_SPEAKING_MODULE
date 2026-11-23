@@ -56,6 +56,10 @@ SCRIPT = {
     "part2TimeMore": "You still have time, so please tell me a little more about it.",
     "part2Skip": "That's all right. Let's move on.",
     "part2Stop": "Thank you.",
+    # the two minutes are over (the candidate was still speaking, or used the whole time): a professional examiner says so
+    "part2TimeUp": "Thank you, your time is up.",
+    "part2TimeUpCut": "I'm sorry to stop you, but your time is up. Thank you.",
+    "part2MoveOn": "Now let's move on.",
     "part3Intro": lambda subject: f"We've been talking about {subject}, and I'd like to discuss with you one or two more general questions related to this.",
     "part3First": "Let's consider first of all",
     "closing": "Thank you. That is the end of the speaking test.",
@@ -319,13 +323,23 @@ def build_prompt(inp: NextQuestionInput, mode: str, test_id: str = "") -> str:
             "- Keep it clear and natural, under 22 words, and different from everything already asked.")
 
 
+LEAD_IN = re.compile(r"^(?:(?:okay|ok|right|all right|alright|thank you|thanks|sure|great|good|well|so|now then)[,.!]?\s+)+", re.I)
+
+
+def strip_lead_in(say: str) -> str:
+    """The examiner's acknowledgements are added by the session (rarely, on purpose). An LLM that starts its question with
+    "Okay, thank you." or "Right." would add to them, so such openings are dropped (a question like "So, why...?" keeps its words)."""
+    rest = LEAD_IN.sub("", say, count=1).strip()
+    return (rest[:1].upper() + rest[1:]) if rest and rest.count(" ") >= 2 and say.lower().startswith(("okay", "ok", "right", "all right", "alright", "thank", "sure", "great", "good", "now then")) else say
+
+
 def spoken_line(js: dict, inp: NextQuestionInput) -> str:
     picked = None
     if inp.part == 1 and js.get("reply") != "repeat" and isinstance(js.get("pick"), int):
         i = js["pick"] - 1
         picked = inp.frames[i] if 0 <= i < len(inp.frames) else None
     if not picked:
-        return clean(js["say"]) if isinstance(js.get("say"), str) else ""
+        return strip_lead_in(clean(js["say"])) if isinstance(js.get("say"), str) else ""
     return f"Now let's move on to {lower_first(inp.topic)}. {picked}" if inp.question_number == 1 else picked
 
 
