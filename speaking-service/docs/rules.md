@@ -57,9 +57,11 @@ A test may take up to **16 minutes** (`TEST_MAX_S` 960). Time drives the number 
 | Part 3 | Target about 4.5 min (`PART3_MIN_S` 270), cap 5 min 40 s (`PART3_MAX_S` 340), at least 3 questions before time can end it |
 | Close | "Thank you. That is the end of the speaking test." The page is told `done` only after the audio has finished |
 
-Part 1 topic time: the time left is shared between the main topics still to come (at least 60 s each); a reserve topic gets 50 s and is only started if about 40 s or more of the Part 1 target remain. A topic gets **at least 2 real questions** (follow-ups do not count). A topic also ends early after 3 questions if the last two answers were 3 words or fewer. If the bank for a topic is used up, the examiner moves on and never repeats.
+Part 1 topic time: the time left is shared between the main topics still to come (at least 60 s each); a reserve topic gets 50 s and is only started if about 40 s or more of the Part 1 target remain. A topic gets **at least 3 real questions** (follow-ups do not count), and more when its time share allows.  A topic also ends early after 3 questions if the last two answers were 3 words or fewer. If the bank for a topic is used up, the examiner moves on and never repeats.
 
 Part 1 plan (`choose_plan`): one opening topic, then one local and one non-local topic of a different theme from the cue card and from each other, then 2 reserves. Bank size: 75 topics, 417 questions, 64 cue cards.
+
+**Over-long answers.** A candidate must be able to finish, so the limit is generous: an answer that has gone on for **60 s in Part 1** (`PART1_MAX_ANSWER_S`) or **90 s in Part 3** (`PART3_MAX_ANSWER_S`), counted from their first words, and only while they are still talking (voice heard in the last 2 s), is ended politely: "Okay, thank you. Let's move on to the next question." followed by the next question (at a change of topic: "Okay, thank you." and the new topic). If they have already stopped, the normal wait applies and nothing is cut.
 
 ## 5. Question sources and how the next question is chosen
 

@@ -54,6 +54,8 @@ SCRIPT = {
     # the reminder after the first prompt: say there is still time (never repeats "start speaking now" to someone who has started)
     "part2Time": "You still have time, so please take a moment and tell me about the topic.",
     "part2TimeMore": "You still have time, so please tell me a little more about it.",
+    # an answer that runs far too long is ended politely and the next question is asked
+    "moveOn": "Okay, thank you. Let's move on to the next question.",
     "part2Skip": "That's all right. Let's move on.",
     "part2Stop": "Thank you.",
     # the two minutes are over (the candidate was still speaking, or used the whole time): a professional examiner says so
