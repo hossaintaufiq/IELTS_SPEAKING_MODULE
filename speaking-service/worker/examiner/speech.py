@@ -14,6 +14,8 @@ HALLUCINATIONS = {
     "you", "thank you", "thanks", "thanks for watching", "thank you for watching", "thank you so much",
     "bye", "bye bye", "goodbye", "hmm", "mm", "mhm", "uh", "um", "ah", "oh", "huh", "the", "i", "so",
     "please subscribe", "subtitles by the amara.org community",
+    "this computer is offline", "this video is unavailable", "see you in the next video", "see you next time",
+    "like and subscribe", "subscribe to my channel", "thanks for listening", "we will be right back",
 }
 _HALLU_PATTERNS = re.compile(r"^(subtitles? by|translated by|transcribed by|www\.|https?://|\[|\(|♪|music)", re.I)
 
