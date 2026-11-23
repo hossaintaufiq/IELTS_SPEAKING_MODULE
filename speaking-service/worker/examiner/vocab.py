@@ -22,7 +22,7 @@ MIN_LETTERS = 4                      # shorter words are almost always ordinary 
 LOCAL = """bangladesh bangladeshi bangla dhaka chattogram chittagong sylhet rajshahi khulna barishal sundarbans rickshaw eid pohela boishakh
 brac buet mirpur dhanmondi gulshan uttara mohammadpur narayanganj gazipur mymensingh comilla cumilla biryani fuchka pitha bhorta khichuri
 hilsa puja ramadan metro bkash bashundhara banani motijheel farmgate savar minar ekushey kacchi tehari lungi panjabi adda
-waterlogging loadshedding monsoon cyclone""".split()
+waterlogging loadshedding monsoon cyclone kichuri khichri ilish hilsha phuchka fuska chotpoti haleem borhani kabaddi kabadi jamdani nakshi dhaka's""".split()
 
 _known: set[str] | None = None
 

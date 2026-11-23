@@ -334,8 +334,13 @@ def build_prompt(inp: NextQuestionInput, mode: str, test_id: str = "") -> str:
             "- If the candidate's last answer was very short (one sentence), you may instead ask a short follow-up that pushes them to develop it, "
             'e.g. "Why do you think that is?" or "Can you give an example?".\n'
             "- Use plain, spoken, everyday English, the way a real examiner talks. Short sentences, common words. No jargon or report words "
-            '(not "sustainable", "infrastructure", "initiatives", "implement", "overall quality of life"). Good: "Why do you think that happens?", '
-            '"Do you think that will change in the future?", "Is it the same for older people?".\n'
+            '(not "sustainable", "infrastructure", "initiatives", "implement", "overall quality of life").\n'
+            "- Mostly OPEN questions that begin with How, Why, What, In what ways, Which or What kinds of. Examples of the style: "
+            '"Why do people choose to travel by bus?", "How has that changed over the years?", "What are the main reasons for that?", '
+            '"In what ways is it different for older people?". At most one question in three may begin with "Do you think", '
+            "so if a recent question did, do not.\n"
+            "- Each question must open a DIFFERENT aspect of the theme. Never ask again about the same thing as a recent question, "
+            'even in other words (for example do not ask three times whether "preferences have changed").\n'
             "- Never name Dhaka, Bangladesh or any city or country. Say \"in your country\" or \"where you live\".\n"
             "- Do not suggest what the answer should be (no leading questions such as \"Do you think schools should teach...\"); ask openly.\n"
             "- Keep it clear and natural, under 22 words, and different from everything already asked.")
@@ -357,7 +362,8 @@ def spoken_line(js: dict, inp: NextQuestionInput) -> str:
         i = js["pick"] - 1
         picked = inp.frames[i] if 0 <= i < len(inp.frames) else None
     if not picked:
-        return strip_lead_in(clean(js["say"])) if isinstance(js.get("say"), str) else ""
+        say = strip_lead_in(clean(js["say"])) if isinstance(js.get("say"), str) else ""
+        return question_part(say) if say.count("?") > 1 else say            # two questions at once: keep the first, it stands alone
     return f"Now let's move on to {lower_first(inp.topic)}. {picked}" if inp.question_number == 1 else picked
 
 
@@ -383,6 +389,16 @@ def check_question(say: str, inp: NextQuestionInput, repeat: bool = False) -> st
         if odd:
             return f"repeats a word from the answer that may be misheard ({', '.join(odd[:3])})"
     q = question_part(say)
+    if inp.part == 3 and not repeat:
+        recent3 = [question_part(t) for sp, t in inp.history if sp == "examiner" and "?" in t][-3:]
+        if q.lower().startswith("do you think") and any(r.lower().startswith("do you think") for r in recent3[-2:]):
+            return "too many 'Do you think' questions in a row"
+        new_words = aspect_words(q)
+        for r in recent3:
+            old_words = set(aspect_words(r))
+            shared = sum(1 for w in new_words if w in old_words)
+            if len(new_words) >= 2 and shared >= 2 and shared / len(new_words) >= 0.7:
+                return "asks about the same aspect as a recent question"
     if not repeat and restates_last_question(say, inp):
         return "restates the question just asked"
     previous = list(inp.asked) + [t for s, t in inp.history if s == "examiner"]
@@ -514,6 +530,21 @@ def fallback_probe(inp: NextQuestionInput) -> str:
     return pool[0]
 
 
+# words that appear in almost every Part 3 question and say nothing about its aspect
+_GENERIC = ("people country countries year years life society change changes changed different better important today nowadays future "
+            "past think ways place thing reason many young older general over more most").split()
+
+
+def aspect_words(question: str) -> list[str]:
+    """The words that say what a Part 3 question is ABOUT (not the filler that most of them share)."""
+    from worker.examiner.answered import _stem
+    generic = {_stem(w) for w in _GENERIC} | set(_GENERIC)
+    return [w for w in (x.split("'")[0] for x in content_words(question)) if w and w not in generic and _stem(w) not in generic]
+
+
+RETRYABLE = ("too many", "asks about the same aspect", "repeats a word", "repeats an earlier", "names a place")
+
+
 async def next_question(inp: NextQuestionInput, llm: JsonLLM, test_id: str = "") -> NextQuestion:
     mode = choose_mode(inp, test_id)
     js = await llm(SYSTEM, build_prompt(inp, mode, test_id))
@@ -547,6 +578,14 @@ async def next_question(inp: NextQuestionInput, llm: JsonLLM, test_id: str = "")
         rejected = "already answered by the candidate"      # a bank question they have in effect answered before
     if not rejected and not repeat and 0 in await covered_questions(inp, llm, [question_part(say)]):
         rejected = "already asked or answered (meaning check)"
+    if rejected and inp.part == 3 and not repeat and rejected.startswith(RETRYABLE):
+        # one more try, told what was wrong: better than falling back to the bank straight away (and than running out of questions)
+        retry_note = (f'\n\nYour previous question was not accepted ({rejected}): "{say}". '
+                      "Write a DIFFERENT open question (begin with How, Why, What, In what ways or Which) about a different aspect of the theme.")
+        js2 = await llm(SYSTEM, build_prompt(inp, mode, test_id) + retry_note)
+        say2 = spoken_line(js2, inp) if js2 else ""
+        if say2 and check_question(say2, inp) is None and not await covered_questions(inp, llm, [question_part(say2)]):
+            return NextQuestion(say2, "ai", origin_of(say2, inp.frames), "answer", facts)
     if rejected:
         return NextQuestion(await pick_fallback(inp, llm), "script", "fallback", facts=facts, why=f"LLM question rejected: {rejected}")
     return NextQuestion(say, "ai", "repeat" if repeat else origin_of(say, inp.frames),

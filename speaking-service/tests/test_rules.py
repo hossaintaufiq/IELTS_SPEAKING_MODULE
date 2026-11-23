@@ -152,3 +152,59 @@ def test_the_safe_follow_up_does_not_start_with_why_twice():
     i = inp()
     i.history = [("examiner", "Why is that?"), ("candidate", "Yes.")]
     assert not rules.fallback_probe(i).lower().startswith("why")
+
+
+# ---- Part 3: open, varied questions that each open a new aspect ---------------------------------------------------------
+def _p3(history, **kw):
+    return rules.NextQuestionInput(part=3, topic="holidays", frames=["Why do people like to travel?"], asked=[], question_number=3,
+                                   questions_on_topic=8, history=history, fallback="", **kw)
+
+
+def test_part3_does_not_ask_do_you_think_three_times_in_a_row():
+    hist = [("examiner", "Do you think young people travel more?"), ("candidate", "Yes."), ("examiner", "Do you think tourism helps shops?"), ("candidate", "Yes.")]
+    assert "too many" in (rules.check_question("Do you think people travel too much?", _p3(hist)) or "")
+    assert rules.check_question("How has travelling changed in recent years?", _p3(hist)) is None
+    one = [("examiner", "How do people choose where to go?"), ("candidate", "By price."), ("examiner", "Do you think tourism helps shops?"), ("candidate", "Yes.")]
+    assert "too many" in (rules.check_question("Do you think people travel too much?", _p3(one)) or "")      # one of the last two already was
+    assert rules.check_question("Do you think people travel too much?", _p3(one[:2])) is None
+
+
+def test_part3_does_not_ask_about_the_same_aspect_again_in_other_words():
+    hist = [("examiner", "How have people's preferences for holidays changed over the years?"), ("candidate", "They like short trips.")]
+    assert "same aspect" in (rules.check_question("Why have preferences for holidays changed in your country?", _p3(hist)) or "")
+    assert rules.check_question("What problems can mass tourism cause for local people?", _p3(hist)) is None
+
+
+def test_two_questions_in_one_reply_keep_the_first():
+    js = {"reply": "answer", "pick": None, "say": "Why do people like to travel? And what are the effects of it?", "facts": []}
+    assert rules.spoken_line(js, _p3([])) == "Why do people like to travel?"
+
+
+def test_part3_retries_once_with_the_reason_and_uses_the_better_question():
+    calls = []
+
+    async def llm(system, prompt, **kw):
+        if system == rules.SEMANTIC_SYSTEM:
+            return {"covered": []}
+        calls.append(prompt)
+        say = "Do you think people travel too much?" if len(calls) == 1 else "What problems can mass tourism cause for local people?"
+        return {"reply": "answer", "pick": None, "say": say, "facts": []}
+
+    hist = [("examiner", "Do you think young people travel more?"), ("candidate", "Yes, I think they do travel more."),
+            ("examiner", "Do you think tourism helps shops?"), ("candidate", "Yes, it brings customers to the shops.")]
+    nq = asyncio.run(rules.next_question(_p3(hist), llm))
+    assert nq.say == "What problems can mass tourism cause for local people?" and nq.source == "ai"
+    assert len(calls) == 2 and "not accepted" in calls[1] and "too many" in calls[1]
+
+
+# ---- recogniser noise and local spellings ---------------------------------------------------------------------------------
+@pytest.mark.parametrize("text", ["This computer is offline.", "See you in the next video.", "Like and subscribe.", "Thanks for listening."])
+def test_stock_phrases_from_a_silent_recording_are_noise(text):
+    from worker.examiner.speech import is_noise
+    assert is_noise(text)
+
+
+def test_local_spellings_may_be_repeated_back():
+    from worker.examiner.vocab import unverified_echoes
+    assert unverified_echoes("Do you cook kichuri at home?", ["During the monsoon I like warm food, like kichuri with eggs or fried fish."]) == []
+    assert unverified_echoes("Do you play kabaddi?", ["Football's popular too, and kabaddi has its fans."]) == []
