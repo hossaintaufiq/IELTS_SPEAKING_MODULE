@@ -1,4 +1,4 @@
-# API Contract for the Node app (DRAFT v0)
+# API Contract for the Node app (DRAFT v0) -- SUPERSEDED by API_CONTRACT_V1.md (2026-11-24)
 
 Draft for review with the Node team. Nothing here is implemented yet. Align with their existing LLM-service API shape once we have it.
 

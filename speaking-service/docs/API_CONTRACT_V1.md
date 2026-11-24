@@ -1,0 +1,101 @@
+# Speaking Service API, contract v1 (DRAFT for review)
+
+One complete IELTS Speaking examiner, delivered as a service. The ieltsup server connects to it the way it connects to a speech
+provider today: one WebSocket per test, one API key. The service runs the whole exam (rules, questions, timing, voice).
+ieltsup keeps booking, auth, proctoring and its own test records.
+
+Replaces the lease-based `API_CONTRACT.md` (v0). Leases are dropped for now: the service runs on an always-on GPU machine with a fixed
+capacity. They can return later without changing anything below.
+
+Marked **[exists]** = already implemented in `worker/`, **[new]** = to be built in step 2.
+
+## 1. Conventions
+- Base URL: `https://speaking.<our-domain>` (HTTP) and `wss://speaking.<our-domain>` (WebSocket).
+- Auth: `Authorization: Bearer <api key>` on every HTTP call and on the WebSocket upgrade. **[new]** Keys are issued per caller and can be revoked.
+- Versioning: the version is in the path (`/v1`). Within v1 only additive changes (new optional fields, new event types).
+  Clients must ignore event types and fields they do not know.
+- Audio: PCM16 little-endian, mono. **Up** (candidate) 16 000 Hz. **Down** (examiner) 24 000 Hz. Sent as binary WebSocket frames. **[exists]**
+- Times in events: `t` = seconds since the test started, `at` = wall-clock Unix seconds. **[exists]**
+
+## 2. Health and capacity
+`GET /health` (no auth) **[exists, to be extended]**
+```json
+{ "ok": true, "version": "1", "tests_running": 3, "max_tests": 9, "ready": true }
+```
+`ready` is false while models are still loading (the first minutes after a start). Callers should not send tests until it is true. **[new]**
+
+## 3. Live test (WebSocket)
+`GET /v1/session` upgraded to WebSocket. Query parameters:
+
+| Param | Required | Meaning |
+|---|---|---|
+| `external_user_id` | yes | The caller's own id for the candidate. Opaque to us, stored with the test. **[new]** |
+| `hour` | no | Local hour 0-23 for the greeting ("Good morning"). Defaults to the server's hour. **[exists]** |
+| `device` | no | Free label for logs. **[exists]** |
+
+Refusals at upgrade: `401` bad or missing key. If the service is full the socket is accepted and closed at once with
+close code **1013**, reason `"Server is full"`. The caller retries later or routes elsewhere. **[exists]**
+
+### 3.1 Client to server
+- Binary frame: candidate microphone audio (16 kHz PCM16). **[exists]**
+- Text frame, JSON `{"action": ...}`: **[exists]**
+
+| action | Effect |
+|---|---|
+| `start` | Begins the test; the examiner greets. Send once, after the socket opens and the microphone works. |
+| `end` | Ends the test politely (the examiner closes the test) |
+| `next_part` | Skips to the next part. Testing and admin use only; ieltsup should not expose it to students. |
+
+### 3.2 Server to client
+Binary frame: examiner speech (24 kHz PCM16), streamed as it is produced. **[exists]**
+
+Text frames, JSON with a `type`:
+
+| type | Fields | When |
+|---|---|---|
+| `test` | `id` | First message: the test id. Use it to fetch the result. **[new, name taken from ieltsup's own message]** |
+| `phase` | `phase`, `limit` (seconds or null), `cue_card` (only in part 2 phases) | The test moves to a new phase **[exists]** |
+| `timer` | `phase`, `elapsed`, `limit`, `mic_chunks`, `mic_rms` | About every 0.5 s. `mic_rms` near 0 means the microphone is silent. **[exists]** |
+| `transcript` | `role` (`examiner` or `user`), `text`, `origin` (examiner only) | A finished line **[exists]** |
+| `interim` | `text` | Live caption while the candidate speaks. Replaced by the final `transcript`. Optional, may be turned off. **[exists]** |
+| `interrupt` | none | The candidate started speaking: stop playing examiner audio **[exists]** |
+| `latency` | `seconds` | Candidate stopped to first examiner audio **[exists]** |
+| `ignored` | `text`, `why` | Speech discarded as noise. Diagnostic. **[exists]** |
+| `note` | `text` | Why the examiner did something. Diagnostic, safe to hide from students. **[exists]** |
+| `done` | `reason` | The test is over **[exists; `reason` is new]** |
+| `error` | `code`, `message` | Something failed in the service **[new]** |
+
+`phase` values, in order: `intro`, `name`, `part1`, `part2_intro`, `part2_prep`, `part2_speak`, `part2_followup`, `part3`, `done`.
+`cue_card` is `{ "prompt": str, "bullets": [str], "closing": str }`.
+
+`done.reason` **[new]**:
+`completed` (normal finish), `ended_by_candidate` (`end` action or the candidate asked to finish), `off_topic` (limit of irrelevant questions reached),
+`no_response` (silence at the end of Part 3), `skipped_to_end` (`next_part` past Part 3), `error`.
+
+### 3.3 Close codes
+`1000` normal end after `done`. `1013` service full. `1011` internal error. If the caller drops the connection mid-test the test is saved as
+`status: "aborted"` with whatever happened so far. There is no resume in v1. **[exists as abort+save; status is new]**
+
+## 4. Results (HTTP, Bearer auth) **[new]**
+| Call | Returns |
+|---|---|
+| `GET /v1/tests/{id}` | `{ id, external_user_id, status, started_at, ended_at, end_reason, phase }`. `status`: `running`, `completed`, `aborted`, `failed`. |
+| `GET /v1/tests/{id}/result` | Full record: examiner and candidate turns with `t`/`at`, phase boundaries, topics and cue card used, latencies, flags. `404` while the test is still running. |
+| `GET /v1/tests/{id}/audio` | The candidate's microphone recording as WAV (16 kHz mono) |
+
+Scoring (the four IELTS criteria) is **not part of v1**. When added it will be a separate `GET /v1/tests/{id}/assessment` returning
+estimated bands with an `estimated: true` flag. No official-score claim (decision D6).
+
+## 5. Errors and limits
+- HTTP errors: `401` bad key, `404` unknown test, `429` too many requests, `503` service not ready. Body: `{ "error": { "code": "...", "message": "..." } }`.
+- Capacity is fixed by configuration (`MAX_SESSIONS`) and measured by load test. The service never degrades running tests to take a new one.
+
+## 6. Out of scope for v1 (decided later)
+Pricing and usage billing. Webhooks (the caller already holds the socket and can poll `/v1/tests/{id}`). Resume after a dropped connection.
+Browser-direct connections with short-lived tokens. Leases and GPU rental control. Scoring.
+
+## 7. Open points for the ieltsup team
+1. Is a server-to-server socket (ieltsup relays audio to the browser, as it does today) acceptable, or does it want the browser to connect directly?
+2. Do they want the results fetched, or pushed by webhook?
+3. How long must audio and transcripts be kept? (retention is an open decision in `DECISIONS.md`)
+4. Are the `phase`, `cue_card` and `done.reason` values enough to drive their screen, or do they need extra events (for example `begin_part`, `end_test`)?
