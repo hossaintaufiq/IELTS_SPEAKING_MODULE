@@ -16,6 +16,28 @@ Fully local IELTS Speaking test service: an AI examiner that speaks, listens and
 | `MAX_SESSIONS` | Tests allowed at once (default 6). Over that, a new test is refused with close code 1013. |
 | `ACCESS_CODE` | Optional code for the browser test bench pages (`/`, `/logs`). Does not apply to `/v1` or the monitor. |
 | `MONITOR_SLOW_S` | A reply slower than this many seconds counts as slow on the monitor (default 3). |
+| `CAPTIONS` | `off` switches live captions off completely (the small caption model is not even loaded). Default on. |
+| `CAPTION_WINDOW_S` | Live captions re-decode only the last N seconds of speech (default 8; it was 15). |
+| `CAPTION_INTERVAL_S` | Seconds between caption updates (default 1.2; it was 0.9). |
+| `CAPTION_MAX_CONCURRENT` | Most caption decodes at one moment in the whole server (default 2). A caption that finds them busy is skipped, so captions can never delay a real answer. The monitor shows how many were skipped. |
+
+The caption defaults are a first guess to be tuned by the load test below, not measured values.
+
+## Load test (run on the GPU box)
+
+`eval/load_test.py` runs N scripted candidates at once and reports reply delay (p50, p95), refusals, errors and, with `--gpu`, the busiest the GPU got.
+Run one session first as the baseline, then more, and keep `/monitor` open while it runs:
+
+```
+python -m eval.load_test --sessions 1 --report base.json
+python -m eval.load_test --sessions 3 --baseline base.json
+python -m eval.load_test --sessions 9 --baseline base.json --gpu --report nine.json     # add --part2 for the long talk
+```
+
+It passes when the p95 reply delay is no more than 1 s (`--allow-extra-s`) above the baseline and nobody is refused or left without a reply.
+The examiner deliberately waits about 2 s for the candidate's pause, so the delay of a single session is never near zero: compare, do not expect 2 s.
+To compare caption settings run the same test with `CAPTIONS=off` and with the defaults. Use `--audio wav --wav a.wav b.wav` for your own 16 kHz mono
+recordings; `--audio fake` (noise) only checks that sessions connect. Use `--api-key` to test the service API (`/v1/session`) instead of the bench.
 
 ## Monitoring page
 
