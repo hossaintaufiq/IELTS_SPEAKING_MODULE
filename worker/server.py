@@ -18,7 +18,7 @@ import struct
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from worker import caption_budget
@@ -132,7 +132,7 @@ MAX_SESSIONS = int(os.getenv("MAX_SESSIONS", "6"))   # one GPU serves only so ma
 
 @app.get("/logs")
 def logs_page():
-    return FileResponse(WEB / "logs.html")
+    return RedirectResponse("/monitor#runlog")      # the run log lives in the monitoring page
 
 
 @app.get("/api/live")

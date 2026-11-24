@@ -116,7 +116,7 @@ def test_key_by_header_or_by_link_then_cookie(client, monkeypatch):
     assert client.get("/api/monitor", headers={"Authorization": "Bearer s3cret"}).status_code == 200
     assert client.get("/api/monitor?key=s3cret").status_code == 401            # a key in the URL is only for opening the page once
     page = client.get("/monitor?key=s3cret")
-    assert page.status_code == 200 and "service monitor" in page.text and "monitor=s3cret" in page.headers["set-cookie"]
+    assert page.status_code == 200 and "Service monitor" in page.text and "monitor=s3cret" in page.headers["set-cookie"]
     assert "httponly" in page.headers["set-cookie"].lower()
     assert client.get("/api/monitor").status_code == 200                       # the cookie now opens the data too
 
