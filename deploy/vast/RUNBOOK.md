@@ -11,7 +11,7 @@ Goal: one focused 4-6 hour session on a single RTX 4090 to measure STT, TTS and 
 
 ## Run (paid clock starts at step 2)
 
-Use the venv Python from `speaking-service/`. The `vastai.exe` launcher is blocked on this PC, so everything goes through `vast.py`.
+Use the venv Python from the repo root. The `vastai.exe` launcher is blocked on this PC, so everything goes through `vast.py`.
 
 ```
 python deploy/vast/vast.py search

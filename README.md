@@ -1,113 +1,73 @@
-# IELTS Speaking Test Engine — TTS & STT Test Labs
+# Speaking Service
 
-Early-stage work toward a self-hosted IELTS Speaking practice engine: an AI examiner that speaks (text-to-speech), listens to the candidate (speech-to-text), and gives feedback. This repository currently holds the **architecture proposal** and two **single-file browser test labs** used to evaluate the speech components before any server code is written.
+Fully local IELTS Speaking test service: an AI examiner that speaks, listens and produces estimated practice feedback. Runs on GPU servers, called by the company's Node app over an API. See `docs/`.
 
-> Status (18 Nov 2026): TTS standard configuration decided and a benchmark page is ready. Benchmark numbers have **not** been recorded yet. STT accuracy lab is built and untested. The server engine, LLM examiner and assessment are not started.
+- `docs/PROGRESS.md`: what is done, next and blocked (update with every change)
+- `docs/DECISIONS.md`: why we chose what we chose, plus open questions
+- `docs/ARCHITECTURE.md`: shape and diagram link
+- `docs/API_CONTRACT_V1.md`: the service API for the ieltsup server (`API_CONTRACT.md` is the superseded v0 draft)
 
----
+## Repository layout
 
-## Repository contents
+This repository is the speaking service. Run everything from the repo root (`python -m worker.server`, `python -m eval.load_test`, `pytest`).
+
+| Folder | What it is |
+|---|---|
+| `worker/` | The live test: examiner rules, speech recognition, voice, the server and the service API |
+| `control_plane/`, `assessment/` | Capacity/lease skeleton and post-test scoring (not finished) |
+| `web/` | The test bench page, the run-log page and the monitoring page |
+| `question_bank/` | Questions and cue cards |
+| `eval/` | Benchmarks and the load test |
+| `deploy/` | Renting and setting up the GPU box |
+| `docs/` | Contract, decisions, architecture, progress, the examiner's rules and prompts |
+| `tests/` | The test suite |
+| `experiments/` | Earlier experiments (numbered studies, a GPT live voice sample, the browser TTS and STT labs). Not part of the service; nothing here imports them. |
+
+## Server settings (environment variables)
+
+| Variable | What it does |
+|---|---|
+| `SERVICE_API_KEYS` | API keys for `/v1`, comma separated, one per caller. **With none set, every `/v1` call is refused.** |
+| `MONITOR_KEY` | Key for the monitoring page. **With none set, the page is closed** (except in `MOCK=1`). |
+| `MAX_SESSIONS` | Tests allowed at once (default 6). Over that, a new test is refused with close code 1013. |
+| `ACCESS_CODE` | Optional code for the browser test bench pages (`/`, `/logs`). Does not apply to `/v1` or the monitor. |
+| `MONITOR_SLOW_S` | A reply slower than this many seconds counts as slow on the monitor (default 3). |
+| `CAPTIONS` | `off` switches live captions off completely (the small caption model is not even loaded). Default on. |
+| `CAPTION_WINDOW_S` | Live captions re-decode only the last N seconds of speech (default 8; it was 15). |
+| `CAPTION_INTERVAL_S` | Seconds between caption updates (default 1.2; it was 0.9). |
+| `CAPTION_MAX_CONCURRENT` | Most caption decodes at one moment in the whole server (default 2). A caption that finds them busy is skipped, so captions can never delay a real answer. The monitor shows how many were skipped. |
+
+The caption defaults are a first guess to be tuned by the load test below, not measured values.
+
+## Load test (run on the GPU box)
+
+`eval/load_test.py` runs N scripted candidates at once and reports reply delay (p50, p95), refusals, errors and, with `--gpu`, the busiest the GPU got.
+Run one session first as the baseline, then more, and keep `/monitor` open while it runs:
 
 ```
-.
-├── README.md                      this file
-├── doc/
-│   ├── IELTS_Speaking_Engine_System_Architecture_Proposal.docx   architecture proposal v1.0
-│   └── TTS_Tuning_and_Decisions.md                               every TTS setting, why, and what is still open
-├── tts_lab/
-│   └── tts_browser.html           Kokoro TTS test page + benchmark + server sizing/cost estimator
-└── stt_lab/
-    └── stt_browser.html           Whisper accuracy lab (WER/CER, word diff, filler tracking)
+python -m eval.load_test --sessions 1 --report base.json
+python -m eval.load_test --sessions 3 --baseline base.json
+python -m eval.load_test --sessions 9 --baseline base.json --gpu --report nine.json     # add --part2 for the long talk
 ```
 
-Earlier prototype code (a local CLI/web app) was removed from the working tree. It is still available in git history.
+It passes when the p95 reply delay is no more than 1 s (`--allow-extra-s`) above the baseline and nobody is refused or left without a reply.
+The examiner deliberately waits about 2 s for the candidate's pause, so the delay of a single session is never near zero: compare, do not expect 2 s.
+To compare caption settings run the same test with `CAPTIONS=off` and with the defaults. Use `--audio wav --wav a.wav b.wav` for your own 16 kHz mono
+recordings; `--audio fake` (noise) only checks that sessions connect. Use `--api-key` to test the service API (`/v1/session`) instead of the bench.
 
-## The plan
+## Monitoring page
 
-The architecture proposal describes one permanent **modular monolith**: FastAPI (REST + WebSocket), Kokoro TTS, faster-whisper STT, a self-hosted LLM, PostgreSQL, Redis, Celery and Docker. Work proceeds in this order:
+Open `https://<service>/monitor?key=<MONITOR_KEY>` once; the browser keeps a cookie after that. It shows whether the service is ready,
+tests running against the limit, every live test, reply-delay figures (p50, p95), recent tests with how each ended, failures
+(warnings and errors the service logged, plus tests that were aborted, failed, had errors or slow replies) and the server log.
+Scripts can read the same data from `GET /api/monitor` with `Authorization: Bearer <MONITOR_KEY>`. It never includes what a candidate said.
 
-1. **TTS** — choose and tune the examiner voice, pass latency and quality benchmarks locally. *(in progress; this repo)*
-2. **STT** — measure transcription accuracy on realistic candidate speech. *(lab built, not yet run)*
-3. **LLM** — examiner dialogue and assessment, then any fine-tuning. *(not started; nothing decided)*
-4. **Server integration** — Python/GPU service, WebSocket streaming, load tests. *(not started)*
+## Run the tests
 
-See `doc/` for the full proposal. The proposal itself states that capacity claims must be established by benchmarks, and that results are *estimated practice feedback*, not official IELTS scores.
+```
+py -3.10 -m venv .venv
+.venv\Scripts\python -m pip install pytest
+.venv\Scripts\python -m pytest
+```
 
----
-
-## Running the labs
-
-Both labs are single HTML files with no build step and no backend.
-
-**Requirements:** a current Chrome or Edge, and an internet connection on first load (the page fetches a JavaScript library from a CDN and model files from Hugging Face; the browser caches them afterwards). Open the file by double-clicking it, or serve the folder with any static file server.
-
-### TTS lab — `tts_lab/tts_browser.html`
-
-Runs the Kokoro-82M model in the browser through ONNX/WebAssembly (CPU).
-
-1. Open the file and wait for "Model ready" (first load downloads about 330 MB for the fp32 model).
-2. Paste text into the box (write `[pause]` for an extra break) and press **Speak**. Audio streams sentence by sentence.
-3. **Test my text ×5** runs your text five times and scores it. **Full benchmark** runs three built-in feedback texts (short, medium, long) plus your text, five runs each.
-4. Read the pass/fail table, the measured-on-this-machine cards, and the server sizing and cost estimate.
-
-**Fixed standard configuration** (no switches on the page):
-
-| Setting | Value |
-|---|---|
-| Model | Kokoro-82M, **fp32**, via `kokoro-js` 1.2.1 |
-| Voice | **`bf_emma` 75% + `bf_alice` 25%** (blended style vectors) |
-| Speed | **0.95** (± 0.02 repeatable variation per chunk) |
-| Mode | **Feedback** — streamed, first chunk kept short |
-| Pauses | 0.30 s after statements, 0.45 s after questions, +0.60 s for `[pause]`, then 20% tighter in streaming mode |
-| Processing | edge-silence trim, 80 Hz high-pass, even loudness at −3 dBFS, 5 ms fades |
-| Target first audio | 1.5 s (editable; a placeholder, not a requirement) |
-
-The reasoning behind each value, and what was tried before it, is in [`doc/TTS_Tuning_and_Decisions.md`](doc/TTS_Tuning_and_Decisions.md).
-
-**Benchmark metrics**
-
-| Metric | Meaning |
-|---|---|
-| First audio | Time from pressing Speak until the first sentence is ready to play (p50 / p95) |
-| RTF | Real-time factor: generation time ÷ speech duration. Below 1.0 means speech is generated faster than it plays |
-| Stalls | Times the next sentence was not ready when the previous one finished playing (an audible gap) |
-| Words/min | Speaking pace, both speech-only and including pauses |
-| JS heap | Browser JavaScript memory. Does **not** include the model's WASM memory — read the real figure in Chrome Task Manager |
-
-**Pass criteria:** first-audio p95 ≤ target, RTF p95 < 1.0, zero stalls. Benchmarks run one request at a time; concurrency is not tested.
-
-**Server sizing and cost estimator.** Turns the measured RTF into core, RAM, server count and monthly cost estimates for a given load. Every input is editable and every default is a **placeholder** (100 concurrent tests, $150/month server, and so on). The proposal's 5,000–6,000 peak figure is still unvalidated. Treat the output as an illustration of method, not a quote.
-
-### STT lab — `stt_lab/stt_browser.html`
-
-Runs OpenAI Whisper models (tiny.en, base.en, small.en on CPU; large-v3-turbo on WebGPU) in the browser through `@huggingface/transformers`.
-
-1. Choose a model and press **Load model**.
-2. Record with the microphone or upload an audio file. Audio is processed locally and is not uploaded anywhere.
-3. Type exactly what was said as the reference (three sample passages are provided to read aloud).
-4. Press **Transcribe & score**.
-
-You get WER and CER, substitution/deletion/insertion counts, a word-by-word colored comparison, filler-word counts (spoken → transcribed, since Whisper tends to drop "um/uh"), transcription time, RTF, a history table, per-model averages and a CSV export.
-
-**Caveat:** the planned server engine is *faster-whisper*, which uses the same Whisper weights through a different runtime. Accuracy by model size should carry over; speed will not. Run several clips from different speakers and accents per model — one clip proves little.
-
----
-
-## Known limitations
-
-- Browser measurements are **not** server measurements. RTF, latency and memory must be re-measured with the Python engine on the real GPU server.
-- The browser page runs the model on a single thread; a server will behave differently.
-- Voice quality was judged by ear by the project owner. No MOS scores, listening-panel results or round-trip WER numbers exist yet.
-- Concurrent-load behavior (the target is 10–15 simultaneous students) has not been tested.
-- The STT lab has not been run yet, and the LLM/assessment stages are not started.
-- Pronunciation scoring from a transcript alone is not valid; it needs its own method (see the proposal).
-
-## Third-party components
-
-| Component | Used for |
-|---|---|
-| [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M) and [kokoro-js](https://www.npmjs.com/package/kokoro-js) | Text-to-speech |
-| [OpenAI Whisper](https://github.com/openai/whisper) via [Transformers.js](https://huggingface.co/docs/transformers.js) | Speech-to-text lab |
-| ONNX Runtime Web | In-browser inference |
-
-Check each project's current license before any commercial deployment; this repository does not yet declare a license of its own.
+Only the pure-Python parts exist and are tested so far (eval metrics, GPU provisioner interface, test flow). The voice pipeline and control-plane API are not written yet; see PROGRESS.md.
