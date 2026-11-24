@@ -13,7 +13,7 @@ Pipecat (BSD-2, Python) is the framework for the live voice pipeline. Hugging Fa
 
 ## D4: Model stack (2026-11-21), provisional
 - STT: faster-whisper (model size to be chosen on real non-native speech).
-- TTS: Kokoro-82M (see `doc/TTS_Tuning_and_Decisions.md` in the repo root).
+- TTS: Kokoro-82M (see `docs/TTS_Tuning_and_Decisions.md`).
 - LLM: an open model served with vLLM behind an OpenAI-compatible endpoint. Model chosen by evaluation, not by benchmark rankings. Ollama is for development only.
 - No fine-tuning until prompts and a good base model show a specific gap.
 
@@ -28,6 +28,13 @@ This is an ieltsup product. It is packaged as one service that runs the whole ex
 server the way it uses a speech provider today: one WebSocket per test, one API key. It is not split into separate STT, LLM and TTS
 services, because the rules engine would then have to be rebuilt inside ieltsup. Internals stay modular (vLLM is already a separate process).
 Contract: `API_CONTRACT_V1.md`. Leases are dropped for v1 (fixed capacity). Pricing and billing are out of scope for now. D1 (no external AI APIs) still holds.
+
+## D8: The repo root is the service; experiments live under experiments/ (2026-11-24)
+The repository used to hold the service in a `speaking-service/` subfolder next to experiments, two browser labs and a GPT sample. The service is
+now the project: `worker/`, `control_plane/`, `web/`, `docs/`, `tests/` and the rest sit at the repo root. `gpt-live-voice-api/`, `stt_lab/`, `tts_lab/`
+and the old root README moved under `experiments/` (they were experiments; nothing in the service imports them). `doc/` moved into `docs/`.
+History is kept (files were moved with git, not re-added). Consequence for deployment: `deploy/vast/upload.sh` no longer tars the current folder,
+because the root can hold a private key; it sends the files git knows about minus a deny list, and `--list` shows what would be sent.
 
 ## Open decisions
 

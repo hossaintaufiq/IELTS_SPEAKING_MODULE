@@ -16,7 +16,7 @@ The Node app talks to the control plane only. Students connect their audio WebSo
 ## Repository layout
 
 ```
-speaking-service/
+(repo root)
   control_plane/          FastAPI app, leases, sessions
     gpu_provisioner/      GpuProvisioner interface + implementations
   worker/                 Pipecat pipeline per session
@@ -29,6 +29,7 @@ speaking-service/
   deploy/                 Docker Compose, GPU image
   docs/                   this folder
   tests/
+  experiments/            earlier experiments, not part of the service (nothing here imports them)
 ```
 
 ## Live turn (target)

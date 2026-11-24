@@ -3,7 +3,7 @@
 Why a wrapper: the `vastai.exe` launcher is blocked by Windows Application Control on this PC, and
 renting should have a hard price cap and an explicit confirmation so a typo cannot burn the balance.
 
-Usage (from speaking-service/, with the venv python):
+Usage (from the repo root, with the venv python):
     python deploy/vast/vast.py search                 # cheap verified 24 GB cards, cheapest first
     python deploy/vast/vast.py rent OFFER_ID --max-price 0.60 --yes
     python deploy/vast/vast.py status
