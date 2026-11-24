@@ -3,7 +3,7 @@
 **Project:** IELTS Speaking Test Engine · **Stage:** 1 of 4 (TTS) · **Date:** 18 November 2026
 **Companion to:** *IELTS Speaking Engine — System Architecture Proposal v1.0*
 
-This document records everything decided and tried for the examiner's text-to-speech (TTS) voice, why each choice was made, and what remains open. The test page is `tts_lab/tts_browser.html`.
+This document records everything decided and tried for the examiner's text-to-speech (TTS) voice, why each choice was made, and what remains open. The test page is `experiments/tts_lab/tts_browser.html`.
 
 > **Honesty note.** All voice choices below were made by the project owner listening to the output. No benchmark numbers, MOS scores or listening-panel results have been recorded yet. Where a statement comes from general knowledge rather than a measurement in this project, it is marked *(unverified)*.
 
@@ -124,7 +124,7 @@ An earlier full-quality "Exam prompt" path also applied a dynamics compressor (3
 
 ## 7. Benchmark design
 
-Built into `tts_lab/tts_browser.html` (**Test my text ×5** and **Full benchmark**).
+Built into `experiments/tts_lab/tts_browser.html` (**Test my text ×5** and **Full benchmark**).
 
 - Texts: three built-in feedback samples (short, medium, long) plus the user's text; **5 runs each**; optional silent mode.
 - Per text: first-audio p50/p95, RTF mean/p95, stalls, words/min (speech only and with pauses), PASS/FAIL.
@@ -189,7 +189,7 @@ Open questions: exam start pattern (scheduled batch or on demand), student locat
 
 ## 11. STT stage (next)
 
-`stt_lab/stt_browser.html` is built to test Whisper accuracy (tiny.en / base.en / small.en / large-v3-turbo) with WER, CER, a word-level diff and filler tracking. It has not been run. Open points to resolve with real recordings: accuracy on the target candidates' accents, handling of disfluencies ("um", "uh" are often dropped), and whether small.en or larger is needed.
+`experiments/stt_lab/stt_browser.html` is built to test Whisper accuracy (tiny.en / base.en / small.en / large-v3-turbo) with WER, CER, a word-level diff and filler tracking. It has not been run. Open points to resolve with real recordings: accuracy on the target candidates' accents, handling of disfluencies ("um", "uh" are often dropped), and whether small.en or larger is needed.
 
 ## 12. LLM stage and fine-tuning
 

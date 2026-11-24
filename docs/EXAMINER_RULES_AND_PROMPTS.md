@@ -2,7 +2,7 @@
 
 Everything the examiner says, asks, waits for and refuses to do, in one place. This file is **generated from the code**: every prompt, word list, pattern and number below is copied from the running modules, not retyped. Where a number can be changed without editing code, its environment variable is given (full list at the end).
 
-**Status:** unit-tested (see `speaking-service/tests/`), not yet verified live with a candidate. The examiner follows the company's examiner rules (`worker/examiner/rules.py`, ported from the Node app) and adds the pacing and manner rules in the later sections.
+**Status:** unit-tested (see `tests/`), not yet verified live with a candidate. The examiner follows the company's examiner rules (`worker/examiner/rules.py`, ported from the Node app) and adds the pacing and manner rules in the later sections.
 
 Results are **estimated practice feedback**, never an official IELTS band.
 
