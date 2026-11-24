@@ -17,14 +17,18 @@ import re
 import struct
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+from worker import monitor as mon
+from worker import service_api as svc
 from worker import session as sess
 from worker.session import ExamSession
 
 log = logging.getLogger("speaking.server")
+READY = {"done": False, "error": ""}      # the models have been loaded (the first minutes after a start); MOCK has none to load
+mon.install_failure_log()                 # warnings and errors of the service, kept in memory for the monitoring page
 WEB = Path(__file__).resolve().parent.parent / "web"
 MOCK = os.getenv("MOCK") == "1"
 
@@ -62,7 +66,11 @@ class AccessCodeMiddleware:
         self.inner = inner
 
     async def __call__(self, scope, receive, send):
-        if scope["type"] not in ("http", "websocket") or not ACCESS["code"] or scope.get("path") == "/health":
+        path = scope.get("path", "")
+        # /v1 is the service API: the caller is a server, not a browser, and proves itself with its own API key (worker/service_api.py).
+        # The monitoring page has its own key too (MONITOR_KEY).
+        if (scope["type"] not in ("http", "websocket") or not ACCESS["code"] or path in ("/health", "/monitor", "/api/monitor")
+                or path.startswith("/v1/")):
             return await self.inner(scope, receive, send)
         ok, from_link = _code_from(scope)
         if not ok:
@@ -102,8 +110,11 @@ if not MOCK:
                 warm.preload()
                 from worker.examiner.llm import generate_json        # the first request to vLLM is the slowest one
                 asyncio.run(generate_json("Reply as JSON.", 'Reply with {"ok": true}.', timeout=60))
-            except Exception:
+            except Exception as e:
                 log.exception("model preload failed; sessions will load models on demand")
+                READY["error"] = f"{type(e).__name__}: {e}"[:200]
+            finally:
+                READY["done"] = True       # finished, one way or the other; is_ready() is false when it failed (the error shows in /health)
 
         threading.Thread(target=work, daemon=True).start()
 
@@ -189,35 +200,183 @@ def server_log(name: str, lines: int = 300, q: str = "", hide_debug: bool = True
     return {"name": name, "path": str(path), "exists": True, "lines": rows[-max(10, min(lines, 2000)):]}
 
 
+def is_ready() -> bool:
+    return MOCK or (READY["done"] and not READY["error"])
+
+
+def running_tests() -> int:
+    return sum(1 for v in SESSIONS.values() if v.phase != "done")
+
+
 @app.get("/health")
 def health():
-    return {"ok": True, "mock": MOCK, "tests_running": sum(1 for v in SESSIONS.values() if v.phase != "done"), "max_tests": MAX_SESSIONS}
+    return {"ok": True, "mock": MOCK, "tests_running": running_tests(), "max_tests": MAX_SESSIONS,
+            "version": svc.API_VERSION, "ready": is_ready(), "models_error": READY["error"]}
 
 
-@app.websocket("/ws")
-async def ws_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    running = sum(1 for v in SESSIONS.values() if v.phase != "done")
-    if running >= MAX_SESSIONS:
-        # the GPU is shared: a test that cannot get its share would stutter for everyone, so it waits instead
-        await websocket.close(code=1013, reason=f"Server is full ({running} tests running). Please try again in a minute.")
-        return
-    session = ExamSession(send=websocket.send_json)
-    session.device = (websocket.query_params.get("device") or "")[:40]     # optional label: open the page with ?device=Laptop
+async def _serve(websocket: WebSocket, session: ExamSession, *, service: bool = False) -> None:
+    """Run one test on an accepted socket and, whatever happens, forget it and save what it recorded.
+    `service`: the contract's `test` message first, and a failure is reported as an `error` message instead of just ending the socket."""
     LIVE["session"] = session
     SESSIONS[session.test_id] = session
     try:
+        if service:
+            await websocket.send_json({"type": "test", "id": session.test_id})
         if MOCK:
             await run_mock(websocket, session)
         else:
             await run_real(websocket, session)
     except WebSocketDisconnect:
         pass
+    except Exception as e:
+        if not service:
+            raise
+        log.exception("test %s failed", session.test_id)
+        session.status, session.end_reason = "failed", session.end_reason or "error"
+        try:
+            await websocket.send_json({"type": "error", "code": "internal", "message": f"{type(e).__name__}"})
+            await websocket.close(code=1011)
+        except Exception:
+            pass
     finally:
         SESSIONS.pop(session.test_id, None)
         path = session.abort() if session.started else None
         if path:
             log.info("saved run log %s", path)
+
+
+@app.websocket("/ws")
+async def ws_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    running = running_tests()
+    if running >= MAX_SESSIONS:
+        # the GPU is shared: a test that cannot get its share would stutter for everyone, so it waits instead
+        await websocket.close(code=1013, reason=f"Server is full ({running} tests running). Please try again in a minute.")
+        return
+    session = ExamSession(send=websocket.send_json)
+    session.device = (websocket.query_params.get("device") or "")[:40]     # optional label: open the page with ?device=Laptop
+    await _serve(websocket, session)
+
+
+# ---- service API (docs/API_CONTRACT_V1.md): one WebSocket per test, API key, results -------------------------------------
+@app.websocket("/v1/session")
+async def v1_session(websocket: WebSocket):
+    # A refusal before accept() reaches the caller as an HTTP 403 on the upgrade request (the socket never opens).
+    if svc.check_bearer(websocket.headers.get("authorization")) != "ok":
+        await websocket.close(code=1008)
+        return
+    params = websocket.query_params
+    external = (params.get("external_user_id") or "").strip()[:120]
+    hour = params.get("hour")
+    if not external or (hour is not None and not (hour.isdigit() and 0 <= int(hour) <= 23)):
+        await websocket.close(code=1008)
+        return
+    await websocket.accept()
+    if not is_ready():
+        await websocket.close(code=1013, reason="Service is starting")
+        return
+    running = running_tests()
+    if running >= MAX_SESSIONS:
+        await websocket.close(code=1013, reason=f"Server is full ({running} tests running)")
+        return
+    session = ExamSession(send=websocket.send_json, hour=int(hour) if hour is not None else None)
+    session.external_user_id = external
+    session.device = (params.get("device") or "")[:40]
+    await _serve(websocket, session, service=True)
+
+
+def _guard(request: Request):
+    """The error response when the request is not allowed (bad or missing key), else None."""
+    return svc.auth_error(svc.check_bearer(request.headers.get("authorization")))
+
+
+@app.get("/v1/tests/{test_id}")
+def v1_test(test_id: str, request: Request):
+    if (denied := _guard(request)) is not None:
+        return denied
+    live = SESSIONS.get(test_id) if svc.TEST_ID.match(test_id) else None
+    if live is not None:
+        stamps = [e["at"] for e in live.log if "at" in e]
+        return {"id": live.test_id, "external_user_id": live.external_user_id, "status": live.status, "started_at": stamps[0] if stamps else None,
+                "ended_at": None, "end_reason": "", "phase": live.phase}
+    path = svc.run_file(test_id)
+    if path is None:
+        return svc.error(404, "not_found", "No such test")
+    return svc.summary(svc.load_record(path))
+
+
+@app.get("/v1/tests/{test_id}/result")
+def v1_result(test_id: str, request: Request):
+    if (denied := _guard(request)) is not None:
+        return denied
+    if test_id in SESSIONS:
+        return svc.error(404, "not_finished", "The test is still running")
+    path = svc.run_file(test_id)
+    if path is None:
+        return svc.error(404, "not_found", "No such test")
+    return JSONResponse(svc.load_record(path))
+
+
+@app.get("/v1/tests/{test_id}/audio")
+def v1_audio(test_id: str, request: Request):
+    if (denied := _guard(request)) is not None:
+        return denied
+    path = svc.run_file(test_id)
+    wav = path.with_suffix(".wav") if path else None
+    if wav is None or not wav.exists():
+        return svc.error(404, "not_found", "No recording for this test")
+    return FileResponse(wav, media_type="audio/wav")
+
+
+# ---- monitoring page: the service as a whole (worker/monitor.py) ------------------------------------------------------
+MONITOR_COOKIE = "monitor"
+
+
+def _monitor_verdict(request: Request, *, from_link_ok: bool = False) -> tuple[str, bool]:
+    """('ok' | 'no_key' | 'bad', came_from_the_link). Key: `Authorization: Bearer`, the cookie, or (page only) ?key= which sets the cookie.
+    With no MONITOR_KEY the page stays closed, except in mock mode (no real tests, nothing to protect)."""
+    import hmac
+
+    want = os.getenv("MONITOR_KEY", "")
+    if not want:
+        return ("ok", False) if MOCK else ("no_key", False)
+    scheme, _, bearer = (request.headers.get("authorization") or "").partition(" ")
+    offered = [(bearer.strip(), False)] if scheme.lower() == "bearer" else []
+    offered.append((request.cookies.get(MONITOR_COOKIE, ""), False))
+    if from_link_ok:
+        offered.append((request.query_params.get("key", ""), True))
+    for value, link in offered:
+        if value and hmac.compare_digest(value.encode(), want.encode()):
+            return "ok", link
+    return "bad", False
+
+
+def _monitor_denied(verdict: str):
+    from fastapi.responses import PlainTextResponse
+
+    if verdict == "no_key":
+        return PlainTextResponse("The monitoring page is closed: set MONITOR_KEY on the server.", status_code=503)
+    return PlainTextResponse("Monitor key needed. Open /monitor?key=<your key> once.", status_code=401, headers={"WWW-Authenticate": "Bearer"})
+
+
+@app.get("/monitor")
+def monitor_page(request: Request):
+    verdict, from_link = _monitor_verdict(request, from_link_ok=True)
+    if verdict != "ok":
+        return _monitor_denied(verdict)
+    response = FileResponse(WEB / "monitor.html")
+    if from_link:
+        response.set_cookie(MONITOR_COOKIE, os.getenv("MONITOR_KEY", ""), httponly=True, samesite="lax", max_age=86400, path="/")
+    return response
+
+
+@app.get("/api/monitor")
+def monitor_data(request: Request):
+    verdict, _ = _monitor_verdict(request)
+    if verdict != "ok":
+        return _monitor_denied(verdict)
+    return mon.snapshot(sessions=SESSIONS, runs_dir=sess.RUNS, max_tests=MAX_SESSIONS, ready=is_ready(), models_error=READY["error"],
+                        mock=MOCK, version=svc.API_VERSION)
 
 
 async def run_real(websocket: WebSocket, session: ExamSession):

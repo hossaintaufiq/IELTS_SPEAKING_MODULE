@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IELTS Speaking service - Monitor</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/monitor.css">
+</head>
+<body>
+  <header>
+    <h1>IELTS Speaking <span>service monitor</span></h1>
+    <div class="head-right">
+      <span id="m-status" class="pill off">connecting...</span>
+      <span class="muted" id="m-updated"></span>
+      <a class="logs-link" href="/logs" target="speaking-logs">Run logs &#8599;</a>
+    </div>
+  </header>
+
+  <div id="m-banner" class="banner" hidden></div>
+
+  <main class="mon">
+    <section class="tiles">
+      <div class="tile"><span class="k">Tests running</span><span class="v" id="t-running">-</span><span class="s" id="t-cap"></span>
+        <div class="meter"><i id="t-meter"></i></div></div>
+      <div class="tile"><span class="k">Reply delay p50</span><span class="v" id="t-p50">-</span><span class="s" id="t-n"></span></div>
+      <div class="tile"><span class="k">Reply delay p95</span><span class="v" id="t-p95">-</span><span class="s" id="t-slow"></span></div>
+      <div class="tile"><span class="k">Recent tests</span><span class="v" id="t-total">-</span><span class="s" id="t-counts"></span></div>
+      <div class="tile"><span class="k">Service uptime</span><span class="v" id="t-up">-</span><span class="s" id="t-ver"></span></div>
+    </section>
+
+    <section class="panel wide">
+      <div class="t-head"><h2>Live tests</h2><span class="muted" id="live-count"></span></div>
+      <div class="scroll"><table id="live"><thead><tr>
+        <th>Test</th><th>Candidate</th><th>Device</th><th>Phase</th><th>Elapsed</th><th>Mic level</th><th>Last reply</th><th>Problems</th>
+      </tr></thead><tbody></tbody></table></div>
+      <div class="muted empty" id="live-empty">No test is running.</div>
+    </section>
+
+    <section class="panel">
+      <div class="t-head"><h2>Failures</h2><span class="muted" id="fail-count"></span></div>
+      <p class="muted small">Warnings and errors the service logged since it started, and recent tests that went wrong (newest first).</p>
+      <div class="feed" id="failures"></div>
+      <div class="muted empty" id="fail-empty">Nothing logged. All quiet.</div>
+    </section>
+
+    <section class="panel">
+      <div class="t-head"><h2>Server log</h2><span class="muted" id="sl-info"></span></div>
+      <div class="ctl">
+        <select id="sl-name">
+          <option value="web">Service (web)</option>
+          <option value="vllm">LLM (vLLM)</option>
+          <option value="setup">Setup</option>
+        </select>
+        <input id="sl-filter" type="search" placeholder="filter, e.g. error">
+        <label><input type="checkbox" id="sl-follow" checked> follow</label>
+      </div>
+      <pre id="sl-view" class="serverlog"></pre>
+    </section>
+
+    <section class="panel wide">
+      <div class="t-head"><h2>Recent tests</h2>
+        <label class="muted"><input type="checkbox" id="only-problems"> problems only</label></div>
+      <div class="scroll"><table id="recent"><thead><tr>
+        <th>Started</th><th>Test</th><th>Candidate</th><th>Device</th><th>Result</th><th>Ended because</th><th>Length</th><th>Reply p95</th><th>Problems</th>
+      </tr></thead><tbody></tbody></table></div>
+      <div class="muted empty" id="recent-empty">No saved test yet.</div>
+    </section>
+  </main>
+  <script src="/static/monitor.js"></script>
+</body>
+</html>
