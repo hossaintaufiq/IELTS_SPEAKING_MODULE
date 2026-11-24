@@ -1,0 +1,366 @@
+{
+  "config": {
+    "base": "ws://127.0.0.1:8080",
+    "sessions": 12,
+    "turns": 6,
+    "ramp_s": 1.0,
+    "part2": false,
+    "reply_timeout": 30.0,
+    "max_s": 900.0,
+    "audio": "synth",
+    "wav": [],
+    "model": "models/cache/kokoro-v1.0.onnx",
+    "voices": "models/cache/voices-v1.0.bin",
+    "baseline": "/root/work/base.json",
+    "allow_extra_s": 1.0,
+    "max_p95": null,
+    "gpu": true,
+    "report": "/root/work/n12.json"
+  },
+  "wall_s": 121.3,
+  "summary": {
+    "sessions": 12,
+    "ran": 12,
+    "refused": 0,
+    "failed": [],
+    "reply_delay": {
+      "n": 72,
+      "p50": 5.15,
+      "p95": 6.49,
+      "max": 6.59
+    },
+    "server_delay": {
+      "n": 73,
+      "p50": 2.86,
+      "p95": 4.78,
+      "max": 5.38
+    },
+    "first_audio": {
+      "n": 12,
+      "p50": 0.35,
+      "p95": 0.37,
+      "max": 0.37
+    },
+    "no_reply": 0,
+    "turns": 72,
+    "errors": [],
+    "ended": {
+      "ended_by_candidate": 12
+    }
+  },
+  "gpu": {
+    "available": true,
+    "util_max_pct": 100.0,
+    "util_avg_pct": 36.0,
+    "mem_max_mb": 19092.0,
+    "mem_total_mb": 24576.0
+  },
+  "baseline_p95": 4.98,
+  "passed": false,
+  "why_not": [
+    "p95 reply delay 6.49 s is more than 1.0 s above the baseline 4.98 s"
+  ],
+  "sessions": [
+    {
+      "n": 0,
+      "delays": [
+        2.77,
+        2.86,
+        3.62,
+        6.42,
+        5.25,
+        3.73
+      ],
+      "server_delays": [
+        2.0,
+        2.11,
+        2.86,
+        2.89,
+        4.59,
+        2.92
+      ],
+      "no_reply": 0,
+      "errors": [],
+      "turns_done": 6,
+      "first_audio_s": 0.35,
+      "ended": "ended_by_candidate",
+      "duration_s": 95.8
+    },
+    {
+      "n": 1,
+      "delays": [
+        5.41,
+        5.78,
+        5.97,
+        3.86,
+        6.05,
+        5.85
+      ],
+      "server_delays": [
+        1.87,
+        2.24,
+        2.4,
+        3.05,
+        2.48,
+        2.28
+      ],
+      "no_reply": 0,
+      "errors": [],
+      "turns_done": 6,
+      "first_audio_s": 0.35,
+      "ended": "ended_by_candidate",
+      "duration_s": 114.8
+    },
+    {
+      "n": 2,
+      "delays": [
+        2.65,
+        2.81,
+        3.63,
+        5.45,
+        4.45,
+        4.03
+      ],
+      "server_delays": [
+        1.98,
+        2.14,
+        2.89,
+        4.78,
+        2.8,
+        3.13
+      ],
+      "no_reply": 0,
+      "errors": [],
+      "turns_done": 6,
+      "first_audio_s": 0.36,
+      "ended": "ended_by_candidate",
+      "duration_s": 84.9
+    },
+    {
+      "n": 3,
+      "delays": [
+        5.19,
+        5.7,
+        5.38,
+        3.78,
+        3.9,
+        4.3
+      ],
+      "server_delays": [
+        1.62,
+        2.17,
+        4.4,
+        2.95,
+        3.1,
+        2.91
+      ],
+      "no_reply": 0,
+      "errors": [],
+      "turns_done": 6,
+      "first_audio_s": 0.28,
+      "ended": "ended_by_candidate",
+      "duration_s": 99.4
+    },
+    {
+      "n": 4,
+      "delays": [
+        2.75,
+        2.14,
+        6.54,
+        6.01,
+        6.51,
+        3.83
+      ],
+      "server_delays": [
+        1.96,
+        5.04,
+        2.9,
+        2.97,
+        2.44,
+        2.98,
+        3.06
+      ],
+      "no_reply": 0,
+      "errors": [],
+      "turns_done": 6,
+      "first_audio_s": 0.35,
+      "ended": "ended_by_candidate",
+      "duration_s": 117.3
+    },
+    {
+      "n": 5,
+      "delays": [
+        2.74,
+        3.04,
+        6.09,
+        6.33,
+        6.05,
+        3.85
+      ],
+      "server_delays": [
+        1.99,
+        2.24,
+        2.52,
+        2.76,
+        2.49,
+        2.98
+      ],
+      "no_reply": 0,
+      "errors": [],
+      "turns_done": 6,
+      "first_audio_s": 0.33,
+      "ended": "ended_by_candidate",
+      "duration_s": 110.7
+    },
+    {
+      "n": 6,
+      "delays": [
+        5.58,
+        5.63,
+        5.03,
+        5.35,
+        6.45,
+        4.24
+      ],
+      "server_delays": [
+        2.04,
+        2.08,
+        4.34,
+        4.33,
+        2.92,
+        2.94
+      ],
+      "no_reply": 0,
+      "errors": [],
+      "turns_done": 6,
+      "first_audio_s": 0.33,
+      "ended": "ended_by_candidate",
+      "duration_s": 99.7
+    },
+    {
+      "n": 7,
+      "delays": [
+        2.75,
+        5.31,
+        4.14,
+        6.59,
+        6.09,
+        3.77
+      ],
+      "server_delays": [
+        2.0,
+        1.73,
+        3.04,
+        3.06,
+        2.52,
+        3.03
+      ],
+      "no_reply": 0,
+      "errors": [],
+      "turns_done": 6,
+      "first_audio_s": 0.36,
+      "ended": "ended_by_candidate",
+      "duration_s": 106.8
+    },
+    {
+      "n": 8,
+      "delays": [
+        5.14,
+        5.66,
+        3.75,
+        6.41,
+        3.84,
+        3.7
+      ],
+      "server_delays": [
+        1.56,
+        2.12,
+        2.96,
+        2.82,
+        3.05,
+        2.93
+      ],
+      "no_reply": 0,
+      "errors": [],
+      "turns_done": 6,
+      "first_audio_s": 0.34,
+      "ended": "ended_by_candidate",
+      "duration_s": 109.4
+    },
+    {
+      "n": 9,
+      "delays": [
+        2.77,
+        5.24,
+        3.88,
+        5.42,
+        5.95,
+        2.45
+      ],
+      "server_delays": [
+        1.95,
+        1.67,
+        3.09,
+        4.69,
+        2.38,
+        5.38
+      ],
+      "no_reply": 0,
+      "errors": [],
+      "turns_done": 6,
+      "first_audio_s": 0.34,
+      "ended": "ended_by_candidate",
+      "duration_s": 104.9
+    },
+    {
+      "n": 10,
+      "delays": [
+        2.75,
+        3.01,
+        5.15,
+        5.77,
+        6.44,
+        6.17
+      ],
+      "server_delays": [
+        1.97,
+        2.22,
+        4.47,
+        5.07,
+        2.86,
+        2.6
+      ],
+      "no_reply": 0,
+      "errors": [],
+      "turns_done": 6,
+      "first_audio_s": 0.37,
+      "ended": "ended_by_candidate",
+      "duration_s": 98.5
+    },
+    {
+      "n": 11,
+      "delays": [
+        5.47,
+        5.19,
+        6.49,
+        5.39,
+        3.82,
+        3.77
+      ],
+      "server_delays": [
+        1.93,
+        1.62,
+        2.97,
+        4.72,
+        2.99,
+        2.95
+      ],
+      "no_reply": 0,
+      "errors": [],
+      "turns_done": 6,
+      "first_audio_s": 0.37,
+      "ended": "ended_by_candidate",
+      "duration_s": 102.4
+    }
+  ]
+}

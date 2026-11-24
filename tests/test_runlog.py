@@ -68,15 +68,13 @@ def test_server_logs_are_tailed_cleaned_and_filterable(tmp_path, monkeypatch):
     assert c.get("/api/serverlog/..%2Fweb").status_code == 404
 
 
-def test_logs_page_is_served_and_the_main_page_links_to_it():
+def test_run_log_lives_in_the_monitor_and_the_test_page_has_no_log_options():
     c = TestClient(server.app)
-    page = c.get("/logs")
-    assert page.status_code == 200 and "Run log" in page.text and "Server log" in page.text
-    for asset in ("logs.js", "logs.css"):
-        assert c.get(f"/static/{asset}").status_code == 200
+    r = c.get("/logs", follow_redirects=False)
+    assert r.status_code in (302, 307) and r.headers["location"] == "/monitor#runlog"      # the old address still leads there
+    assert c.get("/static/logs.js").status_code == 200
     main = c.get("/").text
-    assert 'href="/logs"' in main and 'target="speaking-logs"' in main       # opens in its own window
-    assert "runlog" not in main and "serverlog" not in main                  # the log views no longer crowd the test window
+    assert "/logs" not in main and "runlog" not in main and "serverlog" not in main         # the test page stays clean
 
 
 def test_live_endpoint_shows_the_current_or_last_test(monkeypatch):
@@ -153,7 +151,7 @@ def test_the_server_turns_away_a_test_when_it_is_full(monkeypatch):
 def test_without_the_access_code_nothing_but_health_is_served(monkeypatch):
     monkeypatch.setitem(server.ACCESS, "code", "s3cret")
     c = TestClient(server.app)
-    assert c.get("/").status_code == 401 and c.get("/api/runs").status_code == 401 and c.get("/logs").status_code == 401
+    assert c.get("/").status_code == 401 and c.get("/api/runs").status_code == 401 and c.get("/logs", follow_redirects=False).status_code == 401
     assert c.get("/?key=wrong").status_code == 401
     assert c.get("/health").status_code == 200
     with pytest.raises(Exception):
@@ -166,7 +164,7 @@ def test_the_link_with_the_code_opens_the_page_and_the_cookie_keeps_it_open(monk
     c = TestClient(server.app)
     r = c.get("/?key=s3cret")
     assert r.status_code == 200 and "access=s3cret" in r.headers["set-cookie"]
-    assert c.get("/api/runs").status_code == 200 and c.get("/logs").status_code == 200       # the cookie is now sent along
+    assert c.get("/api/runs").status_code == 200 and c.get("/logs", follow_redirects=False).status_code in (302, 307)       # the cookie is now sent along
     monkeypatch.setattr(server, "MOCK", True)
     with c.websocket_connect("/ws?device=Laptop") as ws:                                      # and so is the microphone connection
         ws.send_text(json.dumps({"action": "start"}))
@@ -177,7 +175,12 @@ def test_no_access_code_set_means_no_check(monkeypatch):
     assert TestClient(server.app).get("/api/runs").status_code == 200
 
 
-def test_logs_page_has_a_split_view_with_one_panel_per_device():
-    html = TestClient(server.app).get("/logs").text
-    js = TestClient(server.app).get("/static/logs.js").text
-    assert 'id="split"' in html and "each device in its own panel" in js and "pollSplit" in js
+def test_monitor_page_has_a_split_view_with_one_panel_per_device():
+    c = TestClient(server.app)
+    monkey = pytest.MonkeyPatch(); monkey.setattr(server, "MOCK", True)
+    try:
+        html = c.get("/monitor").text
+    finally:
+        monkey.undo()
+    js = c.get("/static/logs.js").text
+    assert 'id="split"' in html and 'id="topnav"' in html and "each device in its own panel" in js and "pollSplit" in js

@@ -1,3 +1,4 @@
+(() => {
 // Monitoring page: the service as a whole. Read only; it never touches a running test. Polls /api/monitor every few seconds.
 const $ = (id) => document.getElementById(id);
 const esc = (x) => String(x ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -11,6 +12,18 @@ const REASONS = {
 };
 const POLL_MS = 3000, LOG_MS = 6000;
 let last = null, lastOk = 0;
+const page = { live: 1, fail: 1, recent: 1 };
+const SIZE = { live: 8, fail: 10, recent: 14 };
+// one page of a list, plus Previous / Next under it
+function paged(key, items, el) {
+  const pages = Math.max(1, Math.ceil(items.length / SIZE[key]));
+  page[key] = Math.min(Math.max(1, page[key]), pages);
+  const from = (page[key] - 1) * SIZE[key];
+  el.innerHTML = items.length > SIZE[key]
+    ? `<button data-pg="${key}" data-d="-1" ${page[key] <= 1 ? "disabled" : ""}>Previous</button><span class="pg">Page ${page[key]} of ${pages}</span>` +
+      `<button data-pg="${key}" data-d="1" ${page[key] >= pages ? "disabled" : ""}>Next</button>` : "";
+  return items.slice(from, from + SIZE[key]);
+}
 
 const mmss = (s) => (s == null ? "-" : String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(Math.floor(s % 60)).padStart(2, "0"));
 const clock = (epoch) => (epoch ? new Date(epoch * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "-");
@@ -68,7 +81,7 @@ function render(d) {
 
   // live tests
   const liveBody = $("live").tBodies[0];
-  liveBody.innerHTML = d.live.map((r) => {
+  liveBody.innerHTML = paged("live", d.live, $("pg-live")).map((r) => {
     const probs = [];
     if (r.errors) probs.push(tag(r.errors + " error" + (r.errors > 1 ? "s" : ""), "bad"));
     if (r.llm_error) probs.push(tag("LLM: " + r.llm_error.slice(0, 40), "bad"));
@@ -90,23 +103,31 @@ function render(d) {
       at: r.ended_at || r.started_at || 0, level: "TEST", kind: r.status === "completed" ? "warn" : "bad",
       msg: `test ${r.id}${r.user ? " (" + r.user + ")" : ""}: ${r.problems.join(", ")}`, src: "recent tests" })),
   ].sort((a, b) => b.at - a.at);
-  $("failures").innerHTML = items.map((f) =>
+  $("failures").innerHTML = paged("fail", items, $("pg-fail")).map((f) =>
     `<div class="f"><span class="t">${clock(f.at)}</span>${tag(f.level, f.kind)}<span class="msg">${esc(f.msg)}</span><span class="src">${esc(f.src)}</span></div>`).join("");
   $("fail-empty").hidden = items.length > 0;
+  const nf = $("nav-fail");
+  nf.hidden = !items.length;
+  nf.textContent = items.length;
   $("fail-count").textContent = items.length ? items.length + " item" + (items.length > 1 ? "s" : "") : "";
 
   // recent tests
   const only = $("only-problems").checked;
   const rows = d.recent.filter((r) => !only || r.failed);
-  $("recent").tBodies[0].innerHTML = rows.map((r) => {
+  $("recent").tBodies[0].innerHTML = paged("recent", rows, $("pg-recent")).map((r) => {
     const kind = r.status === "completed" ? "ok" : r.status === "unknown" ? "" : "bad";
     const p95v = r.latency.p95, slow = p95v != null && p95v > r.latency.slow_over_s;
     return `<tr class="${r.failed ? "bad" : ""}"><td class="mono">${esc(day(r.started_at))} ${esc(clock(r.started_at))}</td><td class="mono">${esc(r.id)}</td>` +
       `<td>${esc(r.user) || "-"}</td><td>${esc(r.device) || "-"}</td><td>${tag(r.status === "unknown" ? "older run" : r.status, kind)}</td>` +
       `<td>${esc(REASONS[r.end_reason] || r.end_reason || "-")}</td><td class="mono">${mmss(r.duration_s)}</td>` +
-      `<td class="mono">${slow ? tag(sec(p95v), "warn") : sec(p95v)}</td><td>${r.problems.map((p) => tag(p, "bad")).join("") || tag("none", "ok")}</td></tr>`;
+      `<td class="mono">${slow ? tag(sec(p95v), "warn") : sec(p95v)}</td><td>${r.problems.map((p) => tag(p, "bad")).join("") || tag("none", "ok")}</td><td><button class="openlog" data-id="${esc(r.id)}">Open log</button></td></tr>`;
   }).join("");
   $("recent-empty").hidden = rows.length > 0;
+  // chart: p95 reply delay of each recent test (oldest left)
+  const pts = d.recent.filter((r) => r.latency.p95 != null).slice(0, 40).reverse();
+  const top = Math.max(1, ...pts.map((r) => r.latency.p95));
+  $("chart").innerHTML = pts.map((r) => `<div class="bar1${r.latency.p95 > r.latency.slow_over_s ? " slow" : ""}" style="height:${Math.max(4, (r.latency.p95 / top) * 100)}%" title="${esc(r.id)}: ${r.latency.p95.toFixed(2)} s"></div>`).join("");
+  $("chart-empty").hidden = pts.length > 0;
   $("recent-empty").textContent = only && d.recent.length ? "No test with problems in the recent list." : "No saved test yet.";
 }
 
@@ -127,27 +148,35 @@ async function poll() {
   }
 }
 
-// ---- server log tail -----------------------------------------------------------------------------
-async function tail() {
-  const view = $("sl-view");
-  try {
-    const q = encodeURIComponent($("sl-filter").value);
-    const res = await fetch(`/api/serverlog/${$("sl-name").value}?lines=300&q=${q}`, { cache: "no-store" });
-    if (!res.ok) { $("sl-info").textContent = "unavailable (HTTP " + res.status + ")"; return; }
-    const d = await res.json();
-    $("sl-info").textContent = d.exists ? d.lines.length + " lines" : "no such file yet";
-    const stick = $("sl-follow").checked;
-    view.textContent = d.exists ? d.lines.join("\n") : d.path + " does not exist";
-    if (stick) view.scrollTop = view.scrollHeight;
-  } catch (e) {
-    $("sl-info").textContent = "unavailable";
-  }
+// ---- navbar: one view at a time (the key numbers stay on top of every view) --------------------------------------
+const VIEWS = ["overview", "runlog", "tests", "failures", "serverlog"];
+function showView() {
+  const h = (location.hash || "#overview").slice(1);
+  const v = VIEWS.includes(h) ? h : "overview";
+  document.querySelectorAll("[data-view]").forEach((el) => { el.hidden = !(el.dataset.view === "all" || el.dataset.view.split(" ").includes(v)); });
+  document.body.dataset.v = v;
+  document.querySelectorAll("#topnav a").forEach((a) => a.classList.toggle("on", a.dataset.tab === v));
 }
+window.addEventListener("hashchange", showView);
+showView();
+
+document.addEventListener("click", (ev) => {
+  const b = ev.target.closest("button[data-pg]");
+  if (b && last) { page[b.dataset.pg] += Number(b.dataset.d); render(last); }
+});
+
+// "Open log" in the Tests view: show that test in the Run log view
+$("recent").addEventListener("click", async (ev) => {
+  const b = ev.target.closest(".openlog");
+  if (!b) return;
+  const list = await (await fetch("/api/runs")).json();
+  const hit = list.find((r) => r.name.endsWith("_" + b.dataset.id));
+  if (!hit) { b.textContent = "no log saved"; b.disabled = true; return; }
+  location.hash = "#runlog";
+  window.openRun(hit.name);
+});
 
 $("only-problems").addEventListener("change", () => last && render(last));
-$("sl-name").addEventListener("change", tail);
-$("sl-filter").addEventListener("input", tail);
 poll();
-tail();
 setInterval(poll, POLL_MS);
-setInterval(tail, LOG_MS);
+})();

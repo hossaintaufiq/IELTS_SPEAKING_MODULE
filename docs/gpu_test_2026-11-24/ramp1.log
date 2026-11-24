@@ -1,0 +1,62 @@
+##### N=3
+starting 3 session(s) against ws://127.0.0.1:8080, 1.0s apart, 6 answers each
+
+=== 3 session(s): 3 ran, 0 refused, 0 failed   (97.3 s)
+reply delay (candidate)  n=18  p50=3.57  p95=5.87  max=5.87
+reply delay (server)     n=18  p50=2.82  p95=5.22  max=5.22
+first greeting           p50=0.33  p95=0.33   answers without a reply: 0/18
+how tests ended: {'ended_by_candidate': 3}
+GPU  busiest 100% (average 10.3%), memory 17862 of 24576 MB
+baseline p95 4.98 s
+RESULT: PASS
+report written to /root/work/n3.json
+##### N=6
+starting 6 session(s) against ws://127.0.0.1:8080, 1.0s apart, 6 answers each
+
+=== 6 session(s): 6 ran, 0 refused, 0 failed   (103.8 s)
+reply delay (candidate)  n=36  p50=3.27  p95=5.2  max=5.4
+reply delay (server)     n=36  p50=2.8  p95=4.7  max=5.32
+first greeting           p50=0.33  p95=0.35   answers without a reply: 0/36
+how tests ended: {'ended_by_candidate': 6}
+GPU  busiest 100% (average 24.6%), memory 17948 of 24576 MB
+baseline p95 4.98 s
+RESULT: PASS
+report written to /root/work/n6.json
+##### N=9
+starting 9 session(s) against ws://127.0.0.1:8080, 1.0s apart, 6 answers each
+
+=== 9 session(s): 9 ran, 0 refused, 0 failed   (109.4 s)
+reply delay (candidate)  n=54  p50=3.73  p95=5.94  max=6.1
+reply delay (server)     n=55  p50=2.91  p95=4.77  max=5.42
+first greeting           p50=0.34  p95=0.44   answers without a reply: 0/54
+how tests ended: {'ended_by_candidate': 9}
+GPU  busiest 100% (average 26.8%), memory 18964 of 24576 MB
+baseline p95 4.98 s
+RESULT: PASS
+report written to /root/work/n9.json
+##### N=12
+starting 12 session(s) against ws://127.0.0.1:8080, 1.0s apart, 6 answers each
+
+=== 12 session(s): 12 ran, 0 refused, 0 failed   (121.3 s)
+reply delay (candidate)  n=72  p50=5.15  p95=6.49  max=6.59
+reply delay (server)     n=73  p50=2.86  p95=4.78  max=5.38
+first greeting           p50=0.35  p95=0.37   answers without a reply: 0/72
+how tests ended: {'ended_by_candidate': 12}
+GPU  busiest 100% (average 36.0%), memory 19092 of 24576 MB
+baseline p95 4.98 s
+RESULT: FAIL
+  - p95 reply delay 6.49 s is more than 1.0 s above the baseline 4.98 s
+report written to /root/work/n12.json
+##### N=16
+starting 16 session(s) against ws://127.0.0.1:8080, 1.0s apart, 6 answers each
+
+=== 16 session(s): 16 ran, 0 refused, 0 failed   (122.7 s)
+reply delay (candidate)  n=96  p50=4.42  p95=6.98  max=7.22
+reply delay (server)     n=97  p50=3.02  p95=4.93  max=5.43
+first greeting           p50=0.34  p95=0.48   answers without a reply: 0/96
+how tests ended: {'ended_by_candidate': 16}
+GPU  busiest 100% (average 40.3%), memory 20094 of 24576 MB
+baseline p95 4.98 s
+RESULT: FAIL
+  - p95 reply delay 6.98 s is more than 1.0 s above the baseline 4.98 s
+report written to /root/work/n16.json

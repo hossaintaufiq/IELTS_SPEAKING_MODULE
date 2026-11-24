@@ -28,6 +28,6 @@ fi
 HOST="${1:?host}"; PORT="${2:?ssh port}"
 list_files \
   | tar --null -T - -czf - \
-  | ssh -p "$PORT" -i ~/.ssh/vast_ed25519 -o StrictHostKeyChecking=accept-new "root@$HOST" \
+  | ssh -p "$PORT" -i "${SSH_KEY:-$HOME/.ssh/vast_ed25519}" -o StrictHostKeyChecking=accept-new "root@$HOST" \
       "mkdir -p /root/work/speaking-service && tar -xzf - -C /root/work/speaking-service"
 echo "uploaded. Next: ssh in and run deploy/vast/setup_instance.sh"

@@ -1,0 +1,138 @@
+{
+  "config": {
+    "base": "ws://127.0.0.1:8080",
+    "sessions": 3,
+    "turns": 6,
+    "ramp_s": 1.0,
+    "part2": false,
+    "reply_timeout": 30.0,
+    "max_s": 900.0,
+    "audio": "synth",
+    "wav": [],
+    "model": "models/cache/kokoro-v1.0.onnx",
+    "voices": "models/cache/voices-v1.0.bin",
+    "baseline": "/root/work/base.json",
+    "allow_extra_s": 1.0,
+    "max_p95": null,
+    "gpu": true,
+    "report": "/root/work/n3.json"
+  },
+  "wall_s": 97.3,
+  "summary": {
+    "sessions": 3,
+    "ran": 3,
+    "refused": 0,
+    "failed": [],
+    "reply_delay": {
+      "n": 18,
+      "p50": 3.57,
+      "p95": 5.87,
+      "max": 5.87
+    },
+    "server_delay": {
+      "n": 18,
+      "p50": 2.82,
+      "p95": 5.22,
+      "max": 5.22
+    },
+    "first_audio": {
+      "n": 3,
+      "p50": 0.33,
+      "p95": 0.33,
+      "max": 0.33
+    },
+    "no_reply": 0,
+    "turns": 18,
+    "errors": [],
+    "ended": {
+      "ended_by_candidate": 3
+    }
+  },
+  "gpu": {
+    "available": true,
+    "util_max_pct": 100.0,
+    "util_avg_pct": 10.3,
+    "mem_max_mb": 17862.0,
+    "mem_total_mb": 24576.0
+  },
+  "baseline_p95": 4.98,
+  "passed": true,
+  "why_not": [],
+  "sessions": [
+    {
+      "n": 0,
+      "delays": [
+        2.75,
+        2.8,
+        2.31,
+        3.05,
+        3.58,
+        3.64
+      ],
+      "server_delays": [
+        2.0,
+        2.09,
+        5.22,
+        2.28,
+        2.88,
+        2.89
+      ],
+      "no_reply": 0,
+      "errors": [],
+      "turns_done": 6,
+      "first_audio_s": 0.33,
+      "ended": "ended_by_candidate",
+      "duration_s": 87.6
+    },
+    {
+      "n": 1,
+      "delays": [
+        2.6,
+        5.22,
+        4.93,
+        3.54,
+        3.63,
+        3.57
+      ],
+      "server_delays": [
+        1.9,
+        1.65,
+        4.26,
+        2.82,
+        2.82,
+        2.82
+      ],
+      "no_reply": 0,
+      "errors": [],
+      "turns_done": 6,
+      "first_audio_s": 0.33,
+      "ended": "ended_by_candidate",
+      "duration_s": 96.3
+    },
+    {
+      "n": 2,
+      "delays": [
+        2.66,
+        2.82,
+        4.98,
+        5.87,
+        3.63,
+        3.62
+      ],
+      "server_delays": [
+        1.94,
+        2.06,
+        4.32,
+        2.3,
+        2.9,
+        2.87
+      ],
+      "no_reply": 0,
+      "errors": [],
+      "turns_done": 6,
+      "first_audio_s": 0.33,
+      "ended": "ended_by_candidate",
+      "duration_s": 88.5
+    }
+  ]
+}
