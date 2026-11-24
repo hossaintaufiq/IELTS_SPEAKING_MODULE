@@ -49,7 +49,11 @@ def preload() -> None:
 
     device = os.getenv("WHISPER_DEVICE", "cuda")
     compute = os.getenv("WHISPER_COMPUTE", "float16")
-    for name in {os.getenv("WHISPER_MODEL", "large-v3-turbo"), os.getenv("CAPTION_MODEL", "small.en")}:
+    from worker import caption_budget
+    names = {os.getenv("WHISPER_MODEL", "large-v3-turbo")}
+    if caption_budget.enabled():                       # CAPTIONS=off: the small caption model is never needed, so it is not loaded
+        names.add(os.getenv("CAPTION_MODEL", "small.en"))
+    for name in sorted(names):
         WhisperModel(name, device=device, compute_type=compute)
         log.info("preloaded whisper %s", name)
     # Same arguments the Pipecat service passes, so it hits the cache.

@@ -54,6 +54,12 @@ function render(d) {
   p95.textContent = sec(lat.p95);
   p95.className = "v" + (lat.p95 != null && lat.p95 > lat.slow_over_s ? " bad" : "");
   $("t-slow").textContent = lat.n ? `${lat.slow} slower than ${lat.slow_over_s} s, max ${sec(lat.max)}` : "";
+  const cp = d.captions || {};                       // live captions: off, or on with how many updates were skipped because the GPU was busy
+  const cs = $("t-cap-state");
+  cs.textContent = cp.enabled === undefined ? "-" : cp.enabled ? "on" : "off";
+  cs.className = "v" + (cp.skipped ? " warn" : "");
+  $("t-cap-stats").textContent = !cp.enabled ? (cp.enabled === undefined ? "" : "no caption decoding")
+    : `${cp.decoded} decoded, ${cp.skipped} skipped (busy); last ${cp.window_s} s, every ${cp.interval_s} s, max ${cp.max_concurrent} at once`;
   const c = d.counts, total = c.completed + c.aborted + c.failed + c.unknown;
   $("t-total").textContent = total;
   $("t-counts").textContent = `${c.completed} completed, ${c.aborted} aborted, ${c.failed} failed` + (c.unknown ? `, ${c.unknown} older` : "");

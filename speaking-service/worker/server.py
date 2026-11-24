@@ -21,6 +21,7 @@ from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconn
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+from worker import caption_budget
 from worker import monitor as mon
 from worker import service_api as svc
 from worker import session as sess
@@ -376,7 +377,7 @@ def monitor_data(request: Request):
     if verdict != "ok":
         return _monitor_denied(verdict)
     return mon.snapshot(sessions=SESSIONS, runs_dir=sess.RUNS, max_tests=MAX_SESSIONS, ready=is_ready(), models_error=READY["error"],
-                        mock=MOCK, version=svc.API_VERSION)
+                        mock=MOCK, version=svc.API_VERSION, captions=caption_budget.BUDGET.stats())
 
 
 async def run_real(websocket: WebSocket, session: ExamSession):
