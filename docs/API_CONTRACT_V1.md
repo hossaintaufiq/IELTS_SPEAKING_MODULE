@@ -98,6 +98,13 @@ Browser-direct connections with short-lived tokens. Leases and GPU rental contro
 
 ## 7. Open points for the ieltsup team
 1. Is a server-to-server socket (ieltsup relays audio to the browser, as it does today) acceptable, or does it want the browser to connect directly?
+Ans: Ieltsup will connect to this service directly from browser, but with a gate of basic encryption.
+
 2. Do they want the results fetched, or pushed by webhook?
+Ans: Webhook first. but if webhook missed or we didnt get any hit, we will POST request after a basic timeout to fetch the result. If we got by webhook, we wont hit that POST. 
+   
 3. How long must audio and transcripts be kept? (retention is an open decision in `DECISIONS.md`)
+Ans: You dont have to keep that, thats your choice, but IELTSUP will store with his own policy out of your service.
+   
 4. Are the `phase`, `cue_card` and `done.reason` values enough to drive their screen, or do they need extra events (for example `begin_part`, `end_test`)?
+Ans: No need
