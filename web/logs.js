@@ -1,3 +1,4 @@
+(() => {
 // Logs window: the run log (live or a saved run) and the server logs, side by side. Reads only; it never touches the test.
 const $ = (id) => document.getElementById(id);
 const PHASES = {
@@ -18,19 +19,20 @@ const isLive = () => run.source === "live" || run.source.startsWith("live:");
 // ---- run log ---------------------------------------------------------------------------------
 function row(e) {
   const dev = e.dev ? `<span class="badge you" title="device">${esc(e.dev)}</span>` : "";    // only in the "all devices" view
-  const t = `<span class="t">${fmt(e.t || 0)}</span>${dev}`;
+  const t = `<span class="t">${fmt(e.t || 0)}</span>`;
   if (e.type === "transcript" && e.role === "examiner") {
     const [label, cls] = ORIGIN[e.origin || "script"] || [e.origin, "sc"];
-    return `<div class="rl">${t}<span class="badge ${cls}">${esc(label)}</span><span>${esc(e.text)}` +
-           `${e.why ? `<span class="why">why: ${esc(e.why)}</span>` : ""}</span></div>`;
+    return `<div class="msg ex"><div class="meta">${t}<b>Examiner</b><span class="badge ${cls}">${esc(label)}</span>${dev}</div>` +
+           `<div class="bub">${esc(e.text)}${e.why ? `<span class="why">why: ${esc(e.why)}</span>` : ""}</div></div>`;
   }
-  if (e.type === "transcript") return `<div class="rl">${t}<span class="badge you">candidate</span><span>${esc(e.text)}</span></div>`;
+  if (e.type === "transcript") return `<div class="msg cand"><div class="meta">${t}<b>Candidate</b>${dev}</div><div class="bub">${esc(e.text)}</div></div>`;
   if (e.type === "ignored") return $("rl-noise").checked
-    ? `<div class="rl noise">${t}<span class="badge sc">ignored ${esc(e.why || "")}</span><span>${esc(e.text)}</span></div>` : "";
-  if (e.type === "latency") return $("rl-lat").checked ? `<div class="rl lat">${t}<span>reply delay</span><span>${e.seconds.toFixed(2)} s</span></div>` : "";
-  if (e.type === "note") return `<div class="rl phase">${t}<span class="badge fb">control</span><span>${esc(e.text)}</span></div>`;
-  if (e.type === "phase") return `<div class="rl phase">${t}<span>phase</span><span>${esc(PHASES[e.phase] || e.phase)}</span></div>`;
-  if (e.type === "done") return `<div class="rl phase">${t}<span>done</span><span>test finished</span></div>`;
+    ? `<div class="msg note-row"><span class="t">${fmt(e.t || 0)}</span><span class="badge sc">ignored ${esc(e.why || "")}</span><span class="muted">${esc(e.text)}</span></div>` : "";
+  if (e.type === "latency") return $("rl-lat").checked
+    ? `<div class="msg note-row"><span class="t">${fmt(e.t || 0)}</span><span class="chip${e.seconds > 6 ? " slow" : ""}">reply delay ${e.seconds.toFixed(2)} s</span></div>` : "";
+  if (e.type === "note") return `<div class="msg note-row"><span class="t">${fmt(e.t || 0)}</span><span class="badge fb">control</span><span>${esc(e.text)}</span></div>`;
+  if (e.type === "phase") return `<div class="divider"><span>${esc(PHASES[e.phase] || e.phase)}</span><i>${fmt(e.t || 0)}</i></div>`;
+  if (e.type === "done") return `<div class="divider end"><span>Test finished</span><i>${fmt(e.t || 0)}</i></div>`;
   return "";
 }
 
@@ -45,9 +47,9 @@ function summaryHtml(events) {
   const parts = Object.entries(c).map(([k, n]) => `${esc(k)} <b>${n}</b>`).join(" &middot; ");
   const avg = lat.length ? (lat.reduce((a, b) => a + b, 0) / lat.length).toFixed(2) : "-";
   const ai = (c["LLM wrote"] || 0) + (c["LLM reworded"] || 0) + (c["LLM picked bank"] || 0);
-  return `Examiner lines: ${parts || "none yet"}<br>` +
-    `LLM involved in <b>${ai}</b> questions &middot; ignored noise <b>${noise}</b> &middot; control events <b>${notes}</b> &middot; ` +
-    `reply delay avg <b>${avg}</b> s over ${lat.length} turns`;
+  return `<span class="stat"><b>${ai}</b> LLM questions</span><span class="stat"><b>${noise}</b> ignored noise</span>` +
+    `<span class="stat"><b>${notes}</b> control events</span><span class="stat"><b>${avg}</b> s avg reply (${lat.length} turns)</span>` +
+    `<span class="stat src">${parts || "no examiner lines yet"}</span>`;
 }
 
 function summary(events) { $("runlog-sum").innerHTML = summaryHtml(events); }
@@ -69,14 +71,10 @@ function cardFor(id) {
   if (cards[id]) return cards[id];
   const el = document.createElement("div");
   el.className = "card";
-  el.innerHTML = '<div class="card-head"><b class="dev"></b><span class="ph muted"></span><button class="srv" title="Show this device in the server log">server log</button></div>' +
+  el.innerHTML = '<div class="card-head"><b class="dev"></b><span class="ph muted"></span></div>' +
                  '<div class="sum"></div><div class="rows"></div>';
   $("split").appendChild(el);
   cards[id] = { el, events: [], device: "", phase: "", active: true, gone: false };
-  el.querySelector(".srv").onclick = () => {
-    $("sl-filter").value = "[" + (cards[id].device || id.slice(0, 4)) + "]";
-    loadServerLog();
-  };
   return cards[id];
 }
 
@@ -88,7 +86,7 @@ function renderSplit() {
     const c = cards[id], box = c.el.querySelector(".rows");
     const atEnd = box.scrollTop + box.clientHeight >= box.scrollHeight - 40;
     c.el.querySelector(".dev").textContent = c.device || "device " + id.slice(0, 4);
-    c.el.querySelector(".ph").textContent = c.gone ? "disconnected (the run is saved in the list)" : (PHASES[c.phase] || c.phase || "");
+    c.el.querySelector(".ph").textContent = c.gone ? "disconnected (saved in the Tests list)" : (PHASES[c.phase] || c.phase || "");
     c.el.classList.toggle("gone", c.gone);
     c.el.querySelector(".sum").innerHTML = summaryHtml(c.events);
     box.innerHTML = c.events.map(row).join("");
@@ -186,3 +184,7 @@ loadServerLog();
 setInterval(pollLive, 1200);
 setInterval(loadList, 6000);
 setInterval(loadServerLog, 2500);
+
+// the Tests view opens a saved run here
+window.openRun = (name) => { run.userPicked = true; loadList().then(() => { $("runs").value = name; pick(); }); };
+})();
