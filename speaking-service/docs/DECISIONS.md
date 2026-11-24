@@ -23,6 +23,12 @@ Intro, Part 1 and the Part 2 prompt are scripted with pre-rendered audio. The LL
 ## D6: Results are estimates (2026-11-21)
 Output is labelled as estimated practice feedback, never an official IELTS band.
 
+## D7: One complete exam service, not three parts (2026-11-24)
+This is an ieltsup product. It is packaged as one service that runs the whole exam (our rules engine, STT, LLM, TTS), used by the ieltsup
+server the way it uses a speech provider today: one WebSocket per test, one API key. It is not split into separate STT, LLM and TTS
+services, because the rules engine would then have to be rebuilt inside ieltsup. Internals stay modular (vLLM is already a separate process).
+Contract: `API_CONTRACT_V1.md`. Leases are dropped for v1 (fixed capacity). Pricing and billing are out of scope for now. D1 (no external AI APIs) still holds.
+
 ## Open decisions
 
 | Question | Current assumption | Owner |
