@@ -21,12 +21,14 @@ from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconn
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+from worker import monitor as mon
 from worker import service_api as svc
 from worker import session as sess
 from worker.session import ExamSession
 
 log = logging.getLogger("speaking.server")
 READY = {"done": False, "error": ""}      # the models have been loaded (the first minutes after a start); MOCK has none to load
+mon.install_failure_log()                 # warnings and errors of the service, kept in memory for the monitoring page
 WEB = Path(__file__).resolve().parent.parent / "web"
 MOCK = os.getenv("MOCK") == "1"
 
@@ -65,8 +67,10 @@ class AccessCodeMiddleware:
 
     async def __call__(self, scope, receive, send):
         path = scope.get("path", "")
-        # /v1 is the service API: the caller is a server, not a browser, and proves itself with its own API key (worker/service_api.py)
-        if scope["type"] not in ("http", "websocket") or not ACCESS["code"] or path == "/health" or path.startswith("/v1/"):
+        # /v1 is the service API: the caller is a server, not a browser, and proves itself with its own API key (worker/service_api.py).
+        # The monitoring page has its own key too (MONITOR_KEY).
+        if (scope["type"] not in ("http", "websocket") or not ACCESS["code"] or path in ("/health", "/monitor", "/api/monitor")
+                or path.startswith("/v1/")):
             return await self.inner(scope, receive, send)
         ok, from_link = _code_from(scope)
         if not ok:
@@ -322,6 +326,57 @@ def v1_audio(test_id: str, request: Request):
     if wav is None or not wav.exists():
         return svc.error(404, "not_found", "No recording for this test")
     return FileResponse(wav, media_type="audio/wav")
+
+
+# ---- monitoring page: the service as a whole (worker/monitor.py) ------------------------------------------------------
+MONITOR_COOKIE = "monitor"
+
+
+def _monitor_verdict(request: Request, *, from_link_ok: bool = False) -> tuple[str, bool]:
+    """('ok' | 'no_key' | 'bad', came_from_the_link). Key: `Authorization: Bearer`, the cookie, or (page only) ?key= which sets the cookie.
+    With no MONITOR_KEY the page stays closed, except in mock mode (no real tests, nothing to protect)."""
+    import hmac
+
+    want = os.getenv("MONITOR_KEY", "")
+    if not want:
+        return ("ok", False) if MOCK else ("no_key", False)
+    scheme, _, bearer = (request.headers.get("authorization") or "").partition(" ")
+    offered = [(bearer.strip(), False)] if scheme.lower() == "bearer" else []
+    offered.append((request.cookies.get(MONITOR_COOKIE, ""), False))
+    if from_link_ok:
+        offered.append((request.query_params.get("key", ""), True))
+    for value, link in offered:
+        if value and hmac.compare_digest(value.encode(), want.encode()):
+            return "ok", link
+    return "bad", False
+
+
+def _monitor_denied(verdict: str):
+    from fastapi.responses import PlainTextResponse
+
+    if verdict == "no_key":
+        return PlainTextResponse("The monitoring page is closed: set MONITOR_KEY on the server.", status_code=503)
+    return PlainTextResponse("Monitor key needed. Open /monitor?key=<your key> once.", status_code=401, headers={"WWW-Authenticate": "Bearer"})
+
+
+@app.get("/monitor")
+def monitor_page(request: Request):
+    verdict, from_link = _monitor_verdict(request, from_link_ok=True)
+    if verdict != "ok":
+        return _monitor_denied(verdict)
+    response = FileResponse(WEB / "monitor.html")
+    if from_link:
+        response.set_cookie(MONITOR_COOKIE, os.getenv("MONITOR_KEY", ""), httponly=True, samesite="lax", max_age=86400, path="/")
+    return response
+
+
+@app.get("/api/monitor")
+def monitor_data(request: Request):
+    verdict, _ = _monitor_verdict(request)
+    if verdict != "ok":
+        return _monitor_denied(verdict)
+    return mon.snapshot(sessions=SESSIONS, runs_dir=sess.RUNS, max_tests=MAX_SESSIONS, ready=is_ready(), models_error=READY["error"],
+                        mock=MOCK, version=svc.API_VERSION)
 
 
 async def run_real(websocket: WebSocket, session: ExamSession):
