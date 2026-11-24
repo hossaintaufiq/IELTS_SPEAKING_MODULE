@@ -20,6 +20,8 @@ from pipecat.frames.frames import (
 )
 from pipecat.processors.frame_processor import FrameDirection, FrameProcessor
 
+from worker import caption_budget as caps
+
 
 class UserTextTap(FrameProcessor):
     """Sits after STT. Reports what the candidate said; in Part 2 it swallows the text (held)."""
@@ -68,15 +70,20 @@ class LiveCaptionTap(FrameProcessor):
     user aggregator) and every `interval` seconds transcribes the audio so far with a small, fast
     Whisper, sending {"type": "interim", "text": ...}. The accurate final transcript still comes from
     the main STT; the page replaces the caption with it.
+
+    Captions are limited so that they cannot starve the real answers (see worker/caption_budget.py): only the last few seconds are
+    decoded, updates are spaced out, only a few decodes run at once in the whole server (a caption that finds them busy is skipped),
+    and CAPTIONS=off switches decoding off entirely. The speaking/stopped callbacks to the session work in every case.
     """
 
     PRE_ROLL = 16000 * 2 * 4 // 10     # 0.4 s of 16 kHz PCM16, so the first word is not cut off
-    MAX_BYTES = 16000 * 2 * 15         # never transcribe more than the last 15 s
 
     def __init__(self, send, model_name: str = "small.en", device: str = "cuda",
-                 compute_type: str = "float16", interval: float = 0.9, on_start=None, on_stop=None):
+                 compute_type: str = "float16", interval: float | None = None, on_start=None, on_stop=None):
         super().__init__()
-        self._send, self._interval = send, interval
+        self._enabled = caps.enabled()
+        self._send, self._interval = send, caps.interval_s() if interval is None else interval
+        self._max_bytes = int(caps.window_s() * 16000 * 2)       # never transcribe more than the last few seconds
         self._on_start, self._on_stop = on_start, on_stop     # tell the session when the candidate talks
         self._cfg = (model_name, device, compute_type)
         self._model = None
@@ -110,11 +117,15 @@ class LiveCaptionTap(FrameProcessor):
             await asyncio.sleep(self._interval)
             if not self._active or len(self._buf) < 16000 * 2 // 2:    # need at least 0.5 s
                 continue
-            pcm = bytes(self._buf[-self.MAX_BYTES:])
+            if not caps.BUDGET.try_acquire():      # the GPU is busy with other captions: skip this update, the next one covers it
+                continue
+            pcm = bytes(self._buf[-self._max_bytes:])
             try:
                 text = await loop.run_in_executor(None, self._transcribe, pcm)
             except Exception:   # a failed caption must never break the exam
                 continue
+            finally:
+                caps.BUDGET.release()
             if self._active and text and text != last:
                 last = text
                 await self._send({"type": "interim", "text": text})
@@ -122,7 +133,7 @@ class LiveCaptionTap(FrameProcessor):
     def _begin(self):
         import asyncio
 
-        if self._active:
+        if self._active or not self._enabled:
             return
         self._active = True
         self._buf = bytearray(self._pre)
@@ -141,7 +152,7 @@ class LiveCaptionTap(FrameProcessor):
             self._end()
             if self._on_stop:
                 self._on_stop()
-        elif isinstance(frame, InputAudioRawFrame):
+        elif isinstance(frame, InputAudioRawFrame) and self._enabled:
             if self._active:
                 self._buf.extend(frame.audio)
             else:

@@ -136,7 +136,8 @@ def recent_runs(runs_dir: Path, limit: int = RECENT_RUNS) -> tuple[list[dict], l
     return out, delays
 
 
-def snapshot(*, sessions: dict, runs_dir: Path, max_tests: int, ready: bool, models_error: str, mock: bool, version: str) -> dict:
+def snapshot(*, sessions: dict, runs_dir: Path, max_tests: int, ready: bool, models_error: str, mock: bool, version: str,
+             captions: dict | None = None) -> dict:
     runs, delays = recent_runs(runs_dir)
     counts = {"completed": 0, "aborted": 0, "failed": 0, "unknown": 0}
     for r in runs:
@@ -151,4 +152,5 @@ def snapshot(*, sessions: dict, runs_dir: Path, max_tests: int, ready: bool, mod
         "counts": counts,
         "recent": runs,
         "failures": recent_failures(),
+        "captions": captions or {},       # live-caption limits and how many updates were decoded or skipped (worker/caption_budget.py)
     }
