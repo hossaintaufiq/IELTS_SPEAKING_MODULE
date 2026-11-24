@@ -116,6 +116,9 @@ class ExamSession:
         self.hour = time.localtime().tm_hour if hour is None else hour
         self.test_id = str(rng.random())[2:10]
         self.device = ""              # a label for the device taking this test (several can run at once)
+        self.external_user_id = ""    # the caller's own id for the candidate (service API); opaque to us
+        self.end_reason = ""          # why the test ended: completed, ended_by_candidate, off_topic, no_response, skipped_to_end, aborted
+        self.status = "created"       # created -> running -> completed | aborted
         self.phase = INTRO
         self.muted = True             # mic ignored before start and during Part 2 preparation
         self.bot_speaking = False     # examiner audio is playing: ignore the mic (no talking over the examiner)
@@ -268,12 +271,13 @@ class ExamSession:
             if self.started and self.phase != DONE:
                 self._drop_pending()
                 async with self._lock:
-                    await self.close()              # the examiner thanks the candidate and ends the test, as in the real exam
+                    await self.close(reason="ended_by_candidate")   # the examiner thanks the candidate and ends the test, as in the real exam
             else:
+                self.end_reason = self.end_reason or "ended_by_candidate"
                 await self.finish()
 
     async def start(self) -> None:
-        self.started, self.muted = True, False
+        self.started, self.muted, self.status = True, False, "running"
         await self.set_phase(INTRO)
         self.last_question = "Can you tell me your full name, please?"      # re-asked after an off-test question
         await self.say(SCRIPT["greeting"](rules.EXAMINER, rules.time_of_day(self.hour)))
@@ -437,7 +441,7 @@ class ExamSession:
             return
         self.confirm_end = False
         if choice == "finish":
-            await self.close(SCRIPT["finishDone"])
+            await self.close(SCRIPT["finishDone"], reason="ended_by_candidate")
         elif self.phase == PART2_SPEAK:             # continue (or still unclear): back to the talk, the clock restarts
             self.long_turn_last, self.p2_nudges, self._p2_time_said = self.clock(), 0, False
             await self.say(SCRIPT["finishContinueTalk"])
@@ -451,7 +455,7 @@ class ExamSession:
         n, limit = self.off_topic_count, self.off_topic_limit
         await self.emit({"type": "note", "text": f"irrelevant question {n} of {limit}" + (": ending the test" if n >= limit else "")})
         if n >= limit:
-            await self.close(SCRIPT["offTopicEnd"])
+            await self.close(SCRIPT["offTopicEnd"], reason="off_topic")
         elif n == limit - 1:
             await self.say(f"{SCRIPT['offTopic']} {SCRIPT['offTopicWarn']} {self.last_question}".strip())
         else:
@@ -746,9 +750,11 @@ class ExamSession:
         self.last_question = rules.question_part(say)
         await self.say(self._lead(answer) + say, origin=nq_origin(nq) if nq.say else "script:fallback", why=self._why(nq))
 
-    async def close(self, line: str = "") -> None:
+    async def close(self, line: str = "", reason: str = "completed") -> None:
         """Closing words ("Thank you. That is the end of the speaking test."), then the test is over.
-        The page treats 'done' as the end, so it is sent only after the examiner has finished speaking."""
+        The page treats 'done' as the end, so it is sent only after the examiner has finished speaking.
+        `reason` is sent with 'done' (the first reason given wins)."""
+        self.end_reason = self.end_reason or reason
         self.muted, self.confirm_end = True, False
         await self.say(line or SCRIPT["closing"])
         await self._wait_for_speech_to_end()
@@ -789,7 +795,7 @@ class ExamSession:
         elif p == PART2_FOLLOWUP:
             await self.start_part3()
         elif p == PART3:
-            await self.close()
+            await self.close(reason="skipped_to_end")
 
     async def _tick_loop(self) -> None:
         try:
@@ -857,7 +863,7 @@ class ExamSession:
         elif self.phase == PART3 and self.elapsed() >= (limit or 0) + PART3_GRACE_S:
             # Part 3 time is up and nobody is answering: the real examiner would end the test, not wait for ever
             if not (self._pending or self._responding or self._speaking_now() or self.listening_blocked()):
-                await self.close()
+                await self.close(reason="no_response")
 
     async def _part2_silence_check(self) -> None:
         """The candidate is quiet during the long turn and time remains.
@@ -920,7 +926,9 @@ class ExamSession:
         if self._ticker and self._ticker is not asyncio.current_task():     # never cancel the task that is saving
             self._ticker.cancel()
         self.muted = True
-        await self.emit({"type": "done"})
+        self.end_reason = self.end_reason or "completed"
+        self.status = "completed"
+        await self.emit({"type": "done", "reason": self.end_reason})
         return self.save()
 
     def abort(self) -> Path | None:
@@ -930,13 +938,15 @@ class ExamSession:
         if self._ticker:
             self._ticker.cancel()
         self.muted = True
+        if self.status not in ("completed", "failed"):      # a test that already finished (or crashed) keeps that status
+            self.status, self.end_reason = "aborted", self.end_reason or "aborted"
         return self.save()
 
     def save(self) -> Path | None:
         if not self.log:
             return None
         RUNS.mkdir(exist_ok=True)
-        path = RUNS / f"run_{time.strftime('%Y%m%d_%H%M%S')}_{self.test_id[:6]}.json"       # the id keeps two tests that end in the same second apart
+        path = RUNS / f"run_{time.strftime('%Y%m%d_%H%M%S')}_{self.test_id}.json"       # the id keeps two tests apart, and finds a test by its id
         lat = [e["seconds"] for e in self.log if e["type"] == "latency"]
         mic = {}
         if self._mic_pcm:
@@ -946,7 +956,10 @@ class ExamSession:
                    "mic_rms": round((sum(x * x for x in a) / len(a)) ** 0.5 / 32768, 4)}
             with wave.open(str(path.with_suffix(".wav")), "wb") as w:
                 w.setnchannels(1); w.setsampwidth(2); w.setframerate(16000); w.writeframes(bytes(self._mic_pcm))
-        path.write_text(json.dumps({**mic, 
+        stamps = [e["at"] for e in self.log if "at" in e]
+        path.write_text(json.dumps({**mic,
+            "test_id": self.test_id, "external_user_id": self.external_user_id, "status": self.status or "aborted",
+            "end_reason": self.end_reason, "started_at": stamps[0] if stamps else None, "ended_at": stamps[-1] if stamps else None,
             "topics": [t["topic"] for t in self.plan["part1"]], "card": self.plan["cueCard"]["prompt"],
             "name": self.name, "device": self.device, "known_facts": self.known, "mic_chunks_received": self.mic_chunks,
             "latencies_s": lat, "events": self.log}, indent=2), encoding="utf-8")

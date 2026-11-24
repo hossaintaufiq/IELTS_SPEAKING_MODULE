@@ -33,8 +33,10 @@ Marked **[exists]** = already implemented in `worker/`, **[new]** = to be built 
 | `hour` | no | Local hour 0-23 for the greeting ("Good morning"). Defaults to the server's hour. **[exists]** |
 | `device` | no | Free label for logs. **[exists]** |
 
-Refusals at upgrade: `401` bad or missing key. If the service is full the socket is accepted and closed at once with
-close code **1013**, reason `"Server is full"`. The caller retries later or routes elsewhere. **[exists]**
+Refusals at upgrade (the socket never opens, the caller sees an HTTP `403` on the upgrade request): a bad, missing or unconfigured API key,
+a missing `external_user_id`, or an `hour` outside 0-23. If the service is full, or its models are still loading (`ready: false` in `/health`),
+the socket is accepted and closed at once with close code **1013**, reason `"Server is full"` or `"Service is starting"`.
+The caller retries later or routes elsewhere. **[implemented in step 2]**
 
 ### 3.1 Client to server
 - Binary frame: candidate microphone audio (16 kHz PCM16). **[exists]**
@@ -87,7 +89,7 @@ Scoring (the four IELTS criteria) is **not part of v1**. When added it will be a
 estimated bands with an `estimated: true` flag. No official-score claim (decision D6).
 
 ## 5. Errors and limits
-- HTTP errors: `401` bad key, `404` unknown test, `429` too many requests, `503` service not ready. Body: `{ "error": { "code": "...", "message": "..." } }`.
+- HTTP errors (results calls): `401` bad or missing key (with `WWW-Authenticate: Bearer`), `503` no API key configured on the service, `404` unknown test or a test still running (`code: not_finished`). `429` (rate limit) is not implemented yet. Body: `{ "error": { "code": "...", "message": "..." } }`.
 - Capacity is fixed by configuration (`MAX_SESSIONS`) and measured by load test. The service never degrades running tests to take a new one.
 
 ## 6. Out of scope for v1 (decided later)
