@@ -26,16 +26,20 @@ Pick offers with a high `Net_down`, `R` (reliability) above 98, and a $/hr you a
 
 ```
 bash deploy/vast/upload.sh HOST PORT      # excludes .env, .venv, runs; NEVER use scp -r . (it would send your API key)
-ssh -p PORT -i ~/.ssh/vast_ed25519 root@HOST -L 8080:localhost:8080
+ssh -p PORT -i ~/.ssh/vast_ed25519 root@HOST -L 8081:localhost:8081
 cd /workspace/speaking-service && bash deploy/vast/setup_instance.sh
 ```
 
 Then wait for `Application startup complete` in `/workspace/vllm.log`, start the live test bench, and open
-`http://localhost:8080` on your PC (the SSH forward makes it a localhost page, which browsers allow to use the mic):
+`http://localhost:8081` on your PC (the SSH forward makes it a localhost page, which browsers allow to use the mic):
 
 ```
-cd /workspace/speaking-service && HOST=0.0.0.0 PORT=8080 python -m worker.server
+cd /workspace/speaking-service && SERVICE_API_KEYS=<key> MONITOR_KEY=<key> HOST=0.0.0.0 PORT=8080 python -m worker.server
 ```
+
+The server has two ports. **8080 is public**: only `/v1/...` and `/health`. **8081 is internal** (loopback only): the test bench page, its
+microphone socket, the monitor and the logs, so it is reached through the SSH forward above and never exposed. `setup_instance.sh` starts
+it this way and keeps the generated keys in `/root/work/keys.env`.
 
 Take the speaking test with headphones. Each run is saved to `runs/run_*.json` (transcript, phases, reply delays); `scp` it back
 and use the UI's Download button too. UI-only dry run with no models: `MOCK=1 python -m worker.server`.

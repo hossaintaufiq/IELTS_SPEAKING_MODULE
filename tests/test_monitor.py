@@ -182,6 +182,7 @@ def test_the_browser_access_code_does_not_replace_the_monitor_key(client, tmp_pa
 def test_a_real_service_refuses_to_start_without_its_keys(monkeypatch):
     import asyncio
 
+    monkeypatch.setattr(server, "MOCK", False)
     monkeypatch.delenv("SERVICE_API_KEYS", raising=False)
     monkeypatch.delenv("MONITOR_KEY", raising=False)
     starters = [h for h in server.app.router.on_startup if h.__name__ == "_require_keys"]
@@ -192,3 +193,6 @@ def test_a_real_service_refuses_to_start_without_its_keys(monkeypatch):
     monkeypatch.setenv("SERVICE_API_KEYS", "k")
     monkeypatch.setenv("MONITOR_KEY", "m")
     asyncio.run(starters[0]())
+    monkeypatch.delenv("SERVICE_API_KEYS")
+    monkeypatch.setattr(server, "MOCK", True)
+    asyncio.run(starters[0]())                              # mock mode needs no keys

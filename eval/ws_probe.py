@@ -78,7 +78,7 @@ async def run(args) -> None:
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("text")
-    ap.add_argument("--host", default="localhost:8080")
+    ap.add_argument("--host", default="localhost:8081")
     ap.add_argument("--model", default="models/cache/kokoro-v1.0.onnx")
     ap.add_argument("--voices", default="models/cache/voices-v1.0.bin")
     ap.add_argument("--intro-wait", type=float, default=22.0)

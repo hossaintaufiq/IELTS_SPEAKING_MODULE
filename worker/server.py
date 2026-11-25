@@ -3,8 +3,11 @@
     python -m worker.server            # real pipeline (needs the GPU box: whisper, kokoro, vLLM)
     MOCK=1 python -m worker.server     # no models: fake examiner, to test the UI and protocol
 
-Open http://localhost:8080 (on the GPU box use an SSH port forward, see deploy/vast/RUNBOOK.md).
-This is a quality-testing tool, not the production API: no auth, one test per connection.
+Two ports (worker/public.py): the public one (HOST:PORT, default 8080) serves only /v1 and /health; the internal one
+(INTERNAL_HOST:INTERNAL_PORT, loopback, default 8081) serves everything, including the test bench page, /ws, the monitor and the logs.
+Open http://localhost:8081 (on the GPU box use an SSH port forward to 8081, see deploy/vast/RUNBOOK.md).
+SINGLE_PORT=1 serves everything on PORT as before (local development only: it makes the bench and monitor reachable wherever /v1 is).
+The bench is a quality-testing tool: one test per connection, no per-student auth.
 """
 from __future__ import annotations
 
@@ -105,6 +108,8 @@ if not MOCK:
     @app.on_event("startup")
     async def _require_keys():
         # A real service without keys is either closed (no one can use it) or, worse, readable by anyone who finds the address.
+        if MOCK:
+            return
         missing = [n for n, v in (("SERVICE_API_KEYS", svc.configured_keys()), ("MONITOR_KEY", os.getenv("MONITOR_KEY", ""))) if not v]
         if missing:
             raise RuntimeError(f"Refusing to start: set {' and '.join(missing)} (see README, Server settings). MOCK=1 needs none.")
@@ -441,4 +446,12 @@ if __name__ == "__main__":
     import uvicorn
 
     logging.basicConfig(level=logging.INFO)
-    uvicorn.run(app, host=os.getenv("HOST", "127.0.0.1"), port=int(os.getenv("PORT", "8080")))
+    host, port = os.getenv("HOST", "127.0.0.1"), int(os.getenv("PORT", "8080"))
+    if os.getenv("SINGLE_PORT") == "1":
+        uvicorn.run(app, host=host, port=port)
+    else:
+        from worker import public
+
+        internal_host, internal_port = public.internal_address()
+        raise SystemExit(asyncio.run(public.serve_both(app, public_host=host, public_port=port,
+                                                       internal_host=internal_host, internal_port=internal_port)))

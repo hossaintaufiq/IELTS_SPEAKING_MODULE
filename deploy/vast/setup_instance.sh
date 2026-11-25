@@ -78,7 +78,7 @@ export MONITOR_KEY=%s
   chmod 600 /root/work/keys.env
 fi
 . /root/work/keys.env
-HOST=0.0.0.0 PORT=8080 exec python -m worker.server 2>&1 | tee /root/work/web.log
+HOST=0.0.0.0 PORT=8080 INTERNAL_PORT=8081 exec python -m worker.server 2>&1 | tee /root/work/web.log
 EOF
 chmod +x "$WORK/start_web.sh"
 tmux new-session -d -s web "$WORK/start_web.sh"

@@ -359,7 +359,8 @@ def show(report: dict) -> None:
 
 def parse(argv=None):
     p = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    p.add_argument("--base", default="ws://127.0.0.1:8080", help="server address, ws:// or wss:// (default %(default)s)")
+    p.add_argument("--base", default="", help="server address, ws:// or wss:// (default: ws://127.0.0.1:8080, the public port, with --api-key; "
+                                           "ws://127.0.0.1:8081, the internal port with the test bench /ws, without)")
     p.add_argument("--sessions", type=int, default=9, help="candidates at the same time (default %(default)s)")
     p.add_argument("--turns", type=int, default=6, help="answers per candidate before the test is ended (default %(default)s)")
     p.add_argument("--ramp-s", type=float, default=2.0, help="seconds between candidate starts (default %(default)s)")
@@ -378,7 +379,7 @@ def parse(argv=None):
     p.add_argument("--gpu", action="store_true", help="sample nvidia-smi while running (run this on the GPU box)")
     p.add_argument("--report", default="", help="write the full report here as JSON")
     cfg = p.parse_args(argv)
-    cfg.base = cfg.base.rstrip("/")
+    cfg.base = (cfg.base or ("ws://127.0.0.1:8080" if cfg.api_key else "ws://127.0.0.1:8081")).rstrip("/")
     return cfg
 
 
