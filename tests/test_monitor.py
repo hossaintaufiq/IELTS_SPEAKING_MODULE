@@ -147,3 +147,48 @@ def test_a_failed_model_load_shows_on_the_page_data(client, monkeypatch):
     monkeypatch.setitem(server.READY, "error", "RuntimeError: no gpu")
     body = client.get("/api/monitor", headers={"Authorization": "Bearer s3cret"}).json()
     assert body["server"]["ready"] is False and "no gpu" in body["server"]["models_error"]
+
+
+# ---- transcripts and logs are behind the monitor key too ---------------------------------------------------
+DATA_ROUTES = ["/api/runs", "/api/runs/run_20261122_071217", "/api/live", "/api/live?id=all", "/api/serverlog/web"]
+
+
+def test_run_data_and_logs_are_closed_without_the_monitor_key(client, tmp_path):
+    write_run(tmp_path, "run_20261122_071217")
+    for path in DATA_ROUTES:
+        assert client.get(path).status_code == 503, path                       # no MONITOR_KEY configured: closed, not open
+
+
+def test_run_data_and_logs_need_the_key_by_header_or_cookie(client, tmp_path, monkeypatch):
+    monkeypatch.setenv("MONITOR_KEY", "s3cret")
+    write_run(tmp_path, "run_20261122_071217")
+    for path in DATA_ROUTES:
+        assert client.get(path).status_code == 401, path
+        assert client.get(path, headers={"Authorization": "Bearer wrong"}).status_code == 401, path
+        assert client.get(path, headers={"Authorization": "Bearer s3cret"}).status_code == 200, path
+    assert client.get("/api/runs?key=s3cret").status_code == 401                # a key in the URL opens only the page
+    client.get("/monitor?key=s3cret")                                          # the page sets the cookie ...
+    assert client.get("/api/runs").status_code == 200                          # ... which then opens the data the page loads
+
+
+def test_the_browser_access_code_does_not_replace_the_monitor_key(client, tmp_path, monkeypatch):
+    monkeypatch.setenv("MONITOR_KEY", "s3cret")
+    monkeypatch.setitem(server.ACCESS, "code", "bench")
+    write_run(tmp_path, "run_20261122_071217")
+    assert client.get("/api/runs?key=bench").status_code == 401                # the bench code is not the monitor key
+    assert client.get("/api/runs", headers={"Authorization": "Bearer s3cret"}).status_code == 200   # the monitor key needs no bench code
+
+
+def test_a_real_service_refuses_to_start_without_its_keys(monkeypatch):
+    import asyncio
+
+    monkeypatch.delenv("SERVICE_API_KEYS", raising=False)
+    monkeypatch.delenv("MONITOR_KEY", raising=False)
+    starters = [h for h in server.app.router.on_startup if h.__name__ == "_require_keys"]
+    if not starters:
+        pytest.skip("the app was imported in mock mode, so the key check is not installed")
+    with pytest.raises(RuntimeError, match="SERVICE_API_KEYS and MONITOR_KEY"):
+        asyncio.run(starters[0]())
+    monkeypatch.setenv("SERVICE_API_KEYS", "k")
+    monkeypatch.setenv("MONITOR_KEY", "m")
+    asyncio.run(starters[0]())
