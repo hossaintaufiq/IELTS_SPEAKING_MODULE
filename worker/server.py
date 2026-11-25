@@ -260,12 +260,14 @@ def running_tests() -> int:
 
 
 @app.get("/health")
-def health():
+def health(request: Request):
     running = running_tests()
     decision = GUARD.accepting(running, MAX_SESSIONS)
-    return {"ok": True, "mock": MOCK, "tests_running": running, "max_tests": MAX_SESSIONS,
-            "version": svc.API_VERSION, "ready": is_ready(), "models_error": READY["error"],
+    body = {"ok": True, "tests_running": running, "max_tests": MAX_SESSIONS, "version": svc.API_VERSION, "ready": is_ready(),
             "accepting": is_ready() and decision.ok, "busy_reason": decision.reason}
+    if not request.scope.get(public.PUBLIC_MARK):          # the outside gets no internals: an error text can name paths, models or hosts
+        body.update(mock=MOCK, models_error=READY["error"])
+    return body
 
 
 async def _serve(websocket: WebSocket, session: ExamSession, *, service: bool = False) -> None:

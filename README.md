@@ -18,7 +18,7 @@ This repository is the speaking service. Run everything from the repo root (`pyt
 | `web/` | The test bench page, the run-log page and the monitoring page |
 | `question_bank/` | Questions and cue cards |
 | `eval/` | Benchmarks and the load test |
-| `deploy/` | Renting and setting up the GPU box |
+| `deploy/` | Renting and setting up the GPU box, and putting the public port on the internet (`deploy/public/`, `docs/DEPLOY_PUBLIC.md`) |
 | `docs/` | Contract, decisions, architecture, progress, the examiner's rules and prompts |
 | `tests/` | The test suite |
 | `experiments/` | Earlier experiments (numbered studies, a GPT live voice sample, the browser TTS and STT labs). Not part of the service; nothing here imports them. |
@@ -68,6 +68,12 @@ It passes when the p95 reply delay is no more than 1 s (`--allow-extra-s`) above
 The examiner deliberately waits about 2 s for the candidate's pause, so the delay of a single session is never near zero: compare, do not expect 2 s.
 To compare caption settings run the same test with `CAPTIONS=off` and with the defaults. Use `--audio wav --wav a.wav b.wav` for your own 16 kHz mono
 recordings; `--audio fake` (noise) only checks that sessions connect. Use `--api-key` to test the service API (`/v1/session`) instead of the bench.
+
+## Checking the public address
+
+`python -m eval.check_public --base https://<public address> --origin https://<ieltsup site> --api-key <key>` looks at the service from the outside
+(certificate, nothing internal reachable, key and CORS rules, headers, token round trip) and exits non-zero if the address is not fit to hand over.
+See `docs/DEPLOY_PUBLIC.md`.
 
 ## Monitoring page
 

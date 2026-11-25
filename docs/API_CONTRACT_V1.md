@@ -11,6 +11,7 @@ Marked **[exists]** = already implemented in `worker/`, **[new]** = to be built 
 
 ## 1. Conventions
 - Base URL: `https://speaking.<our-domain>` (HTTP) and `wss://speaking.<our-domain>` (WebSocket).
+- Every public HTTP response is `Cache-Control: no-store` and carries `X-Content-Type-Options`, `Referrer-Policy` and `Strict-Transport-Security`. `/health` shows readiness and capacity only. **[new]**
 - Public surface: only `/v1/...` and `/health` exist on the public address. Everything else (our test bench, monitor and logs) is on an internal port that is not reachable from outside and answers 404 here. **[new]**
 - Auth: `Authorization: Bearer <api key>` on every HTTP call and on the WebSocket upgrade. **[new]** Keys are issued per caller and can be revoked.
 - Versioning: the version is in the path (`/v1`). Within v1 only additive changes (new optional fields, new event types).

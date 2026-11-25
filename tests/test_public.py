@@ -182,3 +182,13 @@ def test_a_browser_token_works_over_a_real_socket_and_stays_out_of_the_log(tmp_p
     text = logfile.read_text(errors="replace")
     assert "WebSocket /v1/session" in text                    # the connection was logged ...
     assert minted["token"] not in text and "token=REDACTED" in text         # ... without its token
+
+
+def test_the_public_health_has_no_internals_but_the_internal_one_does(monkeypatch):
+    monkeypatch.setattr(server, "MOCK", True)
+    monkeypatch.setitem(server.READY, "error", "OSError: /root/work/models/secret-path missing")
+    public_body = TestClient(public.PublicGate(server.app)).get("/health").json()
+    assert set(public_body) == {"ok", "tests_running", "max_tests", "version", "ready", "accepting", "busy_reason"}
+    assert "secret-path" not in str(public_body)
+    internal_body = TestClient(server.app).get("/health").json()
+    assert internal_body["models_error"].startswith("OSError") and internal_body["mock"] is True
