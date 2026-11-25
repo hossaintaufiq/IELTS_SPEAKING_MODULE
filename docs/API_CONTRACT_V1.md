@@ -46,6 +46,11 @@ The browser then opens `wss://<host>/v1/session?token=<token>` (optionally `&dev
 - A bad token does not open a test. The socket is accepted, sent `{"type":"error","code":"token_invalid"|"token_expired"|"token_used","message":...}`
   and closed with `1008`. The browser should then ask its server for a new token.
 - Tokens are kept out of the service's logs. Ask for a token right before the student presses start, not in advance.
+- **Allowed websites.** A browser sends the page's `Origin` with the socket. If it is not in the service's `ALLOWED_ORIGINS` list, the socket is accepted,
+  sent `{"type":"error","code":"origin_not_allowed",...}` and closed with `1008`; the token is not spent. We need the exact list from ieltsup
+  (for example `https://ieltsup.org` and `https://www.ieltsup.org`, and a staging site). Server-to-server calls send no `Origin` and are not checked.
+- **CORS.** Only `GET /health` can be read by a browser page (from a listed website), so the page can wait for `ready`. `POST /v1/tokens` and
+  `/v1/tests/...` carry the API key and are for ieltsup's server only: they send no CORS headers, so a browser page cannot read them.
 - To void every token at once, change `TOKEN_SECRET` (restarts the service).
 
 ## 3. Live test (WebSocket)

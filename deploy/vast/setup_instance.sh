@@ -79,6 +79,9 @@ for name in SERVICE_API_KEYS MONITOR_KEY TOKEN_SECRET; do
   grep -q "^export $name=" /root/work/keys.env || echo "export $name=$(python -c 'import secrets;print(secrets.token_urlsafe(32))')" >> /root/work/keys.env
 done
 . /root/work/keys.env
+# Websites allowed to open a test from a browser (not a secret). Edit /root/work/origins.env, then restart the web session.
+[ -f /root/work/origins.env ] || echo '# export ALLOWED_ORIGINS=https://ieltsup.org,https://www.ieltsup.org' > /root/work/origins.env
+. /root/work/origins.env
 HOST=0.0.0.0 PORT=8080 INTERNAL_PORT=8081 exec python -m worker.server 2>&1 | tee /root/work/web.log
 EOF
 chmod +x "$WORK/start_web.sh"

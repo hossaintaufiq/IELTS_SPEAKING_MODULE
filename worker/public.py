@@ -24,6 +24,50 @@ PUBLIC_EXACT = frozenset({"/health"})
 PUBLIC_PREFIXES = ("/v1/",)
 LOOPBACK = frozenset({"127.0.0.1", "::1", "localhost"})
 
+# ---- which websites may talk to the service from a browser -----------------------------------------------------------
+# ALLOWED_ORIGINS: comma separated exact origins, e.g. "https://ieltsup.org,https://www.ieltsup.org". No wildcard, no path. Plain http
+# is accepted only for localhost (development). Not set: no browser is allowed (a caller that sends no Origin header, such as
+# ieltsup's server or our load test, is not a browser and is not affected).
+ORIGIN_SHAPE = re.compile(r"^(https?)://([a-z0-9]([a-z0-9.-]*[a-z0-9])?|\[[0-9a-f:]+\])(:\d{1,5})?$")
+
+
+def parse_origins(value: str) -> frozenset[str]:
+    """The allowed origins in the form a browser sends them (lower case, default port left out). Raises ValueError on anything doubtful."""
+    found = set()
+    for raw in value.split(","):
+        text = raw.strip().lower()
+        if not text:
+            continue
+        match = ORIGIN_SHAPE.match(text)
+        if not match:
+            raise ValueError(f"ALLOWED_ORIGINS: {raw.strip()!r} is not an origin like https://example.org (no wildcard, path or trailing slash)")
+        scheme, host, _, port = match.groups()
+        if scheme == "http" and host not in LOOPBACK:
+            raise ValueError(f"ALLOWED_ORIGINS: {raw.strip()!r} is plain http; only localhost may use http")
+        if port == (":443" if scheme == "https" else ":80"):
+            text = f"{scheme}://{host}"                  # a browser leaves the default port out of the Origin header
+        found.add(text)
+    return frozenset(found)
+
+
+def allowed_origins() -> frozenset[str]:
+    try:
+        return parse_origins(os.getenv("ALLOWED_ORIGINS", ""))
+    except ValueError:
+        return frozenset()                                # a bad setting is refused at start-up; until then nothing is allowed
+
+
+def origin_allowed(origin: str | None) -> bool:
+    """True for a request without an Origin header (not a browser) and for a listed origin. The literal 'null' is never allowed."""
+    return origin is None or origin.strip().lower() in allowed_origins()
+
+
+def cors_headers(origin: str | None) -> list[tuple[bytes, bytes]]:
+    """Response headers that let a listed website READ a public response. Never sent with credentials."""
+    if origin is None or origin.strip().lower() not in allowed_origins():
+        return [(b"vary", b"Origin")]
+    return [(b"access-control-allow-origin", origin.strip().lower().encode()), (b"vary", b"Origin")]
+
 
 TOKEN_IN_URL = re.compile(r"([?&]token=)[^\s&\"']+")
 
@@ -73,6 +117,8 @@ class PublicGate:
                     await send({"type": "lifespan.shutdown.complete"})
                     return
         if is_public(scope.get("path", "")):
+            if kind == "http" and scope.get("path") == "/health":
+                return await self._health(scope, receive, send)       # the one route a page may read cross-site (is the service ready?)
             return await self.inner(scope, receive, send)
         if kind == "websocket":
             await receive()                                           # the connect message; closing before accepting is an HTTP 403
@@ -81,6 +127,21 @@ class PublicGate:
         await send({"type": "http.response.start", "status": 404,
                     "headers": [(b"content-type", b"application/json"), (b"content-length", str(len(body)).encode())]})
         await send({"type": "http.response.body", "body": body})
+
+    async def _health(self, scope, receive, send):
+        origin = next((v.decode("latin-1") for k, v in scope.get("headers", []) if k == b"origin"), None)
+        extra = cors_headers(origin)
+        if scope.get("method") == "OPTIONS":                         # the browser's preflight for /health
+            await send({"type": "http.response.start", "status": 204, "headers": [*extra, (b"access-control-allow-methods", b"GET"),
+                                                                                  (b"access-control-max-age", b"600")]})
+            return await send({"type": "http.response.body", "body": b""})
+
+        async def with_cors(message):
+            if message["type"] == "http.response.start":
+                message = {**message, "headers": [*message.get("headers", []), *extra]}
+            await send(message)
+
+        await self.inner(scope, receive, with_cors)
 
 
 def internal_address() -> tuple[str, int]:

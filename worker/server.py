@@ -25,6 +25,7 @@ from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from worker import caption_budget
+from worker import public
 from worker import monitor as mon
 from worker import service_api as svc
 from worker import session as sess
@@ -111,6 +112,12 @@ if not MOCK:
         # A real service without keys is either closed (no one can use it) or, worse, readable by anyone who finds the address.
         if MOCK:
             return
+        try:
+            origins = public.parse_origins(os.getenv("ALLOWED_ORIGINS", ""))
+        except ValueError as e:
+            raise RuntimeError(f"Refusing to start: {e}") from None
+        if not origins:
+            log.warning("ALLOWED_ORIGINS is not set: no browser can open a test (server-to-server callers still can)")
         missing = [n for n, v in (("SERVICE_API_KEYS", svc.configured_keys()), ("MONITOR_KEY", os.getenv("MONITOR_KEY", "")),
                                   ("TOKEN_SECRET (at least 32 characters)", tokens.secret())) if not v]
         if missing:
@@ -304,11 +311,20 @@ async def v1_tokens(request: Request):
     return JSONResponse(tokens.mint(external.strip(), hour), headers={"Cache-Control": "no-store"})
 
 
-async def _refuse_token(websocket: WebSocket, code: str) -> None:
-    """Tell the browser why (it can then ask its server for a new token), then close. Nothing is started."""
-    await websocket.accept()
-    await websocket.send_json({"type": "error", "code": code, "message": "The token is not valid; ask for a new one"})
+REFUSALS = {"token_invalid": "The token is not valid; ask for a new one", "token_expired": "The token has expired; ask for a new one",
+            "token_used": "The token was already used; ask for a new one", "origin_not_allowed": "This website is not allowed to open a test"}
+
+
+async def _tell_and_close(websocket: WebSocket, code: str) -> None:
+    """The reason as an error message (the browser can ask its server for a new token, or the developer sees the cause), then close 1008."""
+    await websocket.send_json({"type": "error", "code": code, "message": REFUSALS[code]})
     await websocket.close(code=1008)
+
+
+async def _refuse(websocket: WebSocket, code: str) -> None:
+    """For a socket not yet accepted: accept it only to say why. Nothing is started."""
+    await websocket.accept()
+    await _tell_and_close(websocket, code)
 
 
 @app.websocket("/v1/session")
@@ -316,11 +332,13 @@ async def v1_session(websocket: WebSocket):
     """One test. The caller proves itself with an API key (server to server) or, from a browser, with a token from POST /v1/tokens."""
     params = websocket.query_params
     claims = None
+    if not public.origin_allowed(websocket.headers.get("origin")):      # a browser on a website we were not told about (see ALLOWED_ORIGINS)
+        return await _refuse(websocket, "origin_not_allowed")
     if params.get("token") is not None:           # a browser: who it is and its hour come from the token, never from the URL
         try:
             claims = tokens.verify(params["token"])
         except tokens.TokenError as e:
-            return await _refuse_token(websocket, e.code)
+            return await _refuse(websocket, e.code)
         external, hour = claims.external_user_id, claims.hour
     else:
         # A refusal before accept() reaches the caller as an HTTP 403 on the upgrade request (the socket never opens).
@@ -343,8 +361,7 @@ async def v1_session(websocket: WebSocket):
         return
     # Spent only now, so a refusal above (starting, full) lets the same token try again. One token opens one test.
     if claims is not None and not tokens.USED.consume(claims):
-        await websocket.send_json({"type": "error", "code": "token_used", "message": "The token was already used; ask for a new one"})
-        await websocket.close(code=1008)
+        await _tell_and_close(websocket, "token_used")
         return
     session = ExamSession(send=websocket.send_json, hour=hour)
     session.external_user_id = external
