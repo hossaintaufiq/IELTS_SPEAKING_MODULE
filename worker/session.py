@@ -26,6 +26,7 @@ from worker.examiner.llm import generate_json
 from worker.examiner.answered import content_words
 from worker.examiner.intents import finish_answer, is_done_talking, is_finish_request
 from worker.examiner.naturalness import AckPicker
+from worker import load_guard
 from worker.examiner.pacing import wait_seconds
 from worker.examiner.rules import SCRIPT, NextQuestionInput
 from worker.examiner.vocab import unverified_echoes
@@ -918,6 +919,7 @@ class ExamSession:
 
     # ---- hooks used by the pipeline taps ---------------------------------------------------------
     async def on_latency(self, seconds: float) -> None:
+        load_guard.GUARD.record_delay(seconds)          # the whole service's recent reply delay decides whether to take new tests
         await self.emit({"type": "latency", "seconds": round(seconds, 2)})
 
     # ---- end -------------------------------------------------------------------------------------

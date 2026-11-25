@@ -82,7 +82,16 @@ done
 # Websites allowed to open a test from a browser (not a secret). Edit /root/work/origins.env, then restart the web session.
 [ -f /root/work/origins.env ] || echo '# export ALLOWED_ORIGINS=https://ieltsup.org,https://www.ieltsup.org' > /root/work/origins.env
 . /root/work/origins.env
-HOST=0.0.0.0 PORT=8080 INTERNAL_PORT=8081 exec python -m worker.server 2>&1 | tee /root/work/web.log
+export HOST=0.0.0.0 PORT=8080 INTERNAL_PORT=8081
+# GPU memory that is not given back after an overload: with no test running the service restarts itself (exit code 75, worker/load_guard.py)
+export RECYCLE_ON_LEAK=1
+while true; do
+  python -m worker.server 2>&1 | tee -a /root/work/web.log
+  code=${PIPESTATUS[0]}
+  [ "$code" = "75" ] || exit "$code"
+  echo "== restarting to free GPU memory ==" | tee -a /root/work/web.log
+  sleep 2
+done
 EOF
 chmod +x "$WORK/start_web.sh"
 tmux new-session -d -s web "$WORK/start_web.sh"

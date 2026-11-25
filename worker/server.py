@@ -25,6 +25,7 @@ from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from worker import caption_budget
+from worker import load_guard
 from worker import public
 from worker import monitor as mon
 from worker import service_api as svc
@@ -123,6 +124,24 @@ if not MOCK:
         if missing:
             raise RuntimeError(f"Refusing to start: set {' and '.join(missing)} (see README, Server settings). MOCK=1 needs none.")
 
+    WATCH: dict = {}
+
+    async def _watch_gpu():
+        """Every few seconds: read the GPU for the admission guard, and restart the service if memory is not given back (load_guard.py)."""
+        while True:
+            await asyncio.sleep(load_guard._float("GPU_POLL_S", 5))
+            try:
+                reading = await asyncio.to_thread(load_guard.read_gpu_memory)
+                if GUARD.watch_step(running_tests(), reading, ready=is_ready()) == "recycle":
+                    logging.shutdown()
+                    os._exit(load_guard.RESTART_EXIT_CODE)       # no test is running (watch_step checked); the start script starts it again
+            except Exception:
+                log.exception("GPU watcher failed; it will try again")
+
+    @app.on_event("startup")
+    async def _start_gpu_watcher():
+        WATCH["task"] = asyncio.create_task(_watch_gpu())         # kept in WATCH so it is not garbage collected
+
     @app.on_event("startup")
     async def _preload_models():
         import asyncio
@@ -149,7 +168,8 @@ def index():
 
 LIVE: dict = {"session": None}           # the newest test (in progress or the last one): what the logs window shows by default
 SESSIONS: dict[str, ExamSession] = {}    # every connected test, by id: several devices can take a test at the same time
-MAX_SESSIONS = int(os.getenv("MAX_SESSIONS", "6"))   # one GPU serves only so many tests at once; the next device is told to wait
+GUARD = load_guard.GUARD                       # refuses a new test before the GPU is in trouble (worker/load_guard.py)
+MAX_SESSIONS = load_guard.safe_max_sessions(int(os.getenv("MAX_SESSIONS", "6")))   # one GPU serves only so many tests at once; the next device is told to wait
 
 
 @app.get("/logs")
@@ -241,8 +261,11 @@ def running_tests() -> int:
 
 @app.get("/health")
 def health():
-    return {"ok": True, "mock": MOCK, "tests_running": running_tests(), "max_tests": MAX_SESSIONS,
-            "version": svc.API_VERSION, "ready": is_ready(), "models_error": READY["error"]}
+    running = running_tests()
+    decision = GUARD.accepting(running, MAX_SESSIONS)
+    return {"ok": True, "mock": MOCK, "tests_running": running, "max_tests": MAX_SESSIONS,
+            "version": svc.API_VERSION, "ready": is_ready(), "models_error": READY["error"],
+            "accepting": is_ready() and decision.ok, "busy_reason": decision.reason}
 
 
 async def _serve(websocket: WebSocket, session: ExamSession, *, service: bool = False) -> None:
@@ -279,10 +302,10 @@ async def _serve(websocket: WebSocket, session: ExamSession, *, service: bool = 
 @app.websocket("/ws")
 async def ws_endpoint(websocket: WebSocket):
     await websocket.accept()
-    running = running_tests()
-    if running >= MAX_SESSIONS:
+    decision = GUARD.admit(running_tests(), MAX_SESSIONS)
+    if not decision.ok:
         # the GPU is shared: a test that cannot get its share would stutter for everyone, so it waits instead
-        await websocket.close(code=1013, reason=f"Server is full ({running} tests running). Please try again in a minute.")
+        await websocket.close(code=1013, reason=decision.message)
         return
     session = ExamSession(send=websocket.send_json)
     session.device = (websocket.query_params.get("device") or "")[:40]     # optional label: open the page with ?device=Laptop
@@ -355,9 +378,9 @@ async def v1_session(websocket: WebSocket):
     if not is_ready():
         await websocket.close(code=1013, reason="Service is starting")
         return
-    running = running_tests()
-    if running >= MAX_SESSIONS:
-        await websocket.close(code=1013, reason=f"Server is full ({running} tests running)")
+    decision = GUARD.admit(running_tests(), MAX_SESSIONS)
+    if not decision.ok:
+        await websocket.close(code=1013, reason=decision.message)
         return
     # Spent only now, so a refusal above (starting, full) lets the same token try again. One token opens one test.
     if claims is not None and not tokens.USED.consume(claims):
@@ -466,7 +489,7 @@ def monitor_data(request: Request):
     if verdict != "ok":
         return _monitor_denied(verdict)
     return mon.snapshot(sessions=SESSIONS, runs_dir=sess.RUNS, max_tests=MAX_SESSIONS, ready=is_ready(), models_error=READY["error"],
-                        mock=MOCK, version=svc.API_VERSION, captions=caption_budget.BUDGET.stats())
+                        mock=MOCK, version=svc.API_VERSION, captions=caption_budget.BUDGET.stats(), load=GUARD.stats())
 
 
 async def run_real(websocket: WebSocket, session: ExamSession):

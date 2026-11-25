@@ -24,6 +24,7 @@ Marked **[exists]** = already implemented in `worker/`, **[new]** = to be built 
 { "ok": true, "version": "1", "tests_running": 3, "max_tests": 9, "ready": true }
 ```
 `ready` is false while models are still loading (the first minutes after a start). Callers should not send tests until it is true. **[new]**
+`accepting` is true when a new test would be taken right now; when false, `busy_reason` says why: `full` (all test places used), `gpu_memory` (the GPU is nearly full), `slow` (replies are slow at the moment), `restarting` (the service is restarting to free GPU memory; models reload, `ready` is false for a few minutes). Callers should wait and retry, not send tests while `accepting` is false. **[new]**
 
 ## 2a. Browser tokens (a student's browser connects directly) **[new]**
 The browser never holds an API key. ieltsup's **server** asks for a token for one candidate and hands it to that candidate's browser.
@@ -64,7 +65,7 @@ The browser then opens `wss://<host>/v1/session?token=<token>` (optionally `&dev
 
 Refusals at upgrade (the socket never opens, the caller sees an HTTP `403` on the upgrade request): a bad, missing or unconfigured API key,
 a missing `external_user_id`, or an `hour` outside 0-23. If the service is full, or its models are still loading (`ready: false` in `/health`),
-the socket is accepted and closed at once with close code **1013**, reason `"Server is full"` or `"Service is starting"`.
+the socket is accepted and closed at once with close code **1013**, reason `"Server is full (N tests running)"`, `"Service is starting"`, `"Server is busy, try again in a minute"` (GPU nearly full, or replies slow) or `"Service is restarting, try again in a minute"`. Tests already running are never cut off to make room.
 The caller retries later or routes elsewhere. **[implemented in step 2]**
 
 ### 3.1 Client to server
@@ -104,7 +105,7 @@ Text frames, JSON with a `type`:
 `no_response` (silence at the end of Part 3), `skipped_to_end` (`next_part` past Part 3), `error`.
 
 ### 3.3 Close codes
-`1000` normal end after `done`. `1013` service full. `1011` internal error. If the caller drops the connection mid-test the test is saved as
+`1000` normal end after `done`. `1013` service full, busy, starting or restarting (try again later; `/health` `accepting` says when). `1011` internal error. If the caller drops the connection mid-test the test is saved as
 `status: "aborted"` with whatever happened so far. There is no resume in v1. **[exists as abort+save; status is new]**
 
 ## 4. Results (HTTP, Bearer auth) **[new]**
