@@ -28,6 +28,7 @@ from worker import caption_budget
 from worker import monitor as mon
 from worker import service_api as svc
 from worker import session as sess
+from worker import tokens
 from worker.session import ExamSession
 
 log = logging.getLogger("speaking.server")
@@ -110,7 +111,8 @@ if not MOCK:
         # A real service without keys is either closed (no one can use it) or, worse, readable by anyone who finds the address.
         if MOCK:
             return
-        missing = [n for n, v in (("SERVICE_API_KEYS", svc.configured_keys()), ("MONITOR_KEY", os.getenv("MONITOR_KEY", ""))) if not v]
+        missing = [n for n, v in (("SERVICE_API_KEYS", svc.configured_keys()), ("MONITOR_KEY", os.getenv("MONITOR_KEY", "")),
+                                  ("TOKEN_SECRET (at least 32 characters)", tokens.secret())) if not v]
         if missing:
             raise RuntimeError(f"Refusing to start: set {' and '.join(missing)} (see README, Server settings). MOCK=1 needs none.")
 
@@ -281,18 +283,56 @@ async def ws_endpoint(websocket: WebSocket):
 
 
 # ---- service API (docs/API_CONTRACT_V1.md): one WebSocket per test, API key, results -------------------------------------
+@app.post("/v1/tokens")
+async def v1_tokens(request: Request):
+    """ieltsup's server asks for a short-lived token for one candidate and gives it to that candidate's browser (worker/tokens.py)."""
+    if (denied := _guard(request)) is not None:
+        return denied
+    if tokens.secret() is None:
+        return svc.error(503, "no_token_secret", "The service has no token secret configured")
+    try:
+        body = await request.json()
+    except ValueError:
+        body = None
+    if not isinstance(body, dict):
+        return svc.error(400, "invalid_request", "Send a JSON object: {\"external_user_id\": \"...\", \"hour\": 0-23 (optional)}")
+    external, hour = body.get("external_user_id"), body.get("hour")
+    if not isinstance(external, str) or not 1 <= len(external.strip()) <= 120:
+        return svc.error(400, "invalid_request", "external_user_id is required (1 to 120 characters)")
+    if hour is not None and (not isinstance(hour, int) or isinstance(hour, bool) or not 0 <= hour <= 23):
+        return svc.error(400, "invalid_request", "hour must be a whole number from 0 to 23")
+    return JSONResponse(tokens.mint(external.strip(), hour), headers={"Cache-Control": "no-store"})
+
+
+async def _refuse_token(websocket: WebSocket, code: str) -> None:
+    """Tell the browser why (it can then ask its server for a new token), then close. Nothing is started."""
+    await websocket.accept()
+    await websocket.send_json({"type": "error", "code": code, "message": "The token is not valid; ask for a new one"})
+    await websocket.close(code=1008)
+
+
 @app.websocket("/v1/session")
 async def v1_session(websocket: WebSocket):
-    # A refusal before accept() reaches the caller as an HTTP 403 on the upgrade request (the socket never opens).
-    if svc.check_bearer(websocket.headers.get("authorization")) != "ok":
-        await websocket.close(code=1008)
-        return
+    """One test. The caller proves itself with an API key (server to server) or, from a browser, with a token from POST /v1/tokens."""
     params = websocket.query_params
-    external = (params.get("external_user_id") or "").strip()[:120]
-    hour = params.get("hour")
-    if not external or (hour is not None and not (hour.isdigit() and 0 <= int(hour) <= 23)):
-        await websocket.close(code=1008)
-        return
+    claims = None
+    if params.get("token") is not None:           # a browser: who it is and its hour come from the token, never from the URL
+        try:
+            claims = tokens.verify(params["token"])
+        except tokens.TokenError as e:
+            return await _refuse_token(websocket, e.code)
+        external, hour = claims.external_user_id, claims.hour
+    else:
+        # A refusal before accept() reaches the caller as an HTTP 403 on the upgrade request (the socket never opens).
+        if svc.check_bearer(websocket.headers.get("authorization")) != "ok":
+            await websocket.close(code=1008)
+            return
+        external = (params.get("external_user_id") or "").strip()[:120]
+        hour_text = params.get("hour")
+        if not external or (hour_text is not None and not (hour_text.isdigit() and 0 <= int(hour_text) <= 23)):
+            await websocket.close(code=1008)
+            return
+        hour = int(hour_text) if hour_text is not None else None
     await websocket.accept()
     if not is_ready():
         await websocket.close(code=1013, reason="Service is starting")
@@ -301,7 +341,12 @@ async def v1_session(websocket: WebSocket):
     if running >= MAX_SESSIONS:
         await websocket.close(code=1013, reason=f"Server is full ({running} tests running)")
         return
-    session = ExamSession(send=websocket.send_json, hour=int(hour) if hour is not None else None)
+    # Spent only now, so a refusal above (starting, full) lets the same token try again. One token opens one test.
+    if claims is not None and not tokens.USED.consume(claims):
+        await websocket.send_json({"type": "error", "code": "token_used", "message": "The token was already used; ask for a new one"})
+        await websocket.close(code=1008)
+        return
+    session = ExamSession(send=websocket.send_json, hour=hour)
     session.external_user_id = external
     session.device = (params.get("device") or "")[:40]
     await _serve(websocket, session, service=True)
@@ -447,11 +492,11 @@ if __name__ == "__main__":
 
     logging.basicConfig(level=logging.INFO)
     host, port = os.getenv("HOST", "127.0.0.1"), int(os.getenv("PORT", "8080"))
-    if os.getenv("SINGLE_PORT") == "1":
-        uvicorn.run(app, host=host, port=port)
-    else:
-        from worker import public
+    from worker import public
 
+    if os.getenv("SINGLE_PORT") == "1":
+        public.serve_single(app, host=host, port=port)
+    else:
         internal_host, internal_port = public.internal_address()
         raise SystemExit(asyncio.run(public.serve_both(app, public_host=host, public_port=port,
                                                        internal_host=internal_host, internal_port=internal_port)))
