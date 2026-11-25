@@ -1,5 +1,7 @@
 # Two-day roadmap: hand the speaking service to ieltsup
 
+> **Status, 2026-11-25:** Day 1 is done and merged (steps 1.1 to 1.6; 1.6 is tooling only until a domain exists). Day 2 has not started: **one day behind**. See `docs/UPDATE_2026-11-25.md`.
+
 Goal: by the end of day 2, ieltsup can run a real test from their own page against **one service** that contains speech recognition (STT), the examiner brain (LLM) and the voice (TTS), with nothing else for them to install or call.
 
 "One service" means: one address, one API, one start command on one GPU box. The three models already run on the same machine (Whisper + vLLM Qwen2.5-7B + Kokoro); the work is to make it safe, packaged and reachable.
