@@ -30,6 +30,7 @@ This repository is the speaking service. Run everything from the repo root (`pyt
 | `SERVICE_API_KEYS` | API keys for `/v1`, comma separated, one per caller. **With none set, every `/v1` call is refused.** |
 | `TOKEN_SECRET` | At least 32 random characters. Signs the short-lived browser tokens (`POST /v1/tokens`); the service refuses to start without it. Changing it voids every token. |
 | `TOKEN_TTL_S` | How long a token can be used to open a test (default 120, between 10 and 600). The test itself may run longer. |
+| `ALLOWED_ORIGINS` | The websites whose pages may open a test from a browser: exact origins, comma separated, e.g. `https://ieltsup.org,https://www.ieltsup.org`. No wildcard, path or trailing slash; plain `http` only for localhost. **Not set: no browser is allowed** (a start-up warning says so). Callers that send no `Origin` header (ieltsup's server, our load test) are not browsers and are not affected. |
 | `MONITOR_KEY` | Key for the monitoring page. **With none set, the page is closed** (except in `MOCK=1`). |
 | `HOST`, `PORT` | Address of the **public** port (default `127.0.0.1:8080`): serves only `/v1/...` and `/health`. This is the one to expose. |
 | `INTERNAL_HOST`, `INTERNAL_PORT` | Address of the **internal** port (default `127.0.0.1:8081`): test bench page and `/ws`, `/monitor`, run log, server log. The service refuses to start if `INTERNAL_HOST` is not a loopback address (unless `INTERNAL_ALLOW_REMOTE=1`); reach it with an SSH tunnel. |
