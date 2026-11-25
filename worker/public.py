@@ -99,6 +99,26 @@ def is_public(path: str) -> bool:
     return path in PUBLIC_EXACT or path.startswith(PUBLIC_PREFIXES)
 
 
+# Sent with every public HTTP response. The service answers in JSON and audio for one candidate: nothing may be kept by a cache on the way
+# (a CDN, a proxy, the browser), the type must not be guessed, and a browser that has seen the site over https keeps using https.
+SECURITY_HEADERS = ((b"x-content-type-options", b"nosniff"), (b"referrer-policy", b"no-referrer"),
+                    (b"strict-transport-security", b"max-age=15552000"))
+NO_STORE = (b"cache-control", b"no-store")
+PUBLIC_MARK = "speaking_public"             # set in the ASGI scope of a request that came in through the public port
+
+
+def hardened(send):
+    """`send` that adds SECURITY_HEADERS and a no-store Cache-Control to a response unless it already set them."""
+    async def wrapped(message):
+        if message["type"] == "http.response.start":
+            headers = list(message.get("headers", []))
+            present = {name.lower() for name, _ in headers}
+            headers += [(n, v) for n, v in (*SECURITY_HEADERS, NO_STORE) if n not in present]
+            message = {**message, "headers": headers}
+        await send(message)
+    return wrapped
+
+
 class PublicGate:
     """ASGI wrapper: lets the allow-listed paths through to `inner`, answers everything else as if it did not exist."""
 
@@ -116,7 +136,10 @@ class PublicGate:
                 elif message["type"] == "lifespan.shutdown":
                     await send({"type": "lifespan.shutdown.complete"})
                     return
+        if kind == "http":
+            send = hardened(send)
         if is_public(scope.get("path", "")):
+            scope = {**scope, PUBLIC_MARK: True}                      # lets a route know it is being served to the outside (see /health)
             if kind == "http" and scope.get("path") == "/health":
                 return await self._health(scope, receive, send)       # the one route a page may read cross-site (is the service ready?)
             return await self.inner(scope, receive, send)
