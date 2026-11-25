@@ -14,9 +14,11 @@ wget -O /root/cloudflared https://github.com/cloudflare/cloudflared/releases/lat
 ACCESS_CODE=<a long random code> /root/work/start_web.sh        # in tmux session "web"
 
 # the tunnel (tmux session "cf"); the link is printed in the log
-/root/cloudflared tunnel --no-autoupdate --url http://localhost:8080 2>&1 | tee /root/work/cloudflared.log
+/root/cloudflared tunnel --no-autoupdate --url http://localhost:8081 2>&1 | tee /root/work/cloudflared.log
 grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' /root/work/cloudflared.log | head -1
 ```
+
+The tunnel points at the **internal** port (8081), which serves the test bench; the public port (8080) carries only `/v1` and `/health`. This tunnel is for our own testers and must not be left running: it exposes the bench behind the access code only. ieltsup gets a separate address for 8080 (roadmap Day 1, step 6).
 
 The `trycloudflare.com` address is new every time the tunnel starts, and the tunnel lasts only as long as the process. Keep it inside tmux.
 
@@ -37,7 +39,7 @@ What one RTX 3090 really carries is not measured: three silent devices all recei
 
 ## 4. Watching every device (the logs page)
 
-Open `https://<tunnel address>/logs?key=<code>` (or `http://localhost:8080/logs?key=<code>` through the SSH tunnel on your PC; the code applies there too when `ACCESS_CODE` is set).
+Open `https://<tunnel address>/logs?key=<code>` (or `http://localhost:8081/logs?key=<code>` through the SSH tunnel on your PC; the code applies there too when `ACCESS_CODE` is set).
 
 - **Run log, Live: newest test** follows the latest test to start.
 - **Live: <device> (phase)** follows one device. The list refreshes every few seconds.

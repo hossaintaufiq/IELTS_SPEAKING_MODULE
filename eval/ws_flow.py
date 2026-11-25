@@ -105,7 +105,7 @@ async def main(args):
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("--host", default="localhost:8080")
+    ap.add_argument("--host", default="localhost:8081")
     ap.add_argument("--model", default="models/cache/kokoro-v1.0.onnx")
     ap.add_argument("--voices", default="models/cache/voices-v1.0.bin")
     asyncio.run(main(ap.parse_args()))

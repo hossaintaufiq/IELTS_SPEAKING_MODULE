@@ -29,6 +29,9 @@ This repository is the speaking service. Run everything from the repo root (`pyt
 |---|---|
 | `SERVICE_API_KEYS` | API keys for `/v1`, comma separated, one per caller. **With none set, every `/v1` call is refused.** |
 | `MONITOR_KEY` | Key for the monitoring page. **With none set, the page is closed** (except in `MOCK=1`). |
+| `HOST`, `PORT` | Address of the **public** port (default `127.0.0.1:8080`): serves only `/v1/...` and `/health`. This is the one to expose. |
+| `INTERNAL_HOST`, `INTERNAL_PORT` | Address of the **internal** port (default `127.0.0.1:8081`): test bench page and `/ws`, `/monitor`, run log, server log. The service refuses to start if `INTERNAL_HOST` is not a loopback address (unless `INTERNAL_ALLOW_REMOTE=1`); reach it with an SSH tunnel. |
+| `SINGLE_PORT` | `1` serves everything on `PORT`, as before. For local development only: it puts the bench and monitor wherever `/v1` is. |
 | `MAX_SESSIONS` | Tests allowed at once (default 6). Over that, a new test is refused with close code 1013. |
 | `ACCESS_CODE` | Optional code for the browser test bench pages (`/`, `/logs`). Does not apply to `/v1` or the monitor. |
 | `MONITOR_SLOW_S` | A reply slower than this many seconds counts as slow on the monitor (default 3). |
@@ -45,7 +48,7 @@ The caption defaults are a first guess to be tuned by the load test below, not m
 Run one session first as the baseline, then more, and keep `/monitor` open while it runs:
 
 ```
-python -m eval.load_test --sessions 1 --report base.json
+python -m eval.load_test --sessions 1 --report base.json    # bench /ws on the internal port 8081; with --api-key it uses /v1/session on 8080
 python -m eval.load_test --sessions 3 --baseline base.json
 python -m eval.load_test --sessions 9 --baseline base.json --gpu --report nine.json     # add --part2 for the long talk
 ```
@@ -57,7 +60,7 @@ recordings; `--audio fake` (noise) only checks that sessions connect. Use `--api
 
 ## Monitoring page
 
-Open `https://<service>/monitor?key=<MONITOR_KEY>` once; the browser keeps a cookie after that. It shows whether the service is ready,
+Open `http://localhost:8081/monitor?key=<MONITOR_KEY>` (internal port, through the SSH tunnel) once; the browser keeps a cookie after that. It shows whether the service is ready,
 tests running against the limit, every live test, reply-delay figures (p50, p95), recent tests with how each ended, failures
 (warnings and errors the service logged, plus tests that were aborted, failed, had errors or slow replies) and the server log.
 Scripts can read the same data from `GET /api/monitor` with `Authorization: Bearer <MONITOR_KEY>`. It never includes what a candidate said.

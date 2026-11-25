@@ -1,0 +1,88 @@
+"""The public face of the service, and the way it is started: two ports, one process.
+
+The service has two kinds of callers:
+
+* **public**: ieltsup's server and their students' browsers. They may reach exactly the service API (`/v1/...`, see
+  docs/API_CONTRACT_V1.md) and `/health`. Nothing else.
+* **internal**: us. The test bench page, its microphone socket (`/ws`), the monitor, the run log and the server log. They show or use
+  student speech and the GPU, so they listen on the loopback address only (reach them through an SSH tunnel).
+
+Both ports serve the same application in the same process, so they share the running tests, the loaded models and the GPU. The public
+port is that application behind `PublicGate`, which answers 404 to every path that is not on the allow-list, so a route added later
+is private until someone decides to publish it here.
+"""
+from __future__ import annotations
+
+import asyncio
+import logging
+import os
+
+log = logging.getLogger("speaking.public")
+
+PUBLIC_EXACT = frozenset({"/health"})
+PUBLIC_PREFIXES = ("/v1/",)
+LOOPBACK = frozenset({"127.0.0.1", "::1", "localhost"})
+
+
+def is_public(path: str) -> bool:
+    """True when `path` may be reached on the public port."""
+    if "\\" in path or "//" in path or "/../" in path + "/" or path.endswith("/.."):
+        return False                                    # nothing legitimate looks like this; do not rely on how the router reads it
+    return path in PUBLIC_EXACT or path.startswith(PUBLIC_PREFIXES)
+
+
+class PublicGate:
+    """ASGI wrapper: lets the allow-listed paths through to `inner`, answers everything else as if it did not exist."""
+
+    def __init__(self, inner):
+        self.inner = inner
+
+    async def __call__(self, scope, receive, send):
+        kind = scope["type"]
+        if kind == "lifespan":
+            # The wrapped application starts and stops with the internal server (models load once, not twice).
+            while True:
+                message = await receive()
+                if message["type"] == "lifespan.startup":
+                    await send({"type": "lifespan.startup.complete"})
+                elif message["type"] == "lifespan.shutdown":
+                    await send({"type": "lifespan.shutdown.complete"})
+                    return
+        if is_public(scope.get("path", "")):
+            return await self.inner(scope, receive, send)
+        if kind == "websocket":
+            await receive()                                           # the connect message; closing before accepting is an HTTP 403
+            return await send({"type": "websocket.close", "code": 1008})
+        body = b'{"error":{"code":"not_found","message":"Not found"}}'
+        await send({"type": "http.response.start", "status": 404,
+                    "headers": [(b"content-type", b"application/json"), (b"content-length", str(len(body)).encode())]})
+        await send({"type": "http.response.body", "body": body})
+
+
+def internal_address() -> tuple[str, int]:
+    """Where the internal app listens. Anything but a loopback address needs an explicit INTERNAL_ALLOW_REMOTE=1."""
+    host = os.getenv("INTERNAL_HOST", "127.0.0.1")
+    port = int(os.getenv("INTERNAL_PORT", "8081"))
+    if host not in LOOPBACK and os.getenv("INTERNAL_ALLOW_REMOTE") != "1":
+        raise SystemExit(f"Refusing to start: INTERNAL_HOST={host} would put the monitor and test bench on the network. "
+                         "Use 127.0.0.1 and an SSH tunnel, or set INTERNAL_ALLOW_REMOTE=1 if you really mean it.")
+    return host, port
+
+
+async def serve_both(app, *, public_host: str, public_port: int, internal_host: str, internal_port: int) -> int:
+    """Run the internal app and the public gate side by side until one stops. Returns the process exit code."""
+    import uvicorn
+
+    if (public_host, public_port) == (internal_host, internal_port) or public_port == internal_port:
+        raise SystemExit(f"Refusing to start: PORT and INTERNAL_PORT are both {public_port}; they must differ.")
+    internal = uvicorn.Server(uvicorn.Config(app, host=internal_host, port=internal_port))
+    public = uvicorn.Server(uvicorn.Config(PublicGate(app), host=public_host, port=public_port))
+    log.info("public  http://%s:%s  (only /v1 and /health)", public_host, public_port)
+    log.info("internal http://%s:%s  (test bench, monitor, logs)", internal_host, internal_port)
+    tasks = [asyncio.create_task(internal.serve()), asyncio.create_task(public.serve())]
+    await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+    for server in (internal, public):
+        server.should_exit = True
+    await asyncio.gather(*tasks, return_exceptions=True)
+    # The internal app owns the start-up checks (keys, models). If it never came up, the public port must not have served either.
+    return 0 if internal.started else 3
