@@ -11,6 +11,11 @@ from worker.session import ExamSession
 from tests.test_listening import FakeTask, to_part1, llm_ok
 
 
+@pytest.fixture(autouse=True)
+def mock_mode(monkeypatch):
+    monkeypatch.setattr(server, "MOCK", True)      # mock mode needs no monitor key; the key rules are tested in test_monitor.py
+
+
 @pytest.fixture
 def runs(tmp_path, monkeypatch):
     monkeypatch.setattr(sess, "RUNS", tmp_path)
@@ -151,7 +156,7 @@ def test_the_server_turns_away_a_test_when_it_is_full(monkeypatch):
 def test_without_the_access_code_nothing_but_health_is_served(monkeypatch):
     monkeypatch.setitem(server.ACCESS, "code", "s3cret")
     c = TestClient(server.app)
-    assert c.get("/").status_code == 401 and c.get("/api/runs").status_code == 401 and c.get("/logs", follow_redirects=False).status_code == 401
+    assert c.get("/").status_code == 401 and c.get("/logs", follow_redirects=False).status_code == 401
     assert c.get("/?key=wrong").status_code == 401
     assert c.get("/health").status_code == 200
     with pytest.raises(Exception):

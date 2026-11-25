@@ -70,6 +70,14 @@ SP=/venv/main/lib/python3.12/site-packages
 export LD_LIBRARY_PATH=$(ls -d $SP/nvidia/*/lib | tr "\n" ":")
 export ONNX_PROVIDER=CUDAExecutionProvider
 cd /root/work/speaking-service
+# The service refuses to start without keys. Made once, kept in /root/work/keys.env (read it there; never paste it into chat).
+if [ ! -f /root/work/keys.env ]; then
+  printf 'export SERVICE_API_KEYS=%s
+export MONITOR_KEY=%s
+' "$(python -c 'import secrets;print(secrets.token_urlsafe(24))')" "$(python -c 'import secrets;print(secrets.token_urlsafe(24))')" > /root/work/keys.env
+  chmod 600 /root/work/keys.env
+fi
+. /root/work/keys.env
 HOST=0.0.0.0 PORT=8080 exec python -m worker.server 2>&1 | tee /root/work/web.log
 EOF
 chmod +x "$WORK/start_web.sh"

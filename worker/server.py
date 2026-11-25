@@ -43,6 +43,7 @@ app = FastAPI(title="Speaking test bench")
 # Not set (the default, and on a private SSH tunnel): no check at all.
 ACCESS = {"code": os.getenv("ACCESS_CODE", "")}
 COOKIE = "access"
+MONITOR_PATHS = ("/api/live", "/api/runs", "/api/serverlog/")      # transcripts and logs: only with MONITOR_KEY, see _monitor_guard
 
 
 def _code_from(scope) -> tuple[bool, bool]:
@@ -69,9 +70,9 @@ class AccessCodeMiddleware:
     async def __call__(self, scope, receive, send):
         path = scope.get("path", "")
         # /v1 is the service API: the caller is a server, not a browser, and proves itself with its own API key (worker/service_api.py).
-        # The monitoring page has its own key too (MONITOR_KEY).
+        # The monitoring page and the data behind it (/api/monitor, runs, live view, server log) have their own key (MONITOR_KEY).
         if (scope["type"] not in ("http", "websocket") or not ACCESS["code"] or path in ("/health", "/monitor", "/api/monitor")
-                or path.startswith("/v1/")):
+                or path.startswith(MONITOR_PATHS) or path.startswith("/v1/")):
             return await self.inner(scope, receive, send)
         ok, from_link = _code_from(scope)
         if not ok:
@@ -100,6 +101,13 @@ if not MOCK:
         warm.install()      # share one loaded Whisper/Kokoro between sessions (must precede pipecat's kokoro import)
     except Exception:       # e.g. a dev PC without the model libraries: the cache is best-effort
         log.warning("model cache not installed; sessions will load models themselves")
+
+    @app.on_event("startup")
+    async def _require_keys():
+        # A real service without keys is either closed (no one can use it) or, worse, readable by anyone who finds the address.
+        missing = [n for n, v in (("SERVICE_API_KEYS", svc.configured_keys()), ("MONITOR_KEY", os.getenv("MONITOR_KEY", ""))) if not v]
+        if missing:
+            raise RuntimeError(f"Refusing to start: set {' and '.join(missing)} (see README, Server settings). MOCK=1 needs none.")
 
     @app.on_event("startup")
     async def _preload_models():
@@ -136,8 +144,10 @@ def logs_page():
 
 
 @app.get("/api/live")
-def live_run(id: str = ""):
+def live_run(request: Request, id: str = ""):
     """Events of one test (default: the newest), for the logs window's live view, and the list of all connected tests."""
+    if (denied := _monitor_guard(request)) is not None:
+        return denied
     listing = [{"id": k, "device": v.device, "phase": v.phase, "started": v.started, "active": v.started and v.phase != "done"}
                for k, v in SESSIONS.items()]
     if id == "all":                                   # every connected device in one timeline, oldest first
@@ -155,8 +165,10 @@ RUN_NAME = re.compile(r"^run_\d{8}_\d{6}(?:_\d{1,8})?$")
 
 
 @app.get("/api/runs")
-def list_runs():
+def list_runs(request: Request):
     """Saved test runs, newest first (the page's Run log can open any of them)."""
+    if (denied := _monitor_guard(request)) is not None:
+        return denied
     files = sorted(sess.RUNS.glob("run_*.json"), reverse=True)[:40] if sess.RUNS.exists() else []
     def device(f: Path) -> str:
         try:
@@ -167,7 +179,9 @@ def list_runs():
 
 
 @app.get("/api/runs/{name}")
-def get_run(name: str):
+def get_run(name: str, request: Request):
+    if (denied := _monitor_guard(request)) is not None:
+        return denied
     if not RUN_NAME.match(name):                  # the name becomes a file name: nothing else is accepted
         raise HTTPException(404, "no such run")
     path = sess.RUNS / f"{name}.json"
@@ -182,8 +196,10 @@ ANSI = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
 
 
 @app.get("/api/serverlog/{name}")
-def server_log(name: str, lines: int = 300, q: str = "", hide_debug: bool = True):
+def server_log(request: Request, name: str, lines: int = 300, q: str = "", hide_debug: bool = True):
     """The tail of a server log (web = this server, vllm = the LLM, setup = installation), for the page's Server log tab."""
+    if (denied := _monitor_guard(request)) is not None:
+        return denied
     if name not in LOG_NAMES:
         raise HTTPException(404, "no such log")
     path = LOG_DIR / LOG_NAMES[name]
@@ -358,6 +374,12 @@ def _monitor_denied(verdict: str):
     if verdict == "no_key":
         return PlainTextResponse("The monitoring page is closed: set MONITOR_KEY on the server.", status_code=503)
     return PlainTextResponse("Monitor key needed. Open /monitor?key=<your key> once.", status_code=401, headers={"WWW-Authenticate": "Bearer"})
+
+
+def _monitor_guard(request: Request):
+    """The refusal for a request to a monitoring data route (key in `Authorization: Bearer` or the cookie), or None when allowed."""
+    verdict, _ = _monitor_verdict(request)
+    return None if verdict == "ok" else _monitor_denied(verdict)
 
 
 @app.get("/monitor")
