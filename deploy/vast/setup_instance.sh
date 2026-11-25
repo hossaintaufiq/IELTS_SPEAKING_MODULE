@@ -70,13 +70,14 @@ SP=/venv/main/lib/python3.12/site-packages
 export LD_LIBRARY_PATH=$(ls -d $SP/nvidia/*/lib | tr "\n" ":")
 export ONNX_PROVIDER=CUDAExecutionProvider
 cd /root/work/speaking-service
-# The service refuses to start without keys. Made once, kept in /root/work/keys.env (read it there; never paste it into chat).
-if [ ! -f /root/work/keys.env ]; then
-  printf 'export SERVICE_API_KEYS=%s
-export MONITOR_KEY=%s
-' "$(python -c 'import secrets;print(secrets.token_urlsafe(24))')" "$(python -c 'import secrets;print(secrets.token_urlsafe(24))')" > /root/work/keys.env
-  chmod 600 /root/work/keys.env
-fi
+# The service refuses to start without these. Made once, kept in /root/work/keys.env (read it there; never paste it into chat).
+#   SERVICE_API_KEYS  ieltsup's server uses it for /v1 calls (comma separated list; one per caller)
+#   MONITOR_KEY       opens the monitor and run log on the internal port
+#   TOKEN_SECRET      signs the short-lived browser tokens (POST /v1/tokens); changing it voids every token
+touch /root/work/keys.env && chmod 600 /root/work/keys.env
+for name in SERVICE_API_KEYS MONITOR_KEY TOKEN_SECRET; do
+  grep -q "^export $name=" /root/work/keys.env || echo "export $name=$(python -c 'import secrets;print(secrets.token_urlsafe(32))')" >> /root/work/keys.env
+done
 . /root/work/keys.env
 HOST=0.0.0.0 PORT=8080 INTERNAL_PORT=8081 exec python -m worker.server 2>&1 | tee /root/work/web.log
 EOF

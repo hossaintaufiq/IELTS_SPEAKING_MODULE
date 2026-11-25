@@ -16,12 +16,36 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+import re
 
 log = logging.getLogger("speaking.public")
 
 PUBLIC_EXACT = frozenset({"/health"})
 PUBLIC_PREFIXES = ("/v1/",)
 LOOPBACK = frozenset({"127.0.0.1", "::1", "localhost"})
+
+
+TOKEN_IN_URL = re.compile(r"([?&]token=)[^\s&\"']+")
+
+
+class RedactTokens(logging.Filter):
+    """uvicorn logs the whole URL of a WebSocket, and ours carries the browser's token: keep it out of every log (and the monitor's copy)."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        try:
+            message = record.getMessage()
+        except Exception:
+            return True
+        if "token=" in message:
+            record.msg, record.args = TOKEN_IN_URL.sub(r"\g<1>REDACTED", message), ()
+        return True
+
+
+def redact_tokens_in_logs() -> None:
+    for name in ("uvicorn", "uvicorn.error", "uvicorn.access"):
+        logger = logging.getLogger(name)
+        if not any(isinstance(f, RedactTokens) for f in logger.filters):
+            logger.addFilter(RedactTokens())
 
 
 def is_public(path: str) -> bool:
@@ -69,6 +93,15 @@ def internal_address() -> tuple[str, int]:
     return host, port
 
 
+def serve_single(app, *, host: str, port: int) -> None:
+    """The old one-port mode (SINGLE_PORT=1), still with tokens kept out of the log."""
+    import uvicorn
+
+    server = uvicorn.Server(uvicorn.Config(app, host=host, port=port))
+    redact_tokens_in_logs()
+    server.run()
+
+
 async def serve_both(app, *, public_host: str, public_port: int, internal_host: str, internal_port: int) -> int:
     """Run the internal app and the public gate side by side until one stops. Returns the process exit code."""
     import uvicorn
@@ -76,7 +109,9 @@ async def serve_both(app, *, public_host: str, public_port: int, internal_host: 
     if (public_host, public_port) == (internal_host, internal_port) or public_port == internal_port:
         raise SystemExit(f"Refusing to start: PORT and INTERNAL_PORT are both {public_port}; they must differ.")
     internal = uvicorn.Server(uvicorn.Config(app, host=internal_host, port=internal_port))
-    public = uvicorn.Server(uvicorn.Config(PublicGate(app), host=public_host, port=public_port))
+    public = uvicorn.Server(uvicorn.Config(PublicGate(app), host=public_host, port=public_port,
+                                          access_log=False))      # the access log prints the whole URL, and a socket's URL carries its token
+    redact_tokens_in_logs()
     log.info("public  http://%s:%s  (only /v1 and /health)", public_host, public_port)
     log.info("internal http://%s:%s  (test bench, monitor, logs)", internal_host, internal_port)
     tasks = [asyncio.create_task(internal.serve()), asyncio.create_task(public.serve())]

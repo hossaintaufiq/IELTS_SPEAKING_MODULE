@@ -25,8 +25,31 @@ Marked **[exists]** = already implemented in `worker/`, **[new]** = to be built 
 ```
 `ready` is false while models are still loading (the first minutes after a start). Callers should not send tests until it is true. **[new]**
 
+## 2a. Browser tokens (a student's browser connects directly) **[new]**
+The browser never holds an API key. ieltsup's **server** asks for a token for one candidate and hands it to that candidate's browser.
+
+`POST /v1/tokens` (Bearer API key, JSON body):
+```json
+{ "external_user_id": "student-7", "hour": 9 }
+```
+`hour` is optional (0-23). Reply `200` (with `Cache-Control: no-store`):
+```json
+{ "token": "eyJ2IjoxLC...", "expires_at": 1795597919, "expires_in": 120 }
+```
+Errors: `400 invalid_request` (missing or too long `external_user_id`, bad `hour`), `401`, `503 no_token_secret`.
+
+The browser then opens `wss://<host>/v1/session?token=<token>` (optionally `&device=<label>`). Rules:
+- The candidate and hour come from the token. `external_user_id` or `hour` in the URL are ignored when a token is present.
+- A token opens **one** test and is valid for `expires_in` seconds (default 120) to **start** it; the test may then run as long as it needs.
+  If the service was full or still loading (close `1013`), the token is not spent and may be tried again before it expires.
+- A token is not an API key: it cannot call `/v1/tests/...` or mint other tokens.
+- A bad token does not open a test. The socket is accepted, sent `{"type":"error","code":"token_invalid"|"token_expired"|"token_used","message":...}`
+  and closed with `1008`. The browser should then ask its server for a new token.
+- Tokens are kept out of the service's logs. Ask for a token right before the student presses start, not in advance.
+- To void every token at once, change `TOKEN_SECRET` (restarts the service).
+
 ## 3. Live test (WebSocket)
-`GET /v1/session` upgraded to WebSocket. Query parameters:
+`GET /v1/session` upgraded to WebSocket. Authenticate with an API key (`Authorization: Bearer`, server to server) **or** with a browser token (`?token=`, section 2a). Query parameters (with a token, only `device` is read):
 
 | Param | Required | Meaning |
 |---|---|---|
@@ -95,7 +118,7 @@ estimated bands with an `estimated: true` flag. No official-score claim (decisio
 
 ## 6. Out of scope for v1 (decided later)
 Pricing and usage billing. Webhooks (the caller already holds the socket and can poll `/v1/tests/{id}`). Resume after a dropped connection.
-Browser-direct connections with short-lived tokens. Leases and GPU rental control. Scoring.
+Leases and GPU rental control. Scoring.
 
 ## 7. Open points for the ieltsup team
 1. Is a server-to-server socket (ieltsup relays audio to the browser, as it does today) acceptable, or does it want the browser to connect directly?

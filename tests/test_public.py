@@ -1,4 +1,7 @@
 """The public/internal split (worker/public.py): the public port serves the service API and /health, nothing else."""
+import asyncio
+import json
+import logging
 import os
 import socket
 import subprocess
@@ -59,7 +62,7 @@ def test_the_service_socket_still_reaches_the_application(gate, monkeypatch):
 def test_a_new_route_is_private_until_it_is_listed():
     """Guard against drift: these, and only these, routes of the application are public."""
     published = {r.path for r in server.app.routes if getattr(r, "path", None) and public.is_public(r.path.split("{")[0].rstrip("/") + ("/" if "{" in r.path else ""))}
-    assert published == {"/health", "/v1/session", "/v1/tests/{test_id}", "/v1/tests/{test_id}/result", "/v1/tests/{test_id}/audio"}
+    assert published == {"/health", "/v1/session", "/v1/tokens", "/v1/tests/{test_id}", "/v1/tests/{test_id}/result", "/v1/tests/{test_id}/audio"}
 
 
 def test_the_internal_app_listens_on_loopback_only(monkeypatch):
@@ -79,9 +82,9 @@ def free_port() -> int:
         return s.getsockname()[1]
 
 
-def start(env_extra: dict) -> subprocess.Popen:
+def start(env_extra: dict, log=subprocess.DEVNULL) -> subprocess.Popen:
     env = {**os.environ, "HOST": "127.0.0.1", **env_extra}
-    return subprocess.Popen([sys.executable, "-m", "worker.server"], env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    return subprocess.Popen([sys.executable, "-m", "worker.server"], env=env, stdout=log, stderr=log)
 
 
 def wait_up(url: str, proc: subprocess.Popen, seconds: float = 20):
@@ -136,3 +139,46 @@ def test_a_real_service_without_keys_never_serves_the_public_port():
     finally:
         if proc.poll() is None:
             proc.kill()
+
+
+# ---- a token never reaches a log ----------------------------------------------------------------------
+def test_the_log_filter_hides_tokens_and_leaves_other_lines_alone():
+    f = public.RedactTokens()
+
+    def out(msg, *args):
+        record = logging.LogRecord("uvicorn.error", logging.INFO, "x", 1, msg, args, None)
+        f.filter(record)
+        return record.getMessage()
+
+    assert out('%s - "WebSocket %s" [accepted]', "1.2.3.4:5", "/v1/session?token=abc.def_-9&device=Laptop") ==         '1.2.3.4:5 - "WebSocket /v1/session?token=REDACTED&device=Laptop" [accepted]'
+    assert out("plain line, 100% fine") == "plain line, 100% fine"
+    assert out("GET /health 200") == "GET /health 200"
+
+
+@pytest.mark.parametrize("single", [False, True])
+def test_a_browser_token_works_over_a_real_socket_and_stays_out_of_the_log(tmp_path, single):
+    pytest.importorskip("uvicorn")
+    websockets = pytest.importorskip("websockets")
+    pub, internal = free_port(), free_port()
+    env = {"MOCK": "1", "PORT": str(pub), "INTERNAL_PORT": str(internal), "SERVICE_API_KEYS": "k1", "TOKEN_SECRET": "z" * 40,
+           "PYTHONUNBUFFERED": "1", **({"SINGLE_PORT": "1"} if single else {})}
+    logfile = tmp_path / "server.log"
+    with open(logfile, "w") as log:
+        proc = start(env, log)
+        try:
+            wait_up(f"http://127.0.0.1:{pub}/health", proc)
+            minted = httpx.post(f"http://127.0.0.1:{pub}/v1/tokens", json={"external_user_id": "stu-1", "hour": 8},
+                                headers={"Authorization": "Bearer k1"}).json()
+
+            async def first_message(token):
+                async with websockets.connect(f"ws://127.0.0.1:{pub}/v1/session?token={token}") as ws:
+                    return json.loads(await asyncio.wait_for(ws.recv(), 10))
+
+            assert asyncio.run(first_message(minted["token"]))["type"] == "test"
+            assert asyncio.run(first_message(minted["token"]))["code"] == "token_used"       # one token, one test
+        finally:
+            proc.terminate()
+            proc.wait(timeout=15)
+    text = logfile.read_text(errors="replace")
+    assert "WebSocket /v1/session" in text                    # the connection was logged ...
+    assert minted["token"] not in text and "token=REDACTED" in text         # ... without its token

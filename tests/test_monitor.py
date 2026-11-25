@@ -185,13 +185,18 @@ def test_a_real_service_refuses_to_start_without_its_keys(monkeypatch):
     monkeypatch.setattr(server, "MOCK", False)
     monkeypatch.delenv("SERVICE_API_KEYS", raising=False)
     monkeypatch.delenv("MONITOR_KEY", raising=False)
+    monkeypatch.delenv("TOKEN_SECRET", raising=False)
     starters = [h for h in server.app.router.on_startup if h.__name__ == "_require_keys"]
     if not starters:
         pytest.skip("the app was imported in mock mode, so the key check is not installed")
-    with pytest.raises(RuntimeError, match="SERVICE_API_KEYS and MONITOR_KEY"):
+    with pytest.raises(RuntimeError, match="SERVICE_API_KEYS and MONITOR_KEY and TOKEN_SECRET"):
         asyncio.run(starters[0]())
     monkeypatch.setenv("SERVICE_API_KEYS", "k")
     monkeypatch.setenv("MONITOR_KEY", "m")
+    monkeypatch.setenv("TOKEN_SECRET", "too short")
+    with pytest.raises(RuntimeError, match="TOKEN_SECRET"):
+        asyncio.run(starters[0]())                          # a short secret does not count
+    monkeypatch.setenv("TOKEN_SECRET", "x" * 40)
     asyncio.run(starters[0]())
     monkeypatch.delenv("SERVICE_API_KEYS")
     monkeypatch.setattr(server, "MOCK", True)
