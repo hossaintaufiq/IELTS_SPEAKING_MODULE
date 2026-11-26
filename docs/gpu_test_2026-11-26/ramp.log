@@ -1,0 +1,13 @@
+== 07:16:49 1 at once (GPU memory before: 17451 MB) health: {"ok":true,"tests_running":0,"max_tests":20,"version":"1","ready":true,"accepting":true,"busy_reason":"","mock":false,"models_error":""}
+== 07:19:05 1 done, exit 0, GPU memory 25 s after: 17451 MB, health: {"ok":true,"tests_running":0,"max_tests":20,"version":"1","ready":true,"accepting":true,"busy_reason":"","mock":false,"models_error":""}
+== 07:19:05 6 at once (GPU memory before: 17451 MB) health: {"ok":true,"tests_running":0,"max_tests":20,"version":"1","ready":true,"accepting":true,"busy_reason":"","mock":false,"models_error":""}
+== 07:21:27 6 done, exit 0, GPU memory 25 s after: 18519 MB, health: {"ok":true,"tests_running":0,"max_tests":20,"version":"1","ready":true,"accepting":true,"busy_reason":"","mock":false,"models_error":""}
+== 07:21:27 9 at once (GPU memory before: 18519 MB) health: {"ok":true,"tests_running":0,"max_tests":20,"version":"1","ready":true,"accepting":true,"busy_reason":"","mock":false,"models_error":""}
+== 07:23:59 9 done, exit 0, GPU memory 25 s after: 18523 MB, health: {"ok":true,"tests_running":0,"max_tests":20,"version":"1","ready":true,"accepting":true,"busy_reason":"","mock":false,"models_error":""}
+== 07:23:59 12 at once (GPU memory before: 18523 MB) health: {"ok":true,"tests_running":0,"max_tests":20,"version":"1","ready":true,"accepting":true,"busy_reason":"","mock":false,"models_error":""}
+== 07:26:31 12 done, exit 0, GPU memory 25 s after: 18523 MB, health: {"ok":true,"tests_running":0,"max_tests":20,"version":"1","ready":true,"accepting":true,"busy_reason":"","mock":false,"models_error":""}
+== 07:26:32 16 at once (GPU memory before: 18523 MB) health: {"ok":true,"tests_running":0,"max_tests":20,"version":"1","ready":true,"accepting":true,"busy_reason":"","mock":false,"models_error":""}
+== 07:29:11 16 done, exit 1, GPU memory 25 s after: 18641 MB, health: {"ok":true,"tests_running":0,"max_tests":20,"version":"1","ready":true,"accepting":true,"busy_reason":"","mock":false,"models_error":""}
+== 07:29:12 20 at once (GPU memory before: 18641 MB) health: {"ok":true,"tests_running":0,"max_tests":20,"version":"1","ready":true,"accepting":true,"busy_reason":"","mock":false,"models_error":""}
+== 07:32:04 20 done, exit 1, GPU memory 25 s after: 19859 MB, health: {"ok":true,"tests_running":0,"max_tests":20,"version":"1","ready":true,"accepting":true,"busy_reason":"","mock":false,"models_error":""}
+RAMP DONE
