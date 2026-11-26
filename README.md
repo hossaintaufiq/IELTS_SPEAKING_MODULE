@@ -23,6 +23,10 @@ This repository is the speaking service. Run everything from the repo root (`pyt
 | `tests/` | The test suite |
 | `experiments/` | Earlier experiments (numbered studies, a GPT live voice sample, the browser TTS and STT labs). Not part of the service; nothing here imports them. |
 
+## Running on a server
+
+One GPU server, one container with all three models and the service: `docs/DEPLOY_SERVER.md` (`deploy/docker/`). Not yet built or run on a real server.
+
 ## Server settings (environment variables)
 
 | Variable | What it does |
