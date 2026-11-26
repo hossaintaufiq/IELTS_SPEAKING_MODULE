@@ -41,6 +41,12 @@ The service deletes a test's record and recording 30 days after saving them (`RE
 policy (its answer in `API_CONTRACT_V1.md`, section 7). The owner of this repo chose 30 days; it can be changed without code.
 Server logs also contain what candidates said and are not covered by this: limiting them belongs to how the service is run.
 
+## D10: One GPU server, one container (2026-11-26)
+At most 10 students at once, almost all day (owner of this repo). One 24 GB GPU holds that (`GPU_TEST_2026-11-26.md`), so the service runs
+as one container on one server: a small supervisor starts the language model, then the service, and restarts either (`deploy/docker/`).
+No Kubernetes and no second server for now; the accepted cost is that tests stop while the server is down or being updated. The same image
+can go to Kubernetes later.
+
 ## Open decisions
 
 | Question | Current assumption | Owner |

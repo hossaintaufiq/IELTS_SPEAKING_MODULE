@@ -1,0 +1,41 @@
+# One GPU server running the speaking service (docs/DEPLOY_SERVER.md). From the repository root:
+#   docker compose -f deploy/docker/compose.yaml up -d --build
+name: speaking
+
+services:
+  speaking:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile
+    image: speaking-service:latest
+    # Starts again after a crash and after the server reboots (Docker itself must start at boot).
+    restart: unless-stopped
+    env_file: .env
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    shm_size: "2gb"                   # vLLM passes data between its processes through shared memory
+    ports:
+      # Both only on the server itself. A tunnel or a web server on the same machine makes 8080 public (https);
+      # 8081 (monitor and logs) is reached with an SSH tunnel and is never public.
+      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:8081:8081"
+    volumes:
+      - models:/data/models           # downloaded models: kept across updates
+      - runs:/app/runs                # test records and recordings (deleted after RETENTION_DAYS)
+      - logs:/data/logs               # service and language model logs, one file a day
+    stop_grace_period: 60s
+    logging:                          # the container's own log holds only the supervisor's messages
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  models:
+  runs:
+  logs:

@@ -1,0 +1,13 @@
+# What may reach "docker build": nothing, except the folders the Dockerfile copies. The repository root also holds a private
+# SSH key, local keys and recordings, which must never be sent to a build.
+*
+!worker
+!web
+!question_bank
+!eval
+!deploy/docker
+**/__pycache__
+**/*.pyc
+**/.env
+**/*.wav
+eval/data
