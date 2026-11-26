@@ -1,3 +1,5 @@
 # Shell scripts run on the Linux GPU box and must have LF line endings even when checked out on Windows
 # (a CRLF script fails there: "set: pipefail: invalid option", see docs/GPU_TEST_2026-11-24.md).
 *.sh text eol=lf
+# Container files run on Linux.
+deploy/docker/** text eol=lf
