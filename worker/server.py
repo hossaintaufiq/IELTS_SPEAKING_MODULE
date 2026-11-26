@@ -168,6 +168,8 @@ if not MOCK:
                 warm.preload()
                 from worker.examiner.llm import generate_json        # the first request to vLLM is the slowest one
                 asyncio.run(generate_json("Reply as JSON.", 'Reply with {"ok": true}.', timeout=60))
+                # Before READY is set, so before any test is accepted: the "clean" memory level the restart rule compares with.
+                GUARD.record_baseline(load_guard.read_gpu_memory())
             except Exception as e:
                 log.exception("model preload failed; sessions will load models on demand")
                 READY["error"] = f"{type(e).__name__}: {e}"[:200]
