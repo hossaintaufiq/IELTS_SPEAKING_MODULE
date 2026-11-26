@@ -36,6 +36,11 @@ and the old root README moved under `experiments/` (they were experiments; nothi
 History is kept (files were moved with git, not re-added). Consequence for deployment: `deploy/vast/upload.sh` no longer tars the current folder,
 because the root can hold a private key; it sends the files git knows about minus a deny list, and `--list` shows what would be sent.
 
+## D9: Saved tests are kept for 30 days (2026-11-26)
+The service deletes a test's record and recording 30 days after saving them (`RETENTION_DAYS`). ieltsup keeps its own copy under its own
+policy (its answer in `API_CONTRACT_V1.md`, section 7). The owner of this repo chose 30 days; it can be changed without code.
+Server logs also contain what candidates said and are not covered by this: limiting them belongs to how the service is run.
+
 ## Open decisions
 
 | Question | Current assumption | Owner |
@@ -45,6 +50,5 @@ because the root can hold a private key; it sends the files git knows about minu
 | Node team's LLM-service API shape | Reuse for leases/webhooks | Node team |
 | Human-scored data source | Needed for eval + any fine-tune | Academic |
 | Result format | Four criteria with bands, labelled estimates | Product |
-| Audio retention/deletion | Store transcripts; audio kept for a limited time | Product/legal |
 | Lease-end grace period | A few minutes | Product |
 | Multi-tenant | No, company only | Product |

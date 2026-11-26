@@ -27,6 +27,7 @@ from fastapi.staticfiles import StaticFiles
 from worker import caption_budget
 from worker import load_guard
 from worker import public
+from worker import retention
 from worker import monitor as mon
 from worker import service_api as svc
 from worker import session as sess
@@ -141,6 +142,21 @@ if not MOCK:
     @app.on_event("startup")
     async def _start_gpu_watcher():
         WATCH["task"] = asyncio.create_task(_watch_gpu())         # kept in WATCH so it is not garbage collected
+
+    async def _delete_old_tests():
+        """Saved tests older than RETENTION_DAYS are deleted, at start and then every hour (worker/retention.py)."""
+        while True:
+            try:
+                deleted = await asyncio.to_thread(retention.purge, sess.RUNS, retention.retention_days())
+                if deleted:
+                    log.info("deleted %d saved test files older than the retention period", len(deleted))
+            except Exception:
+                log.exception("deleting old tests failed; it will try again")
+            await asyncio.sleep(retention.PURGE_EVERY_S)
+
+    @app.on_event("startup")
+    async def _start_retention():
+        WATCH["retention"] = asyncio.create_task(_delete_old_tests())
 
     @app.on_event("startup")
     async def _preload_models():
