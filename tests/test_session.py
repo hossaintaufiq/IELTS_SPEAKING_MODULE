@@ -228,3 +228,59 @@ def test_mic_is_ignored_while_examiner_speaks_and_for_a_short_tail():
         return s
 
     asyncio.run(go())
+
+
+def test_skip_prep_starts_the_long_turn_only_during_preparation():
+    async def go():
+        s, ev = make()
+        await s.handle_control({"action": "skip_prep"})          # before the test has started: nothing happens
+        assert not ev
+        await s.handle_control({"action": "start"})
+        s._ticker.cancel()
+        await s.handle_control({"action": "skip_prep"})          # in the introduction: nothing happens
+        assert s.phase == "intro"
+        for _ in range(4):
+            if s.phase == "part2_prep":
+                break
+            await s.skip_part()
+        assert s.phase == "part2_prep"
+        await s.handle_control({"action": "skip_prep"})
+        assert s.phase == "part2_speak" and not s.muted
+        lines = len(spoken(s))
+        await s.handle_control({"action": "skip_prep"})          # pressed twice: the start line is not said again
+        assert s.phase == "part2_speak" and len(spoken(s)) == lines
+
+    asyncio.run(go())
+
+
+def test_part2_silence_waits_until_a_slow_voice_has_said_the_line():
+    async def go():
+        now = [1000.0]
+        s, _ = make(clock=lambda: now[0])
+        await s.handle_control({"action": "start"})
+        s._ticker.cancel()
+        for _ in range(6):
+            if s.phase == "part2_speak":
+                break
+            await s.skip_part()
+        assert s.phase == "part2_speak"
+        s.await_audio = True                       # the real service: speech takes a while to be generated
+        await s.say("Can you start speaking now, please?")
+        said = len(spoken(s))
+        now[0] += 20                               # still generating: this is not the candidate being silent
+        await s._part2_silence_check()
+        assert len(spoken(s)) == said
+        s.bot_started()
+        now[0] += 3
+        s.bot_stopped()
+        now[0] += 10                               # now they really have been quiet since the examiner finished
+        await s._part2_silence_check()
+        assert len(spoken(s)) == said + 1
+        now[0] += 10                               # the reminder is queued but not heard yet: nothing more is said
+        await s._part2_silence_check()
+        assert len(spoken(s)) == said + 1 and s.phase == "part2_speak"
+        now[0] += 60                               # a voice that never starts must not stop the test for ever
+        await s._part2_silence_check()
+        assert len(spoken(s)) > said + 1
+
+    asyncio.run(go())

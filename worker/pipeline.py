@@ -107,4 +107,11 @@ def build_task(websocket, cfg: WorkerConfig, session):
     )
     session.task = task
     session.stt = stt
+
+    @transport.event_handler("on_client_disconnected")
+    async def _left(_transport, _websocket):
+        # The page was closed, refreshed or lost: end this test now. Without this the pipeline waits for its idle timeout
+        # (minutes) and the test keeps its place, so the next candidate is told the server is full.
+        await task.cancel()
+
     return task

@@ -77,6 +77,7 @@ The caller retries later or routes elsewhere. **[implemented in step 2]**
 |---|---|
 | `start` | Begins the test; the examiner greets. Send once, after the socket opens and the microphone works. |
 | `end` | Ends the test politely (the examiner closes the test) |
+| `skip_prep` | The candidate is ready before the Part 2 preparation time is up: the long turn starts now. Ignored in every other phase. |
 | `next_part` | Skips to the next part. Testing and admin use only; ieltsup should not expose it to students. |
 
 ### 3.2 Server to client
