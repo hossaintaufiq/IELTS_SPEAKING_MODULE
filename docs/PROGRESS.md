@@ -63,6 +63,8 @@ Status: `todo` / `doing` / `done` / `blocked`. Dates are the day the status chan
 | 2026-11-26 | `skip_prep` action; Part 2 prompts wait for the examiner's line to be heard | done (480 tests; checked on this PC, NOT on a GPU) | ieltsup's page has a start-now button. On a slow voice the silence timers counted speech generation as the candidate's silence and skipped Part 2 |
 | 2026-11-26 | A closed, refreshed or lost connection ends its test at once | done (checked with a real service on this PC: place free after 4 to 7 s; NOT on a GPU) | Before, the test kept its place until Pipecat's idle timeout (minutes), so the next candidate was told the server is full |
 | 2026-11-26 | Run the service on this PC (`deploy/local/run_local.py voice` or `mock`) | done | Whisper base.en and Kokoro on the CPU, no language model (bank questions). For trying the flow only: slow, and says nothing about quality or capacity |
+| 2026-11-26 | Second GPU session (RTX 3090): the ieltsup page against the service through an SSH tunnel | done | Two full spoken tests completed (one scripted, one by a person, about 13 min): reply delay median about 3 s, worst 6.9 s. Outside check 19 pass, 1 expected warning (plain http). Found: Part 2 interruption, tests saved twice |
+| 2026-11-26 | Fix: no Part 2 prompt over a candidate who is still talking; each test saved once | done (483 tests; both new tests fail on the old code; NOT yet re-checked on a GPU) | Speech is believed while the microphone carries sound, instead of for 20 s after the speech-started signal |
 
 ## Blocked / waiting on
 
