@@ -284,3 +284,74 @@ def test_part2_silence_waits_until_a_slow_voice_has_said_the_line():
         assert len(spoken(s)) > said + 1
 
     asyncio.run(go())
+
+
+def mic_chunk(level: int) -> bytes:
+    """100 ms of 16 kHz PCM16 at a steady level (out of 32767)."""
+    return int(level).to_bytes(2, "little", signed=True) * 1600
+
+
+async def at_long_turn():
+    now = [1000.0]
+    s, ev = make(clock=lambda: now[0])
+    await s.handle_control({"action": "start"})
+    s._ticker.cancel()
+    for _ in range(6):
+        if s.phase == "part2_speak":
+            break
+        await s.skip_part()
+    assert s.phase == "part2_speak"
+    return s, now
+
+
+def test_part2_never_prompts_a_candidate_who_talks_for_a_long_time_without_pausing():
+    async def go():
+        s, now = await at_long_turn()
+        said = len(spoken(s))
+        s.vad_started()                            # one "speech started", and no pause long enough for a "stopped"
+        for _ in range(900):                       # 90 s of talking
+            now[0] += 0.1
+            s.note_audio(mic_chunk(1500))
+            if _ % 5 == 0:
+                await s._part2_silence_check()
+        assert len(spoken(s)) == said and s.phase == "part2_speak"
+        s.vad_stopped()                            # now they really stop: the usual prompt follows after the usual wait
+        now[0] += s.p2_silence_s + 1
+        await s._part2_silence_check()
+        assert len(spoken(s)) == said + 1
+
+    asyncio.run(go())
+
+
+def test_a_missed_speech_stopped_signal_does_not_block_part2_for_ever():
+    async def go():
+        s, now = await at_long_turn()
+        said = len(spoken(s))
+        s.vad_started()                            # ...and the "stopped" signal is lost
+        now[0] += 10
+        for _ in range(200):                       # 20 s of near-silence from the microphone
+            now[0] += 0.1
+            s.note_audio(mic_chunk(60))
+        assert not s._speaking_now()
+        await s._part2_silence_check()
+        assert len(spoken(s)) == said + 1
+
+    asyncio.run(go())
+
+
+def test_a_finished_test_is_saved_once_even_when_its_connection_closes_later(monkeypatch):
+    async def go():
+        s, _ = make()
+        await s.handle_control({"action": "start"})
+        s._ticker.cancel()
+        first = await s.finish()
+        later = sess.time.strftime
+        monkeypatch.setattr(sess.time, "strftime", lambda fmt, *a: "20991231_235959" if not a else later(fmt, *a))   # time has passed
+        s.note_audio(mic_chunk(1500))
+        again = s.abort()                          # the server calls this when the socket closes
+        assert again == first
+        assert [p.name for p in sess.RUNS.glob("run_*.json")] == [first.name]
+        record = json.loads(first.read_text(encoding="utf-8"))
+        assert record["status"] == "completed" and record["mic_chunks_received"] == 1      # the later save is the one kept
+
+    asyncio.run(go())
