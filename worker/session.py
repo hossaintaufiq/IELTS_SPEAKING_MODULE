@@ -201,6 +201,7 @@ class ExamSession:
         self._cut_next = False                       # the next examiner line is the polite "let's move on" after an over-long answer
         self._late_continuation = False             # the next turn is the end of the PREVIOUS answer, not an answer to the question just asked
         self._line_due: float | None = None          # when the line still waiting to be heard was queued
+        self._run_path: Path | None = None           # where this test's record is saved, chosen at the first save
         self._last_loud_at = -1e9                    # when a microphone chunk last carried sound loud enough to be speech
         self._last_voice_at = -1e9                  # when the voice detector last heard the candidate
 
@@ -968,7 +969,11 @@ class ExamSession:
         if not self.log:
             return None
         RUNS.mkdir(exist_ok=True)
-        path = RUNS / f"run_{time.strftime('%Y%m%d_%H%M%S')}_{self.test_id}.json"       # the id keeps two tests apart, and finds a test by its id
+        # One file per test, however often it is saved (at the end of the test, and again when its connection closes): the later
+        # save has everything the earlier one had, so it replaces it. The id keeps two tests apart, and finds a test by its id.
+        if self._run_path is None:
+            self._run_path = RUNS / f"run_{time.strftime('%Y%m%d_%H%M%S')}_{self.test_id}.json"
+        path = self._run_path
         lat = [e["seconds"] for e in self.log if e["type"] == "latency"]
         mic = {}
         if self._mic_pcm:

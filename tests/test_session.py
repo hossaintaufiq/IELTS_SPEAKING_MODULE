@@ -337,3 +337,21 @@ def test_a_missed_speech_stopped_signal_does_not_block_part2_for_ever():
         assert len(spoken(s)) == said + 1
 
     asyncio.run(go())
+
+
+def test_a_finished_test_is_saved_once_even_when_its_connection_closes_later(monkeypatch):
+    async def go():
+        s, _ = make()
+        await s.handle_control({"action": "start"})
+        s._ticker.cancel()
+        first = await s.finish()
+        later = sess.time.strftime
+        monkeypatch.setattr(sess.time, "strftime", lambda fmt, *a: "20991231_235959" if not a else later(fmt, *a))   # time has passed
+        s.note_audio(mic_chunk(1500))
+        again = s.abort()                          # the server calls this when the socket closes
+        assert again == first
+        assert [p.name for p in sess.RUNS.glob("run_*.json")] == [first.name]
+        record = json.loads(first.read_text(encoding="utf-8"))
+        assert record["status"] == "completed" and record["mic_chunks_received"] == 1      # the later save is the one kept
+
+    asyncio.run(go())
