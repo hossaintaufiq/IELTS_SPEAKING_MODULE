@@ -67,6 +67,8 @@ RESERVE_SLICE_S = 50
 # examiner.ts: "a short follow-up that pushes them to develop it" for Part 3
 PART3_FOLLOW_UPS = ["Why do you think that is?", "Can you give an example?"]
 
+STUCK_VOICE_S = 20         # "speech started" with no "speech stopped" is believed this long after the microphone last carried sound
+VOICE_RMS = 0.012          # a microphone chunk at least this loud carries speech (quiet laptop microphones: about 0.02 to 0.03)
 LINE_START_MAX_S = 45      # how long a queued line may take to start sounding before the silence timers stop waiting for it
 P2_REAL_WORDS = 4          # fewer words than this in the long turn is not "speaking" (stray noise, a lone "okay")
 P2_ENOUGH_WORDS = 12       # fewer than this and no question is made up about it: straight on to Part 3
@@ -199,6 +201,7 @@ class ExamSession:
         self._cut_next = False                       # the next examiner line is the polite "let's move on" after an over-long answer
         self._late_continuation = False             # the next turn is the end of the PREVIOUS answer, not an answer to the question just asked
         self._line_due: float | None = None          # when the line still waiting to be heard was queued
+        self._last_loud_at = -1e9                    # when a microphone chunk last carried sound loud enough to be speech
         self._last_voice_at = -1e9                  # when the voice detector last heard the candidate
 
     # ---- events to the browser + the run log -----------------------------------------------------
@@ -231,7 +234,10 @@ class ExamSession:
         if len(self._mic_pcm) < 16000 * 2 * 600:
             self._mic_pcm.extend(data)
         if a:
-            self.mic_rms = max((sum(x * x for x in a) / len(a)) ** 0.5 / 32768, self.mic_rms * 0.85)
+            rms = (sum(x * x for x in a) / len(a)) ** 0.5 / 32768
+            if rms >= VOICE_RMS:
+                self._last_loud_at = self.clock()
+            self.mic_rms = max(rms, self.mic_rms * 0.85)
 
     async def emit(self, event: dict) -> None:
         event = {**event, "t": round(self.clock() - self.t0, 2), "at": round(time.time(), 2)}   # "at" (wall clock) lines up several devices
@@ -314,8 +320,9 @@ class ExamSession:
         self._last_voice_at = self.clock()           # their voice was heard right up to now (a transcript only follows later)
 
     def _speaking_now(self) -> bool:
-        # a missed "stopped" signal must not make the examiner wait forever
-        return self._user_active and self.clock() - self._user_active_since < 20
+        # A missed "stopped" signal must not make the examiner wait forever. But a candidate who talks for a long time without a
+        # pause (common in the Part 2 long turn) sends no new signal either, so while the microphone still carries sound they are talking.
+        return self._user_active and self.clock() - max(self._user_active_since, self._last_loud_at) < STUCK_VOICE_S
 
     async def on_candidate_turn(self, text: str) -> None:
         """A speech turn was finished. The examiner does NOT answer yet: it waits for the candidate's
