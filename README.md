@@ -25,7 +25,89 @@ This repository is the speaking service. Run everything from the repo root (`pyt
 
 ## Running on a server
 
-One GPU server, one container with all three models and the service: `docs/DEPLOY_SERVER.md` (`deploy/docker/`). Not yet built or run on a real server.
+One GPU server, one container with all three models and the service (`deploy/docker/`). Full guide: `docs/DEPLOY_SERVER.md`.
+
+> **The image has not been built or run yet.** Expect to fix small things on the first build, and send us the error text.
+
+Run every command from the repository root, on Linux.
+
+### 1. Get the code
+
+```bash
+git clone https://github.com/rbrclabs/local_first_speaking_module.git
+cd local_first_speaking_module
+```
+
+### 2. Build the image
+
+Needs Docker and internet access. No GPU and no keys are needed to build. It downloads several GB, so keep plenty of disk free.
+
+```bash
+docker build --platform linux/amd64 -f deploy/docker/Dockerfile -t speaking-service:latest .
+```
+
+The dot at the end matters. `.dockerignore` sends only the service's folders to the build, never keys or recordings.
+
+### 3. Push it to a private registry (only if another machine will run it)
+
+The image holds the code and the question bank: keep the registry **private**. Example with GitHub's registry; log in with a token that may write packages.
+
+```bash
+docker login ghcr.io -u <github-user>
+docker tag speaking-service:latest ghcr.io/rbrclabs/speaking-service:0.1.0
+docker push ghcr.io/rbrclabs/speaking-service:0.1.0
+```
+
+On the server that will run it (it also needs this repository, for the compose file):
+
+```bash
+docker login ghcr.io -u <github-user>
+docker pull ghcr.io/rbrclabs/speaking-service:0.1.0
+docker tag ghcr.io/rbrclabs/speaking-service:0.1.0 speaking-service:latest
+```
+
+### 4. Prepare the GPU server
+
+One NVIDIA card with 24 GB, 32 GB RAM, 100 GB disk, a recent NVIDIA driver, Docker with the compose plugin, and the NVIDIA Container Toolkit. A rented container (such as a vast.ai instance) cannot run Docker.
+
+```bash
+sudo systemctl enable docker                                  # so the service comes back after a reboot
+docker run --rm --gpus all ubuntu nvidia-smi                  # must list the GPU
+```
+
+### 5. Set the keys (once, on the server)
+
+```bash
+cp deploy/docker/.env.example deploy/docker/.env
+python3 -c "import secrets; print(secrets.token_urlsafe(32))" # run three times, one value per key
+nano deploy/docker/.env                                       # SERVICE_API_KEYS, MONITOR_KEY, TOKEN_SECRET, ALLOWED_ORIGINS
+chmod 600 deploy/docker/.env
+```
+
+Never commit this file or send it in a chat.
+
+### 6. Start it
+
+```bash
+docker compose -f deploy/docker/compose.yaml up -d --no-build
+docker compose -f deploy/docker/compose.yaml logs -f          # the supervisor's messages (Ctrl+C leaves them)
+curl -s http://127.0.0.1:8080/health                          # wait for "ready": true
+```
+
+To build and start in one step on the GPU server itself, replace `--no-build` with `--build` (steps 2 and 3 are then not needed). The first start also downloads the speech and language models and can take a long while.
+
+### 7. Check it and run it
+
+```bash
+docker compose -f deploy/docker/compose.yaml ps               # "healthy" once it is ready
+docker compose -f deploy/docker/compose.yaml exec speaking tail -f /data/logs/web.log      # also vllm.log
+docker compose -f deploy/docker/compose.yaml exec speaking \
+  /opt/app/bin/python -m eval.load_test --sessions 1 --api-key <one key from SERVICE_API_KEYS> \
+  --model /opt/models/kokoro-v1.0.onnx --voices /opt/models/voices-v1.0.bin                # one scripted test
+docker compose -f deploy/docker/compose.yaml down             # stop (models, recordings and logs are kept)
+```
+
+Give port 8080 an https address before anyone outside the server uses it (`docs/DEPLOY_PUBLIC.md`). Port 8081 (monitor and logs) is never public.
 
 ## Server settings (environment variables)
 
