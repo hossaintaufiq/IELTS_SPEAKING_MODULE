@@ -1,0 +1,213 @@
+{
+  "config": {
+    "base": "ws://127.0.0.1:8080",
+    "sessions": 6,
+    "turns": 6,
+    "ramp_s": 1.0,
+    "part2": false,
+    "reply_timeout": 30.0,
+    "max_s": 900.0,
+    "audio": "synth",
+    "wav": [],
+    "model": "models/cache/kokoro-v1.0.onnx",
+    "voices": "models/cache/voices-v1.0.bin",
+    "baseline": "/root/work/load/n1.json",
+    "allow_extra_s": 1.0,
+    "max_p95": null,
+    "gpu": true,
+    "report": "/root/work/load/n6.json"
+  },
+  "wall_s": 104.6,
+  "summary": {
+    "sessions": 6,
+    "ran": 6,
+    "refused": 0,
+    "failed": [],
+    "reply_delay": {
+      "n": 36,
+      "p50": 3.78,
+      "p95": 5.97,
+      "max": 6.08
+    },
+    "server_delay": {
+      "n": 36,
+      "p50": 2.97,
+      "p95": 4.57,
+      "max": 4.73
+    },
+    "first_audio": {
+      "n": 6,
+      "p50": 0.3,
+      "p95": 0.34,
+      "max": 0.34
+    },
+    "no_reply": 0,
+    "turns": 36,
+    "errors": [],
+    "ended": {
+      "ended_by_candidate": 6
+    }
+  },
+  "gpu": {
+    "available": true,
+    "util_max_pct": 100.0,
+    "util_avg_pct": 26.3,
+    "mem_max_mb": 21195.0,
+    "mem_total_mb": 24576.0
+  },
+  "baseline_p95": 5.15,
+  "passed": true,
+  "why_not": [],
+  "sessions": [
+    {
+      "n": 0,
+      "delays": [
+        2.68,
+        2.81,
+        3.94,
+        4.34,
+        3.78,
+        5.41
+      ],
+      "server_delays": [
+        1.87,
+        2.08,
+        3.0,
+        2.97,
+        3.02,
+        4.73
+      ],
+      "no_reply": 0,
+      "errors": [],
+      "turns_done": 6,
+      "first_audio_s": 0.33,
+      "ended": "ended_by_candidate",
+      "duration_s": 95.6
+    },
+    {
+      "n": 1,
+      "delays": [
+        2.71,
+        2.77,
+        3.77,
+        5.97,
+        5.32,
+        3.93
+      ],
+      "server_delays": [
+        1.96,
+        2.06,
+        2.9,
+        2.39,
+        4.57,
+        2.99
+      ],
+      "no_reply": 0,
+      "errors": [],
+      "turns_done": 6,
+      "first_audio_s": 0.29,
+      "ended": "ended_by_candidate",
+      "duration_s": 96.5
+    },
+    {
+      "n": 2,
+      "delays": [
+        2.74,
+        2.91,
+        3.95,
+        3.18,
+        3.92,
+        3.94
+      ],
+      "server_delays": [
+        1.96,
+        2.16,
+        3.0,
+        2.38,
+        3.07,
+        3.15
+      ],
+      "no_reply": 0,
+      "errors": [],
+      "turns_done": 6,
+      "first_audio_s": 0.34,
+      "ended": "ended_by_candidate",
+      "duration_s": 94.1
+    },
+    {
+      "n": 3,
+      "delays": [
+        2.26,
+        2.98,
+        4.28,
+        6.08,
+        3.78,
+        3.77
+      ],
+      "server_delays": [
+        1.45,
+        2.07,
+        2.99,
+        2.51,
+        3.01,
+        2.93
+      ],
+      "no_reply": 0,
+      "errors": [],
+      "turns_done": 6,
+      "first_audio_s": 0.29,
+      "ended": "ended_by_candidate",
+      "duration_s": 101.6
+    },
+    {
+      "n": 4,
+      "delays": [
+        2.71,
+        2.9,
+        3.92,
+        4.23,
+        3.79,
+        3.76
+      ],
+      "server_delays": [
+        1.92,
+        2.06,
+        3.04,
+        3.33,
+        3.02,
+        2.99
+      ],
+      "no_reply": 0,
+      "errors": [],
+      "turns_done": 6,
+      "first_audio_s": 0.33,
+      "ended": "ended_by_candidate",
+      "duration_s": 89.8
+    },
+    {
+      "n": 5,
+      "delays": [
+        2.73,
+        2.84,
+        5.24,
+        3.97,
+        3.91,
+        3.94
+      ],
+      "server_delays": [
+        1.92,
+        2.07,
+        4.49,
+        3.11,
+        3.09,
+        3.16
+      ],
+      "no_reply": 0,
+      "errors": [],
+      "turns_done": 6,
+      "first_audio_s": 0.3,
+      "ended": "ended_by_candidate",
+      "duration_s": 89.6
+    }
+  ]
+}
