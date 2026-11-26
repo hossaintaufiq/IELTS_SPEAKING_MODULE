@@ -67,6 +67,7 @@ RESERVE_SLICE_S = 50
 # examiner.ts: "a short follow-up that pushes them to develop it" for Part 3
 PART3_FOLLOW_UPS = ["Why do you think that is?", "Can you give an example?"]
 
+MAX_RECORDING_S = 1800     # of the candidate's microphone is kept (MAX_RECORDING_S): a whole test is about 15 minutes
 STUCK_VOICE_S = 20         # "speech started" with no "speech stopped" is believed this long after the microphone last carried sound
 VOICE_RMS = 0.012          # a microphone chunk at least this loud carries speech (quiet laptop microphones: about 0.02 to 0.03)
 LINE_START_MAX_S = 45      # how long a queued line may take to start sounding before the silence timers stop waiting for it
@@ -201,6 +202,9 @@ class ExamSession:
         self._cut_next = False                       # the next examiner line is the polite "let's move on" after an over-long answer
         self._late_continuation = False             # the next turn is the end of the PREVIOUS answer, not an answer to the question just asked
         self._line_due: float | None = None          # when the line still waiting to be heard was queued
+        self._mic_limit = int(float(os.getenv("MAX_RECORDING_S", MAX_RECORDING_S)) * 16000 * 2)     # bytes
+        self.recording_truncated = False
+        self._wav_saved = 0                          # how much of the recording is on disk already
         self._run_path: Path | None = None           # where this test's record is saved, chosen at the first save
         self._last_loud_at = -1e9                    # when a microphone chunk last carried sound loud enough to be speech
         self._last_voice_at = -1e9                  # when the voice detector last heard the candidate
@@ -232,8 +236,10 @@ class ExamSession:
         import array
         a = array.array("h", data[: len(data) // 2 * 2])
         self.mic_chunks += 1
-        if len(self._mic_pcm) < 16000 * 2 * 600:
+        if len(self._mic_pcm) < self._mic_limit:
             self._mic_pcm.extend(data)
+        else:
+            self.recording_truncated = True
         if a:
             rms = (sum(x * x for x in a) / len(a)) ** 0.5 / 32768
             if rms >= VOICE_RMS:
@@ -976,13 +982,18 @@ class ExamSession:
         path = self._run_path
         lat = [e["seconds"] for e in self.log if e["type"] == "latency"]
         mic = {}
-        if self._mic_pcm:
-            import array, wave
-            a = array.array("h", bytes(self._mic_pcm[: len(self._mic_pcm) // 2 * 2]))
-            mic = {"mic_seconds": round(len(a) / 16000, 1), "mic_peak": round(max(abs(x) for x in a) / 32768, 4),
-                   "mic_rms": round((sum(x * x for x in a) / len(a)) ** 0.5 / 32768, 4)}
-            with wave.open(str(path.with_suffix(".wav")), "wb") as w:
-                w.setnchannels(1); w.setsampwidth(2); w.setframerate(16000); w.writeframes(bytes(self._mic_pcm))
+        pcm = bytes(self._mic_pcm[: len(self._mic_pcm) // 2 * 2])
+        if pcm:
+            import wave
+
+            import numpy as np                                      # a Python loop over half an hour of samples would stall every test
+            a = np.frombuffer(pcm, dtype="<i2").astype(np.float64)
+            mic = {"mic_seconds": round(len(a) / 16000, 1), "mic_peak": round(float(np.abs(a).max()) / 32768, 4),
+                   "mic_rms": round(float(np.sqrt(np.mean(a * a))) / 32768, 4), "recording_truncated": self.recording_truncated}
+            if len(pcm) != self._wav_saved:                         # the second save of a test has nothing new to write
+                with wave.open(str(path.with_suffix(".wav")), "wb") as w:
+                    w.setnchannels(1); w.setsampwidth(2); w.setframerate(16000); w.writeframes(pcm)
+                self._wav_saved = len(pcm)
         stamps = [e["at"] for e in self.log if "at" in e]
         path.write_text(json.dumps({**mic,
             "test_id": self.test_id, "external_user_id": self.external_user_id, "status": self.status or "aborted",

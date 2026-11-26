@@ -16,7 +16,8 @@ Tests that are already running are never touched. Every number above is a first 
 tunes them (/api/monitor shows the live values under "load").
 
 Memory that stays high after an overload: when no test has run for a while the service first asks Python and PyTorch to release what they
-can (`gpu_cleanup`); if the card is still more than RECYCLE_EXTRA_MB (default 3000) above what it used when the service had just started,
+can (`gpu_cleanup`); if the card is still more than RECYCLE_EXTRA_MB (default 3000) above what it used when the models had just been
+loaded (read before the first test is accepted),
 and RECYCLE_ON_LEAK=1, it exits with code 75 and the start script starts it again (models reload; /health says `ready: false` meanwhile).
 It never does this while a test is running, and a fresh start measures a fresh baseline, so it cannot restart in a loop.
 """
@@ -96,6 +97,7 @@ class LoadGuard:
         self.restarting = False
         # for watch_step
         self.baseline_mb: int | None = None
+        self._had_test = False              # a test has been admitted or seen: from then on the memory in use is no longer "clean"
         self._idle_since: float | None = None
         self._cleaned = False
 
@@ -171,23 +173,34 @@ class LoadGuard:
         elif self.slow():
             d = Decision(False, "slow", "Server is busy, try again in a minute")
         else:
+            self._had_test = True
             return Decision(True)
         self.refused[d.reason] += 1
         return d
 
     def accepting(self, running: int, max_sessions: int) -> Decision:
         """Like admit, without counting a refusal: what /health reports."""
-        before = Counter(self.refused)
+        before, had_test = Counter(self.refused), self._had_test
         d = self.admit(running, max_sessions)
-        self.refused = before
+        self.refused, self._had_test = before, had_test
         return d
 
     # ---- the watcher: memory that is not given back ----------------------------------------------
+    def record_baseline(self, reading: tuple[int, int] | None) -> None:
+        """The memory in use when the models have just been loaded: what "clean" means. The server calls this before it accepts
+        the first test. It is kept once set, and never taken after a test has run, because memory a test leaves behind is exactly
+        what the restart is for."""
+        if reading is None or self.baseline_mb is not None or self._had_test:
+            return
+        self.baseline_mb = reading[0]
+        log.info("GPU memory baseline %d MB", self.baseline_mb)
+
     def watch_step(self, running: int, reading: tuple[int, int] | None, *, ready: bool, recycle: bool | None = None, cleanup=gpu_cleanup) -> str | None:
         """One look at the GPU, every few seconds. Returns "recycle" when the service should restart itself, else None."""
         now = self.clock()
         self.update_gpu(reading)
         if running > 0:
+            self._had_test = True
             self._idle_since, self._cleaned = None, False
             return None
         if self._idle_since is None:
@@ -197,9 +210,8 @@ class LoadGuard:
             return None
         used = reading[0]
         if self.baseline_mb is None:
-            if idle >= _float("BASELINE_IDLE_S", 30):         # the models are loaded and nothing has run: this is "clean"
-                self.baseline_mb = used
-                log.info("GPU memory baseline %d MB", used)
+            if idle >= _float("BASELINE_IDLE_S", 30):         # only if the start-up reading failed, and still no test has run
+                self.record_baseline(reading)
             return None
         if not self._cleaned and idle >= _float("CLEANUP_IDLE_S", 20):
             self._cleaned = True

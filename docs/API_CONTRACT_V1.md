@@ -117,6 +117,9 @@ Text frames, JSON with a `type`:
 | `GET /v1/tests/{id}/result` | Full record: examiner and candidate turns with `t`/`at`, phase boundaries, topics and cue card used, latencies, flags. `404` while the test is still running. |
 | `GET /v1/tests/{id}/audio` | The candidate's microphone recording as WAV (16 kHz mono) |
 
+**Retention:** results and recordings are kept for **30 days** and then deleted; after that these calls answer `404`. Fetch and store
+what you need within that time. The recording covers the whole test (up to 30 minutes; the record says `recording_truncated` if longer).
+
 Scoring (the four IELTS criteria) is **not part of v1**. When added it will be a separate `GET /v1/tests/{id}/assessment` returning
 estimated bands with an `estimated: true` flag. No official-score claim (decision D6).
 

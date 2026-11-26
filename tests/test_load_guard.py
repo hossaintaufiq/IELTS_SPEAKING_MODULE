@@ -305,3 +305,67 @@ def test_the_watcher_restarts_with_code_75_and_survives_its_own_errors(monkeypat
     with pytest.raises(Stop):
         asyncio.run(server._watch_gpu())
     assert exits == [75] and lg.RESTART_EXIT_CODE == 75              # an error in one look did not end the watcher; "recycle" exits with 75
+
+
+def test_load_right_after_a_restart_does_not_hide_the_leak(guard, clock):
+    """Seen on the GPU on 2026-11-26: tests arrived at once, the first quiet moment came after them, and the loaded card
+    (20.0 GB) was taken as clean, so the restart could never trigger."""
+    guard.record_baseline((17_000, 24_576))                      # the models have loaded; no test yet
+    assert guard.admit(0, 10).ok                                  # a candidate arrives at once
+    guard.watch_step(1, (20_000, 24_576), ready=True, recycle=True)
+    said = idle_run(guard, clock, [(0, 0, 20_200), (31, 0, 20_200), (35, 0, 20_200)])   # quiet: 0, 31 (cleanup), 66 s
+    assert said == [None, None, "recycle"]                        # 3.2 GB above clean, quiet long enough
+    assert guard.baseline_mb == 17_000
+
+
+@pytest.mark.parametrize("first", ["admitted", "seen"])
+def test_a_loaded_card_is_never_taken_as_clean(guard, clock, first):
+    if first == "admitted":
+        assert guard.admit(0, 10).ok
+    else:
+        guard.watch_step(1, (19_000, 24_576), ready=True)
+    guard.record_baseline((19_000, 24_576))                       # too late: refused
+    assert set(idle_run(guard, clock, [(0, 0, 19_000), (100, 0, 19_000), (100, 0, 19_000)])) == {None}
+    assert guard.baseline_mb is None
+
+
+def test_asking_whether_tests_are_taken_does_not_count_as_a_test(guard, clock):
+    assert guard.accepting(0, 10).ok
+    guard.record_baseline((17_000, 24_576))
+    assert guard.baseline_mb == 17_000
+    guard.record_baseline((21_000, 24_576))                       # kept once set
+    guard.record_baseline(None)
+    assert guard.baseline_mb == 17_000
+
+
+def test_the_service_reads_the_clean_level_before_it_says_it_is_ready(monkeypatch, clock):
+    import worker.examiner.llm as llm
+
+    g, ready = lg.LoadGuard(clock=clock), {"done": False, "error": ""}
+    seen = []
+
+    async def warm_up(*args, **kwargs):
+        return {"ok": True}
+
+    def read():
+        seen.append(ready["done"])
+        return (17_000, 24_576)
+
+    monkeypatch.setattr(server, "GUARD", g)
+    monkeypatch.setattr(server, "READY", ready)
+    monkeypatch.setattr(server, "MOCK", False)
+    monkeypatch.setattr(server.warm, "preload", lambda: None)
+    monkeypatch.setattr(llm, "generate_json", warm_up)
+    monkeypatch.setattr(lg, "read_gpu_memory", read)
+    preload = next(h for h in server.app.router.on_startup if h.__name__ == "_preload_models")
+
+    async def go():
+        await preload()
+        for _ in range(200):                         # the models load in a thread
+            if ready["done"]:
+                return
+            await asyncio.sleep(0.01)
+
+    asyncio.run(go())
+    assert ready == {"done": True, "error": ""} and g.baseline_mb == 17_000
+    assert seen == [False]                           # read while no test could be accepted yet
