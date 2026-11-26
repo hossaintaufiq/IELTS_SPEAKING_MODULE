@@ -67,6 +67,7 @@ RESERVE_SLICE_S = 50
 # examiner.ts: "a short follow-up that pushes them to develop it" for Part 3
 PART3_FOLLOW_UPS = ["Why do you think that is?", "Can you give an example?"]
 
+LINE_START_MAX_S = 45      # how long a queued line may take to start sounding before the silence timers stop waiting for it
 P2_REAL_WORDS = 4          # fewer words than this in the long turn is not "speaking" (stray noise, a lone "okay")
 P2_ENOUGH_WORDS = 12       # fewer than this and no question is made up about it: straight on to Part 3
 DONE_TALKING_PAUSE_S = 1.5   # after "that's all" the examiner waits this long in case they go on, then thanks them
@@ -197,6 +198,7 @@ class ExamSession:
         self._answer_since: float | None = None      # when the candidate began the answer in progress (first voice after the examiner spoke)
         self._cut_next = False                       # the next examiner line is the polite "let's move on" after an over-long answer
         self._late_continuation = False             # the next turn is the end of the PREVIOUS answer, not an answer to the question just asked
+        self._line_due: float | None = None          # when the line still waiting to be heard was queued
         self._last_voice_at = -1e9                  # when the voice detector last heard the candidate
 
     # ---- events to the browser + the run log -----------------------------------------------------
@@ -207,7 +209,12 @@ class ExamSession:
             self.bot_speaking = False
         return self.bot_speaking or self.clock() < self.quiet_until
 
+    def _line_waiting(self) -> bool:
+        """The examiner has a line that is still being turned into speech."""
+        return self._line_due is not None and self.clock() - self._line_due < LINE_START_MAX_S
+
     def bot_started(self) -> None:
+        self._line_due = None
         self.bot_speaking = True
         self._bot_since = self.clock()
 
@@ -243,6 +250,8 @@ class ExamSession:
 
         self.history.append(("examiner", text))
         self._answer_since = None
+        if self.await_audio:
+            self._line_due = self.clock()           # until it is heard: a slow voice must not count as the candidate's silence
         if self.stt is not None:
             self.stt.question_hint = text
         await self.emit({"type": "transcript", "role": "examiner", "text": text, "origin": origin, **({"why": why} if why else {})})
@@ -268,6 +277,10 @@ class ExamSession:
         elif action == "next_part" and self.started:
             async with self._lock:
                 await self.skip_part()
+        elif action == "skip_prep" and self.started:
+            async with self._lock:
+                if self.phase == PART2_PREP:        # checked under the lock: the minute may just have run out on its own
+                    await self.start_long_turn()
         elif action == "end":
             if self.started and self.phase != DONE:
                 self._drop_pending()
@@ -874,7 +887,7 @@ class ExamSession:
         Never started:                   "Can you tell me about the topic you have been given?", then "You still have time,
                                          so please take a moment and tell me about the topic.", then moves on.
         """
-        if self.p2_nudges >= 3 or self.confirm_end or self.listening_blocked() or self._speaking_now():
+        if self.p2_nudges >= 3 or self.confirm_end or self.listening_blocked() or self._line_waiting() or self._speaking_now():
             return                                    # moving on, waiting for "finish or continue", examiner talking, or they are talking
         if self.clock() - self._last_voice_at < VOICE_GRACE_S:
             return                                    # a breath between two sentences, or the transcript is still on its way
