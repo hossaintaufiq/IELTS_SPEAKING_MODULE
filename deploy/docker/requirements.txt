@@ -1,0 +1,16 @@
+# The service's Python packages inside the container (Python 3.12, Linux). Versions are the ones the tests pass with
+# (or, for the GPU libraries, the ones that worked on the rented GPU boxes). onnxruntime-gpu is installed separately,
+# after these: see the Dockerfile. vLLM has its own environment.
+pipecat-ai[silero,websocket]==0.0.108
+faster-whisper==1.2.1
+ctranslate2==4.9.0
+kokoro-onnx==0.6.1
+soundfile
+numpy==2.2.6
+httpx==0.28.1
+openai==2.54.0
+requests==2.34.2
+nltk==3.10.4
+fastapi==0.162.5
+uvicorn[standard]==0.54.0
+websockets>=13.1,<16          # pipecat 0.0.108 does not accept 16
