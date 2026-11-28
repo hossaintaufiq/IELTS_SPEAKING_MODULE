@@ -70,6 +70,7 @@ Status: `todo` / `doing` / `done` / `blocked`. Dates are the day the status chan
 | 2026-11-26 | Go-live item 2: the clean GPU memory level is read before the first test, so the leak restart can trigger | done in code and tests (500 tests); NOT yet verified on a GPU | At up to 10 tests the load test used about 18.7 GB of 24 GB, below the restart level (about 17 GB + 3 GB), so no restart is expected in normal use |
 | 2026-11-26 | Go-live item 1: one container with automatic start and restart (`deploy/docker/`, `docs/DEPLOY_SERVER.md`, D10) | written and partly checked; **image NOT built, nothing run on a GPU** | Supervisor tested with stand-ins and rehearsed on the dev PC (kill service or language model: both come back). App packages resolve for Linux. Needs a GPU server with Docker to verify |
 | 2026-11-26 | Image build and run commands in the README, for the company to create the image | done (commands checked against the files; **not run**: no Docker here) | The first real build is theirs; ask for the full error text if it fails |
+| 2026-11-28 | GPU provider comparison and price (`docs/GPU_PROVIDER_PRICING.md`) | done (public web prices only; no provider contacted) | Suggested: AceCloud, about $411-454 a month before tax. **No listed server has been tested with the service**: first step is a 10-student load test on an L4 |
 
 ## Blocked / waiting on
 
